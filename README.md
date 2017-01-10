@@ -1,10 +1,13 @@
 SubtitlesOctopus displays subtitles in .ass format and easily integrates with HTML5 videos. It supports all SSA/ASS features and fully compatible with [libass](https://github.com/libass/libass).
 
+[DEMO video.js (prefered)](https://dador.github.io/JavascriptSubtitlesOctopus/videojs.html)
+[DEMO native controls](https://dador.github.io/JavascriptSubtitlesOctopus/index.html)
+
 ## Features
 
+- Uses Web Workers thus video and interface doesn't lag even on "heavy" subtitles (working in background)
 - Support fonts (conversions isn't necessary)
 - Quite fast
-- Web Workers used thus video and interface doesn't lag even on "heavy" subtitles (working in background)
 - Doesn't use DOM manipulations and render subtitles on single canvas
 - Supports all SSA/ASS features
 - Fully compatible with [libass](https://github.com/libass/libass)
@@ -37,18 +40,21 @@ var instance = new SubtitlesOctopus(options);
 instance.setCurrentTime(15); // Render subtitles at 00:15 on your canvas
 ```
 
-## How to build?
-That's quite easy!
+[See other examples](https://github.com/Dador/JavascriptSubtitlesOctopus/tree/master/example).
 
-1) Clone repo with submodules:
+## How to build?
+
+1) Install [EMSDK](http://kripken.github.io/emscripten-site/docs/getting_started/downloads.html) (it will take awhile).
+
+2) Clone repo with submodules:
 ```
 git clone --recursive -j8 git@github.com:Dador/JavascriptSubtitlesOctopus.git
 ```
-2) Run make:
+3) Run make:
 ```
 cd JavascriptSubtitlesOctopus
 make
 ```
 
-## How am I an Octopus?
-[Ba da ba da ba!](https://www.youtube.com/watch?v=tOzOD-82mW0)
+## Wny "Octopus"?
+How am I an Octopus? [Ba da ba da ba!](https://www.youtube.com/watch?v=tOzOD-82mW0)
