@@ -563,7 +563,7 @@ function onMessageFromMainEmscriptenThread(message) {
                     Module.canvas.boundingClientRect = message.data.boundingClientRect;
                 }
                 self.resize(message.data.width, message.data.height);
-                //self.render(true);
+                self.render(true);
             } else throw 'ey?';
             break;
         }
