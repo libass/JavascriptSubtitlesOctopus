@@ -1,7 +1,6 @@
 SubtitlesOctopus displays subtitles in .ass format and easily integrates with HTML5 videos. It supports all SSA/ASS features and fully compatible with [libass](https://github.com/libass/libass).
 
-[DEMO video.js (prefered)](https://dador.github.io/JavascriptSubtitlesOctopus/videojs.html)
-[DEMO native controls](https://dador.github.io/JavascriptSubtitlesOctopus/index.html)
+[DEMO (video.js, prefered)](https://dador.github.io/JavascriptSubtitlesOctopus/videojs.html) / [DEMO (native controls)](https://dador.github.io/JavascriptSubtitlesOctopus/index.html)
 
 ## Features
 
