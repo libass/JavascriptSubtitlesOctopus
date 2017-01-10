@@ -55,5 +55,5 @@ cd JavascriptSubtitlesOctopus
 make
 ```
 
-## Wny "Octopus"?
+## Why "Octopus"?
 How am I an Octopus? [Ba da ba da ba!](https://www.youtube.com/watch?v=tOzOD-82mW0)
