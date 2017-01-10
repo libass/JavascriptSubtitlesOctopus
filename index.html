@@ -8,11 +8,11 @@
         SubtitlesOctopusOnLoad = function () {
             var options = {
                 video: document.getElementById('video'),
-                subUrl: '/test.ass',
-                fonts: ['/font-1.ttf', '/font-2.ttf'],
+                subUrl: '/JavascriptSubtitlesOctopus/test.ass',
+                fonts: ['/JavascriptSubtitlesOctopus/font-1.ttf', '/JavascriptSubtitlesOctopus/font-2.ttf'],
                 //onReady: onReadyFunction,
                 //debug: true,
-                workerUrl: '/subtitles-octopus-worker.js'
+                workerUrl: '/JavascriptSubtitlesOctopus/subtitles-octopus-worker.js'
             };
             window.libassJsInstance = new SubtitlesOctopus(options);
         };
@@ -20,6 +20,6 @@
 </head>
 <body>
 <video id="video" src="http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4" width="600" height="500" controls></video>
-<script src="/subtitles-octopus.js"></script>
+<script src="/JavascriptSubtitlesOctopus/subtitles-octopus.js"></script>
 </body>
 </html>
