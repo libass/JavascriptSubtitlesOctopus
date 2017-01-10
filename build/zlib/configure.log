@@ -1,0 +1,633 @@
+--------------------
+./configure
+Fri Aug 14 04:59:00 PDT 2015
+=== ztest3100.c ===
+extern int getchar();
+int hello() {return getchar();}
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -c ztest3100.c
+... using gcc
+
+Checking for obsessive-compulsive compiler options...
+=== ztest3100.c ===
+int foo() { return 0; }
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -c ztest3100.c
+
+Checking for shared library support...
+=== ztest3100.c ===
+extern int getchar();
+int hello() {return getchar();}
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -w -c -fPIC ztest3100.c
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -fPIC -o ztest3100.so ztest3100.o
+Building shared library libz.so.1.2.8 with /home/user/emsdk_portable/emscripten/tag-1.34.4/emcc.
+
+=== ztest3100.c ===
+#include <sys/types.h>
+off64_t dummy = 0;
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -c -D_LARGEFILE64_SOURCE=1 ztest3100.c
+Checking for off64_t... Yes.
+Checking for fseeko... Yes.
+
+=== ztest3100.c ===
+#include <string.h>
+#include <errno.h>
+int main() { return strlen(strerror(errno)); }
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -D_LARGEFILE64_SOURCE=1 -o ztest3100 ztest3100.c
+Checking for strerror... Yes.
+
+=== ztest3100.c ===
+#include <unistd.h>
+int main() { return 0; }
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -c -D_LARGEFILE64_SOURCE=1 ztest3100.c
+Checking for unistd.h... Yes.
+
+=== ztest3100.c ===
+#include <stdarg.h>
+int main() { return 0; }
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -c -D_LARGEFILE64_SOURCE=1 ztest3100.c
+Checking for stdarg.h... Yes.
+
+=== ztest3100.c ===
+#include <stdio.h>
+#include <stdarg.h>
+#include "zconf.h"
+int main()
+{
+#ifndef STDC
+  choke me
+#endif
+  return 0;
+}
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -c -D_LARGEFILE64_SOURCE=1 ztest3100.c
+Checking whether to use vs[n]printf() or s[n]printf()... using vs[n]printf().
+
+=== ztest3100.c ===
+#include <stdio.h>
+#include <stdarg.h>
+int mytest(const char *fmt, ...)
+{
+  char buf[20];
+  va_list ap;
+  va_start(ap, fmt);
+  vsnprintf(buf, sizeof(buf), fmt, ap);
+  va_end(ap);
+  return 0;
+}
+int main()
+{
+  return (mytest("Hello%d\n", 1));
+}
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -D_LARGEFILE64_SOURCE=1 -o ztest3100 ztest3100.c
+Checking for vsnprintf() in stdio.h... Yes.
+
+=== ztest3100.c ===
+#include <stdio.h>
+#include <stdarg.h>
+int mytest(const char *fmt, ...)
+{
+  int n;
+  char buf[20];
+  va_list ap;
+  va_start(ap, fmt);
+  n = vsnprintf(buf, sizeof(buf), fmt, ap);
+  va_end(ap);
+  return n;
+}
+int main()
+{
+  return (mytest("Hello%d\n", 1));
+}
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -c -D_LARGEFILE64_SOURCE=1 ztest3100.c
+Checking for return value of vsnprintf()... Yes.
+
+=== ztest3100.c ===
+#define ZLIB_INTERNAL __attribute__((visibility ("hidden")))
+int ZLIB_INTERNAL foo;
+int main()
+{
+  return 0;
+}
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -c -D_LARGEFILE64_SOURCE=1 ztest3100.c
+Checking for attribute(visibility) support... Yes.
+
+ALL = static shared all64
+AR = /home/user/emsdk_portable/emscripten/tag-1.34.4/emar
+ARFLAGS = rc
+CC = /home/user/emsdk_portable/emscripten/tag-1.34.4/emcc
+CFLAGS = -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN
+CPP = /home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -E
+EXE =
+LDCONFIG = ldconfig
+LDFLAGS =
+LDSHARED = /home/user/emsdk_portable/emscripten/tag-1.34.4/emcc
+LDSHAREDLIBC = -lc
+OBJC = $(OBJZ) $(OBJG)
+PIC_OBJC = $(PIC_OBJZ) $(PIC_OBJG)
+RANLIB = /home/user/emsdk_portable/emscripten/tag-1.34.4/emranlib
+SFLAGS = -fPIC -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN
+SHAREDLIB = libz.so
+SHAREDLIBM = libz.so.1
+SHAREDLIBV = libz.so.1.2.8
+STATICLIB = libz.a
+TEST = all teststatic testshared test64
+VER = 1.2.8
+Z_U4 =
+exec_prefix = ${prefix}
+includedir = ${prefix}/include
+libdir = ${exec_prefix}/lib
+mandir = ${prefix}/share/man
+prefix = /usr/local
+sharedlibdir = ${libdir}
+uname = Linux
+--------------------
+
+
+--------------------
+./configure
+Fri Aug 14 05:30:09 PDT 2015
+Checking for gcc...
+=== ztest15412.c ===
+extern int getchar();
+int hello() {return getchar();}
+===
+gcc -c ztest15412.c
+... using gcc
+
+Checking for obsessive-compulsive compiler options...
+=== ztest15412.c ===
+int foo() { return 0; }
+===
+gcc -c -O3 ztest15412.c
+
+Checking for shared library support...
+=== ztest15412.c ===
+extern int getchar();
+int hello() {return getchar();}
+===
+gcc -w -c -O3 -fPIC ztest15412.c
+gcc -shared -Wl,-soname,libz.so.1,--version-script,zlib.map -O3 -fPIC -o ztest15412.so ztest15412.o
+Building shared library libz.so.1.2.8 with gcc.
+
+=== ztest15412.c ===
+#include <sys/types.h>
+off64_t dummy = 0;
+===
+gcc -c -O3 -D_LARGEFILE64_SOURCE=1 ztest15412.c
+Checking for off64_t... Yes.
+Checking for fseeko... Yes.
+
+=== ztest15412.c ===
+#include <string.h>
+#include <errno.h>
+int main() { return strlen(strerror(errno)); }
+===
+gcc -O3 -D_LARGEFILE64_SOURCE=1 -o ztest15412 ztest15412.c
+Checking for strerror... Yes.
+
+=== ztest15412.c ===
+#include <unistd.h>
+int main() { return 0; }
+===
+gcc -c -O3 -D_LARGEFILE64_SOURCE=1 ztest15412.c
+Checking for unistd.h... Yes.
+
+=== ztest15412.c ===
+#include <stdarg.h>
+int main() { return 0; }
+===
+gcc -c -O3 -D_LARGEFILE64_SOURCE=1 ztest15412.c
+Checking for stdarg.h... Yes.
+
+=== ztest15412.c ===
+#include <stdio.h>
+#include <stdarg.h>
+#include "zconf.h"
+int main()
+{
+#ifndef STDC
+  choke me
+#endif
+  return 0;
+}
+===
+gcc -c -O3 -D_LARGEFILE64_SOURCE=1 ztest15412.c
+Checking whether to use vs[n]printf() or s[n]printf()... using vs[n]printf().
+
+=== ztest15412.c ===
+#include <stdio.h>
+#include <stdarg.h>
+int mytest(const char *fmt, ...)
+{
+  char buf[20];
+  va_list ap;
+  va_start(ap, fmt);
+  vsnprintf(buf, sizeof(buf), fmt, ap);
+  va_end(ap);
+  return 0;
+}
+int main()
+{
+  return (mytest("Hello%d\n", 1));
+}
+===
+gcc -O3 -D_LARGEFILE64_SOURCE=1 -o ztest15412 ztest15412.c
+Checking for vsnprintf() in stdio.h... Yes.
+
+=== ztest15412.c ===
+#include <stdio.h>
+#include <stdarg.h>
+int mytest(const char *fmt, ...)
+{
+  int n;
+  char buf[20];
+  va_list ap;
+  va_start(ap, fmt);
+  n = vsnprintf(buf, sizeof(buf), fmt, ap);
+  va_end(ap);
+  return n;
+}
+int main()
+{
+  return (mytest("Hello%d\n", 1));
+}
+===
+gcc -c -O3 -D_LARGEFILE64_SOURCE=1 ztest15412.c
+Checking for return value of vsnprintf()... Yes.
+
+=== ztest15412.c ===
+#define ZLIB_INTERNAL __attribute__((visibility ("hidden")))
+int ZLIB_INTERNAL foo;
+int main()
+{
+  return 0;
+}
+===
+gcc -c -O3 -D_LARGEFILE64_SOURCE=1 ztest15412.c
+Checking for attribute(visibility) support... Yes.
+
+ALL = static shared all64
+AR = ar
+ARFLAGS = rc
+CC = gcc
+CFLAGS = -O3 -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN
+CPP = gcc -E
+EXE =
+LDCONFIG = ldconfig
+LDFLAGS =
+LDSHARED = gcc -shared -Wl,-soname,libz.so.1,--version-script,zlib.map
+LDSHAREDLIBC = -lc
+OBJC = $(OBJZ) $(OBJG)
+PIC_OBJC = $(PIC_OBJZ) $(PIC_OBJG)
+RANLIB = ranlib
+SFLAGS = -O3 -fPIC -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN
+SHAREDLIB = libz.so
+SHAREDLIBM = libz.so.1
+SHAREDLIBV = libz.so.1.2.8
+STATICLIB = libz.a
+TEST = all teststatic testshared test64
+VER = 1.2.8
+Z_U4 =
+exec_prefix = ${prefix}
+includedir = ${prefix}/include
+libdir = ${exec_prefix}/lib
+mandir = ${prefix}/share/man
+prefix = /usr/local
+sharedlibdir = ${libdir}
+uname = Linux
+--------------------
+
+
+--------------------
+./configure
+Fri Aug 14 08:27:45 PDT 2015
+=== ztest2198.c ===
+extern int getchar();
+int hello() {return getchar();}
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -c ztest2198.c
+... using gcc
+
+Checking for obsessive-compulsive compiler options...
+=== ztest2198.c ===
+int foo() { return 0; }
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -c ztest2198.c
+
+Checking for shared library support...
+=== ztest2198.c ===
+extern int getchar();
+int hello() {return getchar();}
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -w -c -fPIC ztest2198.c
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -fPIC -o ztest2198.so ztest2198.o
+Building shared library libz.so.1.2.8 with /home/user/emsdk_portable/emscripten/tag-1.34.4/emcc.
+
+=== ztest2198.c ===
+#include <sys/types.h>
+off64_t dummy = 0;
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -c -D_LARGEFILE64_SOURCE=1 ztest2198.c
+Checking for off64_t... Yes.
+Checking for fseeko... Yes.
+
+=== ztest2198.c ===
+#include <string.h>
+#include <errno.h>
+int main() { return strlen(strerror(errno)); }
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -D_LARGEFILE64_SOURCE=1 -o ztest2198 ztest2198.c
+Checking for strerror... Yes.
+
+=== ztest2198.c ===
+#include <unistd.h>
+int main() { return 0; }
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -c -D_LARGEFILE64_SOURCE=1 ztest2198.c
+Checking for unistd.h... Yes.
+
+=== ztest2198.c ===
+#include <stdarg.h>
+int main() { return 0; }
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -c -D_LARGEFILE64_SOURCE=1 ztest2198.c
+Checking for stdarg.h... Yes.
+
+=== ztest2198.c ===
+#include <stdio.h>
+#include <stdarg.h>
+#include "zconf.h"
+int main()
+{
+#ifndef STDC
+  choke me
+#endif
+  return 0;
+}
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -c -D_LARGEFILE64_SOURCE=1 ztest2198.c
+Checking whether to use vs[n]printf() or s[n]printf()... using vs[n]printf().
+
+=== ztest2198.c ===
+#include <stdio.h>
+#include <stdarg.h>
+int mytest(const char *fmt, ...)
+{
+  char buf[20];
+  va_list ap;
+  va_start(ap, fmt);
+  vsnprintf(buf, sizeof(buf), fmt, ap);
+  va_end(ap);
+  return 0;
+}
+int main()
+{
+  return (mytest("Hello%d\n", 1));
+}
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -D_LARGEFILE64_SOURCE=1 -o ztest2198 ztest2198.c
+Checking for vsnprintf() in stdio.h... Yes.
+
+=== ztest2198.c ===
+#include <stdio.h>
+#include <stdarg.h>
+int mytest(const char *fmt, ...)
+{
+  int n;
+  char buf[20];
+  va_list ap;
+  va_start(ap, fmt);
+  n = vsnprintf(buf, sizeof(buf), fmt, ap);
+  va_end(ap);
+  return n;
+}
+int main()
+{
+  return (mytest("Hello%d\n", 1));
+}
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -c -D_LARGEFILE64_SOURCE=1 ztest2198.c
+Checking for return value of vsnprintf()... Yes.
+
+=== ztest2198.c ===
+#define ZLIB_INTERNAL __attribute__((visibility ("hidden")))
+int ZLIB_INTERNAL foo;
+int main()
+{
+  return 0;
+}
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -c -D_LARGEFILE64_SOURCE=1 ztest2198.c
+Checking for attribute(visibility) support... Yes.
+
+ALL = static shared all64
+AR = /home/user/emsdk_portable/emscripten/tag-1.34.4/emar
+ARFLAGS = rc
+CC = /home/user/emsdk_portable/emscripten/tag-1.34.4/emcc
+CFLAGS = -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN
+CPP = /home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -E
+EXE =
+LDCONFIG = ldconfig
+LDFLAGS =
+LDSHARED = /home/user/emsdk_portable/emscripten/tag-1.34.4/emcc
+LDSHAREDLIBC = -lc
+OBJC = $(OBJZ) $(OBJG)
+PIC_OBJC = $(PIC_OBJZ) $(PIC_OBJG)
+RANLIB = /home/user/emsdk_portable/emscripten/tag-1.34.4/emranlib
+SFLAGS = -fPIC -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN
+SHAREDLIB = libz.so
+SHAREDLIBM = libz.so.1
+SHAREDLIBV = libz.so.1.2.8
+STATICLIB = libz.a
+TEST = all teststatic testshared test64
+VER = 1.2.8
+Z_U4 =
+exec_prefix = ${prefix}
+includedir = ${prefix}/include
+libdir = ${exec_prefix}/lib
+mandir = ${prefix}/share/man
+prefix = /usr/local
+sharedlibdir = ${libdir}
+uname = Linux
+--------------------
+
+
+--------------------
+./configure CFLAGS=-O3 NM=llvm-nm --prefix=/home/user/ffmpeg.js/build/zlib/dist
+Fri Aug 14 09:04:18 PDT 2015
+unknown option: CFLAGS=-O3
+./configure --help for help
+** ./configure aborting.
+--------------------
+
+
+--------------------
+./configure --prefix=/home/user/ffmpeg.js/build/zlib/dist
+Fri Aug 14 09:04:25 PDT 2015
+=== ztest17935.c ===
+extern int getchar();
+int hello() {return getchar();}
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -c ztest17935.c
+... using gcc
+
+Checking for obsessive-compulsive compiler options...
+=== ztest17935.c ===
+int foo() { return 0; }
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -c ztest17935.c
+
+Checking for shared library support...
+=== ztest17935.c ===
+extern int getchar();
+int hello() {return getchar();}
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -w -c -fPIC ztest17935.c
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -fPIC -o ztest17935.so ztest17935.o
+Building shared library libz.so.1.2.8 with /home/user/emsdk_portable/emscripten/tag-1.34.4/emcc.
+
+=== ztest17935.c ===
+#include <sys/types.h>
+off64_t dummy = 0;
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -c -D_LARGEFILE64_SOURCE=1 ztest17935.c
+Checking for off64_t... Yes.
+Checking for fseeko... Yes.
+
+=== ztest17935.c ===
+#include <string.h>
+#include <errno.h>
+int main() { return strlen(strerror(errno)); }
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -D_LARGEFILE64_SOURCE=1 -o ztest17935 ztest17935.c
+Checking for strerror... Yes.
+
+=== ztest17935.c ===
+#include <unistd.h>
+int main() { return 0; }
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -c -D_LARGEFILE64_SOURCE=1 ztest17935.c
+Checking for unistd.h... Yes.
+
+=== ztest17935.c ===
+#include <stdarg.h>
+int main() { return 0; }
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -c -D_LARGEFILE64_SOURCE=1 ztest17935.c
+Checking for stdarg.h... Yes.
+
+=== ztest17935.c ===
+#include <stdio.h>
+#include <stdarg.h>
+#include "zconf.h"
+int main()
+{
+#ifndef STDC
+  choke me
+#endif
+  return 0;
+}
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -c -D_LARGEFILE64_SOURCE=1 ztest17935.c
+Checking whether to use vs[n]printf() or s[n]printf()... using vs[n]printf().
+
+=== ztest17935.c ===
+#include <stdio.h>
+#include <stdarg.h>
+int mytest(const char *fmt, ...)
+{
+  char buf[20];
+  va_list ap;
+  va_start(ap, fmt);
+  vsnprintf(buf, sizeof(buf), fmt, ap);
+  va_end(ap);
+  return 0;
+}
+int main()
+{
+  return (mytest("Hello%d\n", 1));
+}
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -D_LARGEFILE64_SOURCE=1 -o ztest17935 ztest17935.c
+Checking for vsnprintf() in stdio.h... Yes.
+
+=== ztest17935.c ===
+#include <stdio.h>
+#include <stdarg.h>
+int mytest(const char *fmt, ...)
+{
+  int n;
+  char buf[20];
+  va_list ap;
+  va_start(ap, fmt);
+  n = vsnprintf(buf, sizeof(buf), fmt, ap);
+  va_end(ap);
+  return n;
+}
+int main()
+{
+  return (mytest("Hello%d\n", 1));
+}
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -c -D_LARGEFILE64_SOURCE=1 ztest17935.c
+Checking for return value of vsnprintf()... Yes.
+
+=== ztest17935.c ===
+#define ZLIB_INTERNAL __attribute__((visibility ("hidden")))
+int ZLIB_INTERNAL foo;
+int main()
+{
+  return 0;
+}
+===
+/home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -c -D_LARGEFILE64_SOURCE=1 ztest17935.c
+Checking for attribute(visibility) support... Yes.
+
+ALL = static shared all64
+AR = /home/user/emsdk_portable/emscripten/tag-1.34.4/emar
+ARFLAGS = rc
+CC = /home/user/emsdk_portable/emscripten/tag-1.34.4/emcc
+CFLAGS = -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN
+CPP = /home/user/emsdk_portable/emscripten/tag-1.34.4/emcc -E
+EXE =
+LDCONFIG = ldconfig
+LDFLAGS =
+LDSHARED = /home/user/emsdk_portable/emscripten/tag-1.34.4/emcc
+LDSHAREDLIBC = -lc
+OBJC = $(OBJZ) $(OBJG)
+PIC_OBJC = $(PIC_OBJZ) $(PIC_OBJG)
+RANLIB = /home/user/emsdk_portable/emscripten/tag-1.34.4/emranlib
+SFLAGS = -fPIC -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN
+SHAREDLIB = libz.so
+SHAREDLIBM = libz.so.1
+SHAREDLIBV = libz.so.1.2.8
+STATICLIB = libz.a
+TEST = all teststatic testshared test64
+VER = 1.2.8
+Z_U4 =
+exec_prefix = ${prefix}
+includedir = ${prefix}/include
+libdir = ${exec_prefix}/lib
+mandir = ${prefix}/share/man
+prefix = /home/user/ffmpeg.js/build/zlib/dist
+sharedlibdir = ${libdir}
+uname = Linux
+--------------------
+
+
+--------------------
+./configure --help
+Fri Aug 14 09:16:55 PDT 2015
+usage:
+  configure [--const] [--zprefix] [--prefix=PREFIX]  [--eprefix=EXPREFIX]
+    [--static] [--64] [--libdir=LIBDIR] [--sharedlibdir=LIBDIR]
+    [--includedir=INCLUDEDIR] [--archs="-arch i386 -arch x86_64"]
