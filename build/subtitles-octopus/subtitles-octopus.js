@@ -103,7 +103,10 @@ var SubtitlesOctopus = function (options) {
                 self.setCurrentTime(video.currentTime + self.timeOffset);
             }, false);
 
-            window.addEventListener("resize", self.resize);
+            window.addEventListener("resize", function () {
+                self.resize();
+                setTimeout(self.resize, 100);
+            });
 
             if (self.video.videoWidth > 0) {
                 self.resize();
@@ -315,7 +318,9 @@ var SubtitlesOctopus = function (options) {
             height = videoSize.height * self.pixelRatio;
         }
         if (!width || !height) {
-            console.error('width or height is 0. You should either specify width & height for resize or run it when video metadata already loaded.');
+            if (!self.video) {
+                console.error('width or height is 0. You should specify width & height for resize.');
+            }
             return;
         }
 

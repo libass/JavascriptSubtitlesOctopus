@@ -60,18 +60,10 @@ void libassjs_quit()
     ass_library_done(ass_library);
 }
 
-ASS_Image * libassjs_render(double tm)
+ASS_Image * libassjs_render(double tm, int *changed)
 {
-	int changed = 0;
-
-    ASS_Image *img = ass_render_frame(ass_renderer, track, (int) (tm * 1000), &changed);
-
-    if (changed) {
-        return img;
-    } else {
-        // Not nice but still (we use it in JS)
-        return (ASS_Image *) -1;
-    }
+    ASS_Image *img = ass_render_frame(ass_renderer, track, (int) (tm * 1000), changed);
+    return img;
 }
 
 int main(int argc, char *argv[])

@@ -9,7 +9,16 @@ self.lastCurrentTimeReceivedAt = Date.now();
 
 self.init = Module['cwrap']('libassjs_init', 'number', ['number', 'number']);
 //self.init = Module['cwrap']('libassjs_init', null, ['number', 'number']);
-self.resize = Module['cwrap']('libassjs_resize', null, ['number', 'number']);
+self._resize = Module['cwrap']('libassjs_resize', null, ['number', 'number']);
+
+self.width = 0;
+self.height = 0;
+
+self.resize = function (width, height) {
+    self.width = width;
+    self.height = height;
+    self._resize(width, height);
+};
 
 self.getCurrentTime = function () {
     var diff = (Date.now() - self.lastCurrentTimeReceivedAt) / 1000;
@@ -62,13 +71,16 @@ self.setIsPaused = function (isPaused) {
     }
 };
 
-self._render = Module['cwrap']('libassjs_render', null, ['number']);
+self.changed = Module._malloc(4);
+
+self._render = Module['cwrap']('libassjs_render', null, ['number', 'number']);
 self.render = function (force) {
     self.rafId = 0;
     self.renderPending = false;
     var startTime = performance.now();
-    var renderResult = self._render(self.getCurrentTime() + self.delay);
-    if (renderResult != -1 || force) {
+    var renderResult = self._render(self.getCurrentTime() + self.delay, self.changed);
+    var changed = Module.getValue(self.changed, 'i32');
+    if (changed != 0 || force) {
         var result = self.buildResult(renderResult);
         var spentTime = performance.now() - startTime;
         postMessage({target: 'canvas', op: 'renderMultiple', time: Date.now(), spentTime: spentTime, canvases: result[0]}, result[1]);
@@ -286,13 +298,13 @@ window.requestAnimationFrame = (function () {
     // similar to Browser.requestAnimationFrame
     var nextRAF = 0;
     return function (func) {
-        // try to keep 60fps between calls to here
+        // try to keep 30fps between calls to here
         var now = Date.now();
         if (nextRAF === 0) {
-            nextRAF = now + 1000 / 60;
+            nextRAF = now + 1000 / 30;
         } else {
             while (now + 2 >= nextRAF) { // fudge a little, to avoid timer jitter causing us to do lots of delay:0
-                nextRAF += 1000 / 60;
+                nextRAF += 1000 / 30;
             }
         }
         var delay = Math.max(nextRAF - now, 0);
@@ -551,7 +563,7 @@ function onMessageFromMainEmscriptenThread(message) {
                     Module.canvas.boundingClientRect = message.data.boundingClientRect;
                 }
                 self.resize(message.data.width, message.data.height);
-                self.render(true);
+                //self.render(true);
             } else throw 'ey?';
             break;
         }
@@ -600,8 +612,8 @@ function onMessageFromMainEmscriptenThread(message) {
                 self.quit();
             }
             //Module.canvas = document.createElement('canvas');
-            screen.width = message.data.width;
-            screen.height = message.data.height;
+            screen.width = self.width = message.data.width;
+            screen.height = self.height = message.data.height;
             self.subUrl = message.data.subUrl;
             self.fonts = message.data.fonts;
             if (Module.canvas) {
