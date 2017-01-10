@@ -69,7 +69,8 @@ ASS_Image * libassjs_render(double tm)
     if (changed) {
         return img;
     } else {
-        return -1;
+        // Not nice but still (we use it in JS)
+        return (ASS_Image *) -1;
     }
 }
 

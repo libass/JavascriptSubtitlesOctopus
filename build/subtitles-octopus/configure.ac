@@ -1,4 +1,4 @@
-AC_INIT([subtitles-octopus-worker], [1.1])
+AC_INIT([subtitlesoctopus], [1.1])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_CONFIG_FILES([Makefile])
 AC_PROG_CC

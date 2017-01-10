@@ -20,7 +20,7 @@ LIBASSJS_DEPS = \
 all: libass
 libass: subtitles-octopus-worker.js
 
-clean: clean-js clean-freetype clean-fribidi clean-fontconfig clean-expat clean-libass clean-subtitles-octopus
+clean: clean-js clean-freetype clean-fribidi clean-fontconfig clean-expat clean-libass clean-octopus
 clean-js:
 	rm -f -- libass*
 clean-freetype:
@@ -33,7 +33,7 @@ clean-expat:
 	-cd build/expat && rm -rf dist && make clean
 clean-libass:
 	-cd build/libass && rm -rf dist && make clean
-clean-subtitles-octopus:
+clean-octopus:
 	-cd build/subtitles-octopus && rm -f subtitles-octopus-worker.bc && make clean
 	
 server:
@@ -127,12 +127,13 @@ build/libass/dist/lib/libass.so: build/libass/configure $(LIBASS_DEPS)
 	
 build/subtitles-octopus/configure: $(LIBASSJS_DEPS)
 	cd build/subtitles-octopus && \
-	EM_PKG_CONFIG_PATH=$(LIBASSJS_PC_PATH) emconfigure ./configure && \
-	autoreconf -fi
+	autoreconf -fi && \
+	EM_PKG_CONFIG_PATH=$(LIBASSJS_PC_PATH) emconfigure ./configure
 	
-build/subtitles-octopus/subtitles-octopus-worker: build/subtitles-octopus/configure $(LIBASSJS_DEPS)
+build/subtitles-octopus/subtitles-octopus-worker.bc: build/subtitles-octopus/configure $(LIBASSJS_DEPS)
 	cd build/subtitles-octopus && \
-	emmake make -j8
+	emmake make -j8 && \
+	mv subtitlesoctopus subtitles-octopus-worker.bc
 
 EMCC_COMMON_ARGS = \
 	-s TOTAL_MEMORY=134217728 \
@@ -150,15 +151,14 @@ EMCC_COMMON_ARGS = \
 	#--memory-init-file 0 \
 	#-s OUTLINING_LIMIT=20000 \
 
-subtitles-octopus.js: build/subtitles-octopus/subtitles-octopus-worker
-	emcc build/subtitles-octopus/subtitles-octopus-worker $(LIBASSJS_DEPS) \
+subtitles-octopus-sync.js: build/subtitles-octopus/subtitles-octopus-worker.bc
+	emcc build/subtitles-octopus/subtitles-octopus-worker.bc $(LIBASSJS_DEPS) \
 		--pre-js build/subtitles-octopus/pre-sync.js \
 		--post-js build/subtitles-octopus/post-sync.js \
 		$(EMCC_COMMON_ARGS)
 
-subtitles-octopus-worker.js: build/subtitles-octopus/subtitles-octopus-worker
-    emcc build/subtitles-octopus/subtitles-octopus-worker $(LIBASSJS_DEPS) \
+subtitles-octopus-worker.js: build/subtitles-octopus/subtitles-octopus-worker.bc
+	emcc build/subtitles-octopus/subtitles-octopus-worker.bc $(LIBASSJS_DEPS) \
 		--pre-js build/subtitles-octopus/pre-worker.js \
 		--post-js build/subtitles-octopus/post-worker.js \
-		$(EMCC_COMMON_ARGS) && \
-		cp build/subtitles-octopus/libassjs-worker.html libassjs-worker.html
+		$(EMCC_COMMON_ARGS)
