@@ -137,12 +137,12 @@ build/subtitles-octopus/subtitles-octopus-worker.bc: build/subtitles-octopus/con
 
 EMCC_COMMON_ARGS = \
 	-s TOTAL_MEMORY=134217728 \
-	--embed-file fonts.conf \
 	-O3 \
 	-s EXPORTED_FUNCTIONS="['_main', '_malloc', '_libassjs_init', '_libassjs_quit', '_libassjs_resize', '_libassjs_render']" \
 	-s NO_EXIT_RUNTIME=1 \
 	--use-preload-plugins \
 	--preload-file default.ttf \
+	--preload-file fonts.conf \
 	-s ALLOW_MEMORY_GROWTH=1 \
 	-o $@
 	#TODO: try to find "best total memory" again and disable ALLOW_MEMORY_GROWTH
@@ -155,10 +155,14 @@ subtitles-octopus-sync.js: build/subtitles-octopus/subtitles-octopus-worker.bc
 	emcc build/subtitles-octopus/subtitles-octopus-worker.bc $(LIBASSJS_DEPS) \
 		--pre-js build/subtitles-octopus/pre-sync.js \
 		--post-js build/subtitles-octopus/post-sync.js \
-		$(EMCC_COMMON_ARGS)
+		$(EMCC_COMMON_ARGS) && \
+		mv subtitles-octopus-sync.data subtitles-octopus-sync.js subtitles-octopus-sync.js.mem js/ & \
+		cp build/subtitles-octopus/subtitles-octopus.js js/
 
 subtitles-octopus-worker.js: build/subtitles-octopus/subtitles-octopus-worker.bc
 	emcc build/subtitles-octopus/subtitles-octopus-worker.bc $(LIBASSJS_DEPS) \
 		--pre-js build/subtitles-octopus/pre-worker.js \
 		--post-js build/subtitles-octopus/post-worker.js \
-		$(EMCC_COMMON_ARGS)
+		$(EMCC_COMMON_ARGS) && \
+		mv subtitles-octopus-worker.data subtitles-octopus-worker.js subtitles-octopus-worker.js.mem js/ & \
+		cp build/subtitles-octopus/subtitles-octopus.js js/

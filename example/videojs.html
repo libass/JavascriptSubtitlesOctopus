@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,7 +8,7 @@
 <body>
 <video class="video-js vjs-big-play-centered" id="video" src="https://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4" width="600" height="500" controls data-setup="{}"></video>
 <script src="https://vjs.zencdn.net/5.14.1/video.js"></script>
-<script src="../build/subtitles-octopus/subtitles-octopus.js"></script>
+<script src="/js/subtitles-octopus.js"></script>
 
 <script>
     videojs('video').ready(function () {
@@ -21,7 +21,7 @@
                 fonts: ['/example/font-1.ttf', '/example/font-2.ttf'],
                 //onReady: onReadyFunction,
                 //debug: true,
-                workerUrl: '/subtitles-octopus-worker.js'
+                workerUrl: '/js/subtitles-octopus-worker.js'
             };
             window.octopusInstance = new SubtitlesOctopus(options); // You can experiment in console
         };

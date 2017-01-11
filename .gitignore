@@ -1,7 +1,7 @@
-subtitles-octopus-worker.*
 a.out.js
 a.out.js.mem
 a.out
+build/subtitles-octopus/.deps/
 build/subtitles-octopus/Makefile
 build/subtitles-octopus/Makefile.in
 build/subtitles-octopus/aclocal.m4
@@ -16,6 +16,7 @@ build/subtitles-octopus/missing
 build/expat/xmlwf/xmlwf
 dist/
 .libs/
+*.bc
 *.lo
 *.la
 *.o
