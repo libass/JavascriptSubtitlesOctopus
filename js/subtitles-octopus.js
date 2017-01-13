@@ -1,19 +1,21 @@
 var SubtitlesOctopus = function (options) {
     var self = this;
-    self.canvas = options.canvas;
-    self.isOurCanvas = false;
-    self.video = options.video;
-    self.canvasParent = null;
-    self.fonts = options.fonts || [];
-    self.onReadyEvent = options.onReady;
-    self.workerUrl = options.workerUrl || 'libassjs-worker.js';
-    self.subUrl = options.subUrl;
-    self.onErrorEvent = options.onError;
-    self.debug = options.debug || false;
-    self.lastRenderTime = 0;
-    self.pixelRatio = window.devicePixelRatio || 1;
+    self.canvas = options.canvas; // HTML canvas element (optional if video specified)
+    self.isOurCanvas = false; // (internal) we created canvas and manage it
+    self.video = options.video; // HTML video element (optional if canvas specified)
+    self.canvasParent = null; // (internal) HTML canvas parent element
+    self.fonts = options.fonts || []; // Array with links to fonts used in sub (optional)
+    self.availableFonts = options.availableFonts || []; // Object with all available fonts (optional). Key is font name in lower case, value is link: {"arial": "/font1.ttf"}
+    self.onReadyEvent = options.onReady; // Function called when SubtitlesOctopus is ready (optional)
+    self.workerUrl = options.workerUrl || 'libassjs-worker.js'; // Link to worker
+    self.subUrl = options.subUrl; // Link to sub file (optional if subContent specified)
+    self.subContent = options.subContent || null; // Sub content (optional if subUrl specified)
+    self.onErrorEvent = options.onError; // Function called in case of critical error meaning sub wouldn't be shown and you should use alternative method (for instance it occurs if browser doesn't support web workers).
+    self.debug = options.debug || false; // When debug enabled, some performance info printed in console.
+    self.lastRenderTime = 0; // (internal) Last time we got some frame from worker
+    self.pixelRatio = window.devicePixelRatio || 1; // (internal) Device pixel ratio (for high dpi devices)
 
-    self.timeOffset = options.timeOffset || 0;
+    self.timeOffset = options.timeOffset || 0; // Time offset would be applied to currentTime from video (option)
 
     self.workerError = function (error) {
         console.error('Worker error: ', error);
@@ -38,10 +40,10 @@ var SubtitlesOctopus = function (options) {
             self.worker.onmessage = self.onWorkerMessage;
             self.worker.onerror = self.workerError;
         }
+        self.workerActive = false;
         self.createCanvas();
         self.setVideo(options.video);
         self.setSubUrl(options.subUrl);
-        self.workerActive = false;
         self.worker.postMessage({
             target: 'worker-init',
             width: self.canvas.width,
@@ -50,7 +52,9 @@ var SubtitlesOctopus = function (options) {
             currentScriptUrl: self.workerUrl,
             preMain: true,
             subUrl: self.subUrl,
-            fonts: self.fonts
+            subContent: self.subContent,
+            fonts: self.fonts,
+            availableFonts: self.availableFonts
         });
     };
 
