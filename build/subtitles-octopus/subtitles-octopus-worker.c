@@ -23,7 +23,7 @@ void msg_callback(int level, const char *fmt, va_list va, void *data)
 
 void libassjs_init(int frame_w, int frame_h)
 {
-	char *subfile = "sub.ass";
+    char *subfile = "sub.ass";
     ass_library = ass_library_init();
     if (!ass_library) {
         printf("ass_library_init failed!\n");
@@ -39,8 +39,8 @@ void libassjs_init(int frame_w, int frame_h)
     }
 
     ass_set_frame_size(ass_renderer, frame_w, frame_h);
-	ass_set_fonts(ass_renderer, "default.ttf", NULL, ASS_FONTPROVIDER_FONTCONFIG, "/fonts.conf", 1);
-	
+    ass_set_fonts(ass_renderer, "default.ttf", NULL, ASS_FONTPROVIDER_FONTCONFIG, "/fonts.conf", 1);
+
     track = ass_read_file(ass_library, subfile, NULL);
     if (!track) {
         printf("track init failed!\n");
@@ -50,7 +50,7 @@ void libassjs_init(int frame_w, int frame_h)
 
 void libassjs_resize(int frame_w, int frame_h)
 {
-	ass_set_frame_size(ass_renderer, frame_w, frame_h);
+    ass_set_frame_size(ass_renderer, frame_w, frame_h);
 }
 
 void libassjs_quit()
@@ -68,5 +68,5 @@ ASS_Image * libassjs_render(double tm, int *changed)
 
 int main(int argc, char *argv[])
 {
-	
+    
 }
