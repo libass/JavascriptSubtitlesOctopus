@@ -1,25 +1,18 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <script>
-        SubtitlesOctopusOnLoad = function () {
-            var options = {
-                video: document.getElementById('video'),
-                subUrl: '/JavascriptSubtitlesOctopus/test.ass',
-                fonts: ['/JavascriptSubtitlesOctopus/font-1.ttf', '/JavascriptSubtitlesOctopus/font-2.ttf'],
-                //onReady: onReadyFunction,
-                //debug: true,
-                workerUrl: '/JavascriptSubtitlesOctopus/subtitles-octopus-worker.js'
-            };
-            window.libassJsInstance = new SubtitlesOctopus(options);
-        };
-    </script>
+    <style type="text/css">
+        body {
+            font-family: sans-serif;
+        }
+    </style>
 </head>
 <body>
-<video id="video" src="https://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4" width="600" height="500" controls></video>
-<script src="/JavascriptSubtitlesOctopus/subtitles-octopus.js"></script>
+<a href="videojs.html">Using with Video.js player</a><br>
+<a href="jwplayer.html">Using with JW Player</a><br>
+<a href="fonts_map.html">Fonts map example</a><br>
+<a href="pure.html">Using with pure HTML5 video</a><br>
 </body>
 </html>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type="text/css">
+        body {
+            font-family: sans-serif;
+        }
+    </style>
+</head>
+<body>
+<a href="index.html">Index</a><br><br>
+
+<div style="width: 600px; height: 500px;">
+    <div id="player">Loading the player...</div>
+</div>
+
+<script src="https://content.jwplatform.com/libraries/L7fM8L0h.js"></script>
+<script src="/JavascriptSubtitlesOctopus/subtitles-octopus.js"></script>
+
+<script>
+    // Setup the player
+    var player = jwplayer('player').setup({
+        file: 'https://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4',
+        volume: 10,
+        autostart: false,
+        width: 600,
+        height: 500
+    });
+
+    player.on('ready', function () {
+        var video = player.getContainer().querySelector('video');
+        window.SubtitlesOctopusOnLoad = function () {
+            var options = {
+                video: video,
+                subUrl: '/JavascriptSubtitlesOctopus/test.ass',
+                fonts: ['/JavascriptSubtitlesOctopus/font-1.ttf', '/JavascriptSubtitlesOctopus/font-2.ttf'],
+                //onReady: onReadyFunction,
+                //debug: true,
+                workerUrl: '/JavascriptSubtitlesOctopus/subtitles-octopus-worker.js'
+            };
+            window.octopusInstance = new SubtitlesOctopus(options); // You can experiment in console
+        };
+        if (SubtitlesOctopus) {
+            SubtitlesOctopusOnLoad();
+        }
+    });
+
+</script>
+
+</body>
+</html>
