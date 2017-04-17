@@ -111,6 +111,7 @@ var SubtitlesOctopus = function (options) {
             document.addEventListener("mozfullscreenchange", self.resizeWithTimeout, false);
             document.addEventListener("webkitfullscreenchange", self.resizeWithTimeout, false);
             document.addEventListener("msfullscreenchange", self.resizeWithTimeout, false);
+            window.addEventListener("resize", self.resizeWithTimeout, false);
 
             if (self.video.videoWidth > 0) {
                 self.resize();
