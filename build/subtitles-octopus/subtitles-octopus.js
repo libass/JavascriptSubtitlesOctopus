@@ -74,7 +74,7 @@ var SubtitlesOctopus = function (options) {
                     self.video.parentNode.insertBefore(self.canvasParent, self.video.nextSibling);
                 }
                 else {
-                    self.video.appendChild(self.canvasParent);
+                    self.video.parentNode.appendChild(self.canvasParent);
                 }
             }
             else {
