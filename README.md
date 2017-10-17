@@ -4,11 +4,11 @@ SubtitlesOctopus displays subtitles in .ass format and easily integrates with HT
 
 ## Features
 
-- Uses Web Workers thus video and interface doesn't lag even on "heavy" subtitles (working in background)
-- Support fonts (conversions isn't necessary)
-- Quite fast
-- Doesn't use DOM manipulations and render subtitles on single canvas
 - Supports all SSA/ASS features
+- Supports any fonts
+- Works fast (because uses WebAssembly with fallback to asm.js if it's not available)
+- Uses Web Workers thus video and interface doesn't lag even on "heavy" subtitles (working in background)
+- Doesn't use DOM manipulations and render subtitles on single canvas
 - Fully compatible with [libass](https://github.com/libass/libass)
 - Easy to use - just connect it to video element
 
@@ -43,13 +43,16 @@ instance.setCurrentTime(15); // Render subtitles at 00:15 on your canvas
 
 ## How to build?
 
-1) Install [EMSDK](http://kripken.github.io/emscripten-site/docs/getting_started/downloads.html) (it will take awhile).
-
-2) Clone repo with submodules:
+1) Install [EMSDK](http://kripken.github.io/emscripten-site/docs/getting_started/downloads.html) (it will take awhile). We recommend using Linux because building Windows isn't tested.
+2) Don't forget to activate emsdk environment:
+```
+source ./emsdk_env.sh
+```
+3) Clone repo with submodules:
 ```
 git clone --recursive -j8 git@github.com:Dador/JavascriptSubtitlesOctopus.git
 ```
-3) Run make:
+4) Run make:
 ```
 cd JavascriptSubtitlesOctopus
 make
