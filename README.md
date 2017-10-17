@@ -43,7 +43,7 @@ instance.setCurrentTime(15); // Render subtitles at 00:15 on your canvas
 
 ## How to build?
 
-1) Install [EMSDK](http://kripken.github.io/emscripten-site/docs/getting_started/downloads.html) (it will take awhile). We recommend using Linux because building Windows isn't tested.
+1) Install [EMSDK](http://kripken.github.io/emscripten-site/docs/getting_started/downloads.html) (it will take awhile). We recommend using Linux because building on Windows isn't tested.
 2) Don't forget to activate emsdk environment:
 ```
 source ./emsdk_env.sh
