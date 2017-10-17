@@ -19,6 +19,18 @@
             //LibassJsReady = function () {
             //};
         };
+
+        isFirstRun = true;
+        runBenchmark = function () {
+            octopusInstance.video.width = 1280;
+            octopusInstance.video.height = 720;
+            octopusInstance.resize();
+            octopusInstance.runBenchmark();
+            if (isFirstRun) {
+                alert('See the result in console.');
+                isFirstRun = false;
+            }
+        };
     </script>
     <style type="text/css">
         body {
@@ -33,6 +45,11 @@
 <script src="/JavascriptSubtitlesOctopus/subtitles-octopus.js"></script>
 
 <br>
-Subtitles not shown in fullscreen when using with pure HTML5 video. Fullscreen working in any player with custom controls (<a href="videojs.html">see example with Video.js player</a>). <a href="https://github.com/Dador/JavascriptSubtitlesOctopus/issues/1#issuecomment-271834400">Why that happends?</a>
+Subtitles not shown in fullscreen when using with pure HTML5 video. Fullscreen working in any player with custom controls (<a href="videojs.html">see example with Video.js player</a>). <a href="https://github.com/Dador/JavascriptSubtitlesOctopus/issues/1#issuecomment-271834400">Why this happens?</a>
+
+<br>
+<br>
+<button onclick="runBenchmark();">Run benchmark</button>
+
 </body>
 </html>
