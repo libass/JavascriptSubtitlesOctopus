@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://releases.flowplayer.org/7.1.2/skin/skin.css" rel="stylesheet">
+    <style type="text/css">
+        body {
+            font-family: sans-serif;
+        }
+    </style>
+</head>
+<body>
+<a href="index.html">Index</a><br><br>
+
+<div class="flowplayer player" style="width: 600px; height: 500px;">
+    <video>
+        <source type="video/mp4" src="https://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4">
+    </video>
+</div>
+<script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+<script src="https://releases.flowplayer.org/7.1.2/flowplayer.min.js"></script>
+<script src="/JavascriptSubtitlesOctopus/subtitles-octopus.js"></script>
+
+<script>
+    $(function() {
+        var player = $('.player');
+        flowplayer(player).on('ready', function() {
+            var video = player.find('video')[0];
+            window.SubtitlesOctopusOnLoad = function() {
+                var options = {
+                    video: video,
+                    subUrl: '/JavascriptSubtitlesOctopus/test.ass',
+                    fonts: ['/JavascriptSubtitlesOctopus/font-1.ttf', '/JavascriptSubtitlesOctopus/font-2.ttf'],
+                    //onReady: onReadyFunction,
+                    //debug: true,
+                    workerUrl: '/JavascriptSubtitlesOctopus/subtitles-octopus-worker.js'
+                };
+                window.octopusInstance = new SubtitlesOctopus(options); // You can experiment in console
+            };
+            if (SubtitlesOctopus) {
+                SubtitlesOctopusOnLoad();
+            }
+        });
+    });
+</script>
+</body>
+</html>
