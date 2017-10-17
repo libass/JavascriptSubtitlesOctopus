@@ -17,6 +17,26 @@ var SubtitlesOctopus = function (options) {
 
     self.timeOffset = options.timeOffset || 0; // Time offset would be applied to currentTime from video (option)
 
+    if (typeof ImageData.prototype.constructor !== 'function') {
+        (function () {
+            var canvas = document.createElement('canvas');
+            var ctx = canvas.getContext('2d');
+
+            window.ImageData = function () {
+                var i = 0;
+                if (arguments[0] instanceof Uint8ClampedArray) {
+                    var data = arguments[i++];
+                }
+                var width = arguments[i++];
+                var height = arguments[i];
+
+                var imageData = ctx.createImageData(width, height);
+                if (data) imageData.data.set(data);
+                return imageData;
+            }
+        })();
+    }
+
     self.workerError = function (error) {
         console.error('Worker error: ', error);
         if (self.onErrorEvent) {
@@ -181,7 +201,9 @@ var SubtitlesOctopus = function (options) {
             var image = data.canvases[i];
             self.bufferCanvas.width = image.w;
             self.bufferCanvas.height = image.h;
-            self.bufferCanvasCtx.putImageData(new ImageData(new Uint8ClampedArray(image.buffer), image.w, image.h), 0, 0);
+            var imageBuffer = new Uint8ClampedArray(image.buffer);
+            var imageData = new ImageData(imageBuffer, image.w, image.h);
+            self.bufferCanvasCtx.putImageData(imageData, 0, 0);
             self.ctx.drawImage(self.bufferCanvas, image.x, image.y);
         }
         if (self.debug) {
@@ -356,6 +378,12 @@ var SubtitlesOctopus = function (options) {
     self.resizeWithTimeout = function () {
         self.resize();
         setTimeout(self.resize, 100);
+    };
+
+    self.runBenchmark = function () {
+        self.worker.postMessage({
+            target: 'runBenchmark'
+        });
     };
 
     self.customMessage = function (data, options) {

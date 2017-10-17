@@ -145,7 +145,6 @@ EMCC_COMMON_ARGS = \
 	--preload-file fonts.conf \
 	-s ALLOW_MEMORY_GROWTH=1 \
 	-o $@
-	#TODO: try to find "best total memory" again and disable ALLOW_MEMORY_GROWTH
 	#--js-opts 0 -g4 \
 	#--closure 1 \
 	#--memory-init-file 0 \
@@ -163,6 +162,8 @@ subtitles-octopus-worker.js: build/subtitles-octopus/subtitles-octopus-worker.bc
 	emcc build/subtitles-octopus/subtitles-octopus-worker.bc $(LIBASSJS_DEPS) \
 		--pre-js build/subtitles-octopus/pre-worker.js \
 		--post-js build/subtitles-octopus/post-worker.js \
+		-s WASM=1 \
+		-s "BINARYEN_METHOD='native-wasm,asmjs'" \
 		$(EMCC_COMMON_ARGS) && \
-		mv subtitles-octopus-worker.data subtitles-octopus-worker.js subtitles-octopus-worker.js.mem js/ & \
+		mv subtitles-octopus-worker.* js/ && \
 		cp build/subtitles-octopus/subtitles-octopus.js js/

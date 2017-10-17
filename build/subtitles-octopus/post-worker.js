@@ -6,10 +6,7 @@ self.rate = 1;
 self.rafId = null;
 self.nextIsRaf = false;
 self.lastCurrentTimeReceivedAt = Date.now();
-
-self.init = Module['cwrap']('libassjs_init', 'number', ['number', 'number']);
-//self.init = Module['cwrap']('libassjs_init', null, ['number', 'number']);
-self._resize = Module['cwrap']('libassjs_resize', null, ['number', 'number']);
+self.targetFps = 30;
 
 self.width = 0;
 self.height = 0;
@@ -22,8 +19,7 @@ self.resize = function (width, height) {
 
 self.getCurrentTime = function () {
     var diff = (Date.now() - self.lastCurrentTimeReceivedAt) / 1000;
-    if (self._isPaused)
-    {
+    if (self._isPaused) {
         return self.lastCurrentTime;
     }
     else {
@@ -71,9 +67,6 @@ self.setIsPaused = function (isPaused) {
     }
 };
 
-self.changed = Module._malloc(4);
-
-self._render = Module['cwrap']('libassjs_render', null, ['number', 'number']);
 self.render = function (force) {
     self.rafId = 0;
     self.renderPending = false;
@@ -83,7 +76,13 @@ self.render = function (force) {
     if (changed != 0 || force) {
         var result = self.buildResult(renderResult);
         var spentTime = performance.now() - startTime;
-        postMessage({target: 'canvas', op: 'renderMultiple', time: Date.now(), spentTime: spentTime, canvases: result[0]}, result[1]);
+        postMessage({
+            target: 'canvas',
+            op: 'renderMultiple',
+            time: Date.now(),
+            spentTime: spentTime,
+            canvases: result[0]
+        }, result[1]);
     }
 
     if (!self._isPaused) {
@@ -147,34 +146,10 @@ self.buildResultItem = function (ptr) {
     return {w: w, h: h, x: x, y: y, buffer: result.buffer};
 };
 
-self.quit = Module['cwrap']('libassjs_quit', null, []);
-
 if (typeof SDL !== 'undefined') {
     SDL.defaults.copyOnLock = false;
     SDL.defaults.discardOnLock = false;
     SDL.defaults.opaqueFrontBuffer = false;
-}
-
-// Modified from https://github.com/kripken/emscripten/blob/6dc4ac5f9e4d8484e273e4dcc554f809738cedd6/src/proxyWorker.js 
-if (typeof console === 'undefined') {
-    // we can't call Module.printErr because that might be circular
-    var console = {
-        log: function (x) {
-            if (typeof dump === 'function') dump('log: ' + x + '\n');
-        },
-        debug: function (x) {
-            if (typeof dump === 'function') dump('debug: ' + x + '\n');
-        },
-        info: function (x) {
-            if (typeof dump === 'function') dump('info: ' + x + '\n');
-        },
-        warn: function (x) {
-            if (typeof dump === 'function') dump('warn: ' + x + '\n');
-        },
-        error: function (x) {
-            if (typeof dump === 'function') dump('error: ' + x + '\n');
-        },
-    };
 }
 
 function FPSTracker(text) {
@@ -276,8 +251,6 @@ Image.prototype.onerror = function () {
 };
 
 var HTMLImageElement = Image;
-
-var window = this;
 var windowExtra = new EventListener();
 for (var x in windowExtra) window[x] = windowExtra[x];
 
@@ -298,13 +271,13 @@ window.requestAnimationFrame = (function () {
     // similar to Browser.requestAnimationFrame
     var nextRAF = 0;
     return function (func) {
-        // try to keep 30fps between calls to here
+        // try to keep target fps (30fps) between calls to here
         var now = Date.now();
         if (nextRAF === 0) {
-            nextRAF = now + 1000 / 30;
+            nextRAF = now + 1000 / self.targetFps;
         } else {
             while (now + 2 >= nextRAF) { // fudge a little, to avoid timer jitter causing us to do lots of delay:0
-                nextRAF += 1000 / 30;
+                nextRAF += 1000 / self.targetFps;
             }
         }
         var delay = Math.max(nextRAF - now, 0);
@@ -630,6 +603,10 @@ function onMessageFromMainEmscriptenThread(message) {
             removeRunDependency('worker-init');
             break;
         }
+        case 'runBenchmark': {
+            window.runBenchmark();
+            break;
+        }
         case 'custom': {
             if (Module['onCustomMessage']) {
                 Module['onCustomMessage'](message);
@@ -653,28 +630,51 @@ function postCustomMessage(data) {
     postMessage({target: 'custom', userData: data});
 }
 
-window.runBenchmark = function (count, pos) {
+window.runBenchmark = function (seconds, pos, async) {
     var totalTime = 0;
     var i = 0;
     pos = pos || 0;
-    count = count || 300;
+    seconds = seconds || 60;
+    var count = seconds * self.targetFps;
     var start = performance.now();
-    var runAsync = function () {
+    var longestFrame = 0;
+    var run = function () {
         var t0 = performance.now();
 
-        pos += 0.016;
+        pos += 1 / self.targetFps;
         self.setCurrentTime(pos);
 
         var t1 = performance.now();
-        totalTime += t1 - t0;
+        var diff = t1 - t0;
+        totalTime += diff;
+        if (diff > longestFrame) {
+            longestFrame = diff;
+        }
+
         if (i < count) {
-            window.requestAnimationFrame(runAsync);
             i++;
+
+            if (async) {
+                window.requestAnimationFrame(run);
+                return false;
+            }
+            else {
+                return true;
+            }
         }
         else {
-            console.log("performance fps: " + Math.round(1000 / (totalTime / count)) + "");
-            console.log("real fps: " + Math.round(1000 / ((t1 - start) / count)) + "");
+            console.log("Performance fps: " + Math.round(1000 / (totalTime / count)) + "");
+            console.log("Real fps: " + Math.round(1000 / ((t1 - start) / count)) + "");
+            console.log("Total time: " + totalTime);
+            console.log("Longest frame: " + Math.ceil(longestFrame) + "ms (" + Math.floor(1000 / longestFrame) + " fps)");
+
+            return false;
         }
     };
-    runAsync();
+
+    while (true) {
+        if (!run()) {
+            break;
+        }
+    }
 };
