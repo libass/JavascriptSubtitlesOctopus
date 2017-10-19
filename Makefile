@@ -164,6 +164,7 @@ subtitles-octopus-worker.js: build/subtitles-octopus/subtitles-octopus-worker.bc
 		--post-js build/subtitles-octopus/post-worker.js \
 		-s WASM=1 \
 		-s "BINARYEN_METHOD='native-wasm,asmjs'" \
+		-s "BINARYEN_TRAP_MODE='clamp'" \
 		$(EMCC_COMMON_ARGS) && \
 		mv subtitles-octopus-worker.* js/ && \
 		cp build/subtitles-octopus/subtitles-octopus.js js/
