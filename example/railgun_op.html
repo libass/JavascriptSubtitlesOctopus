@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://vjs.zencdn.net/5.14.1/video-js.css" rel="stylesheet">
+    <style type="text/css">
+        body {
+            font-family: sans-serif;
+        }
+    </style>
+</head>
+<body>
+<a href="index.html">Index</a><br><br>
+
+<video class="video-js vjs-big-play-centered" id="video" src="https://openings.moe/video/Opening1-ToaruKagakuNoRailgunS.webm" width="600" height="500" controls data-setup="{}"></video>
+<script src="https://vjs.zencdn.net/5.14.1/video.js"></script>
+<script src="/js/subtitles-octopus.js"></script>
+
+<script>
+    var player = videojs('video');
+    player.ready(function () {
+        // This would look more nice as a plugin but is's just as showcase of using with custom players
+        var video = this.tech_.el_;
+        window.SubtitlesOctopusOnLoad = function () {
+            var options = {
+                video: video,
+                subUrl: '/example/railgun_op.ass',
+                fonts: ['/example/fonts/CabinCondensed-Regular.ttf', '/example/fonts/SourceSansPro-SemiBold.ttf'],
+                //onReady: onReadyFunction,
+                //debug: true,
+                workerUrl: '/js/subtitles-octopus-worker.js'
+            };
+            window.octopusInstance = new SubtitlesOctopus(options); // You can experiment in console
+        };
+        if (SubtitlesOctopus) {
+            SubtitlesOctopusOnLoad();
+        }
+    });
+
+    var isFirstRun = true;
+    var changeResolution = function (width, height) {
+        player.width(width).height(height);
+        octopusInstance.resize();
+    };
+    var runBenchmark = function () {
+        changeResolution(1280, 720);
+        octopusInstance.runBenchmark();
+        if (isFirstRun) {
+            alert('See the result in console.');
+            isFirstRun = false;
+        }
+    };
+</script>
+
+<br>
+Example with Railgun OP. Thanks <a href="https://openings.moe/" target="_blank">openings.moe</a> for hosting this video.
+<br>
+<br>
+<button onclick="runBenchmark();">Run benchmark</button>
+<button onclick="changeResolution(1280, 720);">Change resolution to 1280x720</button>
+<button onclick="changeResolution(1920, 1080);">Change resolution to 1920x1080</button>
+<button onclick="changeResolution(3840, 2160);">Change resolution to 3840x2160</button>
+</body>
+</html>
