@@ -1,0 +1,25 @@
+diff --git a/src/fcstat.c b/src/fcstat.c
+index 1734fa4..7ba32fd 100644
+--- a/src/fcstat.c
++++ b/src/fcstat.c
+@@ -335,6 +335,12 @@ FcStatChecksum (const FcChar8 *file, struct stat *statb)
+ static int
+ FcFStatFs (int fd, FcStatFS *statb)
+ {
++#if 1
++  memset (statb, 0, sizeof (FcStatFS));
++  statb->is_remote_fs = FcFalse;
++  statb->is_mtime_broken = FcTrue;
++  return 0;
++#else
+     const char *p = NULL;
+     int ret = -1;
+     FcBool flag = FcFalse;
+@@ -394,6 +400,7 @@ FcFStatFs (int fd, FcStatFS *statb)
+     }
+ 
+     return ret;
++#endif
+ }
+ 
+ FcBool

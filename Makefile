@@ -2,16 +2,15 @@
 # You need emsdk environment installed and activated, see:
 # <https://kripken.github.io/emscripten-site/docs/getting_started/downloads.html>.
 
-# TODO: use harfbuzz? (at least need to compare performance)
-
-FONTCONFIG_PC_PATH = ../freetype/dist/lib/pkgconfig:../expat/dist/lib/pkgconfig
-LIBASS_PC_PATH = $(FONTCONFIG_PC_PATH):../fribidi/dist/lib/pkgconfig:../fontconfig/dist/lib/pkgconfig
+FONTCONFIG_PC_PATH = ../freetype/dist/lib/pkgconfig:../expat/expat/dist/lib/pkgconfig
+LIBASS_PC_PATH = $(FONTCONFIG_PC_PATH):../fribidi/dist/lib/pkgconfig:../fontconfig/dist/lib/pkgconfig:../harfbuzz/dist/lib/pkgconfig
 LIBASSJS_PC_PATH = $(LIBASS_PC_PATH):../libass/dist/lib/pkgconfig
 	
 LIBASS_DEPS = \
 	build/fribidi/dist/lib/libfribidi.so \
 	build/freetype/dist/lib/libfreetype.so \
-	build/expat/dist/lib/libexpat.so \
+	build/expat/expat/dist/lib/libexpat.so \
+	build/harfbuzz/dist/lib/libharfbuzz.so \
 	build/fontconfig/dist/lib/libfontconfig.so
 LIBASSJS_DEPS = \
 	$(LIBASS_DEPS) \
@@ -20,7 +19,7 @@ LIBASSJS_DEPS = \
 all: libass
 libass: subtitles-octopus-worker.js
 
-clean: clean-js clean-freetype clean-fribidi clean-fontconfig clean-expat clean-libass clean-octopus
+clean: clean-js clean-freetype clean-fribidi clean-harfbuzz clean-fontconfig clean-expat clean-libass clean-octopus
 clean-js:
 	rm -f -- libass*
 clean-freetype:
@@ -30,7 +29,9 @@ clean-fribidi:
 clean-fontconfig:
 	-cd build/fontconfig && rm -rf dist && make clean
 clean-expat:
-	-cd build/expat && rm -rf dist && make clean
+	-cd build/expat/expat && rm -rf dist && make clean
+clean-harfbuzz:
+	-cd build/harfbuzz && rm -rf dist && make clean
 clean-libass:
 	-cd build/libass && rm -rf dist && make clean
 clean-octopus:
@@ -47,8 +48,6 @@ build/freetype/builds/unix/configure:
 # that: it probably isn't possible to build on x86 now.
 build/freetype/dist/lib/libfreetype.so: build/freetype/builds/unix/configure
 	cd build/freetype && \
-	git reset --hard && \
-	patch -p1 < ../freetype-asmjs.patch && \
 	emconfigure ./configure \
 		CFLAGS="-O3" \
 		--prefix="$$(pwd)/dist" \
@@ -64,19 +63,25 @@ build/freetype/dist/lib/libfreetype.so: build/freetype/builds/unix/configure
 	emmake make -j8 && \
 	emmake make install
 
-build/expat/dist/lib/libexpat.so:
-	cd build/expat && \
+build/expat/expat/configure:
+	cd build/expat/expat && ./buildconf.sh
+
+build/expat/expat/dist/lib/libexpat.so: build/expat/expat/configure
+	cd build/expat/expat && \
 	emconfigure ./configure \
 		CFLAGS=-O3 \
 		--prefix="$$(pwd)/dist" \
+		--disable-dependency-tracking \
+		--without-docbook \
+		--without-xmlwf \
 		&& \
 	emmake make -j8 && \
 	emmake make install
 
-build/fontconfig/dist/lib/libfontconfig.so: build/freetype/dist/lib/libfreetype.so build/expat/dist/lib/libexpat.so
+build/fontconfig/dist/lib/libfontconfig.so: build/freetype/dist/lib/libfreetype.so build/expat/expat/dist/lib/libexpat.so
 	cd build/fontconfig && \
-	git reset --hard && \
-	patch -p1 < ../fontconfig-speedscan.patch && \
+    git reset --hard && \
+	patch -p1 < ../fontconfig-fixbuild.patch && \
 	./autogen.sh && \
 	EM_PKG_CONFIG_PATH=$(FONTCONFIG_PC_PATH) emconfigure ./configure \
 		CFLAGS=-O3 \
@@ -88,6 +93,26 @@ build/fontconfig/dist/lib/libfontconfig.so: build/freetype/dist/lib/libfreetype.
 	emmake make -j8 && \
 	emmake make install
 
+build/harfbuzz/configure:
+	cd build/harfbuzz && ./autogen.sh
+
+build/harfbuzz/dist/lib/libharfbuzz.so: build/harfbuzz/configure build/freetype/dist/lib/libfreetype.so build/fontconfig/dist/lib/libfontconfig.so
+	cd build/harfbuzz && \
+	EM_PKG_CONFIG_PATH=$(LIBASS_PC_PATH) emconfigure ./configure \
+		CFLAGS="-O3" \
+		--prefix="$$(pwd)/dist" \
+		--disable-static \
+		--disable-dependency-tracking \
+		\
+		--without-cairo \
+		--with-fontconfig \
+		--without-icu \
+		--with-freetype \
+		--without-glib \
+		&& \
+	emmake make -j8 && \
+	emmake make install
+
 build/fribidi/configure:
 	cd build/fribidi && ./bootstrap
 
@@ -95,6 +120,7 @@ build/fribidi/dist/lib/libfribidi.so: build/fribidi/configure
 	cd build/fribidi && \
 	git reset --hard && \
 	patch -p1 < ../fribidi-make.patch && \
+	patch -p1 < ../fribidi-fixclang.patch && \
 	touch configure.ac aclocal.m4 configure Makefile.am Makefile.in && \
 	aclocal && autoconf && autoheader && automake --add-missing && \
 	emconfigure ./configure \
@@ -111,14 +137,14 @@ build/fribidi/dist/lib/libfribidi.so: build/fribidi/configure
 build/libass/configure:
 	cd build/libass && ./autogen.sh
 
+# Use --enable-large-tiles to incrase speed
 build/libass/dist/lib/libass.so: build/libass/configure $(LIBASS_DEPS)
 	cd build/libass && \
 	EM_PKG_CONFIG_PATH=$(LIBASS_PC_PATH) emconfigure ./configure \
 		CFLAGS="-O3" \
 		--prefix="$$(pwd)/dist" \
 		--disable-static \
-		--disable-enca \
-		--disable-harfbuzz \
+		--enable-harfbuzz \
 		--disable-asm \
 		--enable-fontconfig \
 		&& \
