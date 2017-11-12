@@ -20,3 +20,6 @@
 [submodule "build/zlib"]
 	path = build/zlib
 	url = https://github.com/madler/zlib.git
+[submodule "build/harfbuzz"]
+	path = build/harfbuzz
+	url = https://github.com/behdad/harfbuzz.git
