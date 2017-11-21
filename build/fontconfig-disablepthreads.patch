@@ -1,0 +1,33 @@
+diff --git a/configure.ac b/configure.ac
+index 7fa755f..22ee80e 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -665,17 +665,18 @@ if test "$os_win32" = no && ! $have_pthread; then
+ fi
+ 
+ have_pthread=false
+-if test "$os_win32" = no; then
+-	AX_PTHREAD([have_pthread=true])
+-fi
+-if $have_pthread; then
+-	LIBS="$PTHREAD_LIBS $LIBS"
+-	CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+-	CC="$PTHREAD_CC"
+-	AC_DEFINE(HAVE_PTHREAD, 1, [Have POSIX threads])
+-fi
++#if test "$os_win32" = no; then
++#	AX_PTHREAD([have_pthread=true])
++#fi
++#if $have_pthread; then
++#	LIBS="$PTHREAD_LIBS $LIBS"
++#	CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
++#	CC="$PTHREAD_CC"
++#	AC_DEFINE(HAVE_PTHREAD, 1, [Have POSIX threads])
++#fi
+ AM_CONDITIONAL(HAVE_PTHREAD, $have_pthread)
+-
++have_pthread=false
++AC_DEFINE(HAVE_PTHREAD, 0, [Have POSIX threads])
+ 
+ dnl ===========================================================================
+ 
