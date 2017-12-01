@@ -381,7 +381,9 @@ var SubtitlesOctopus = function (options) {
             self.worker.postMessage({
                 target: 'canvas',
                 width: self.canvas.width,
-                height: self.canvas.height
+                height: self.canvas.height,
+                top: top,
+                left: left
             });
         }
     };
