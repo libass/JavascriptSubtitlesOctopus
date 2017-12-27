@@ -3,16 +3,15 @@
 # <https://kripken.github.io/emscripten-site/docs/getting_started/downloads.html>.
 
 FONTCONFIG_PC_PATH = ../freetype/dist/lib/pkgconfig:../expat/expat/dist/lib/pkgconfig
-#LIBASS_PC_PATH = $(FONTCONFIG_PC_PATH):../fribidi/dist/lib/pkgconfig:../fontconfig/dist/lib/pkgconfig:../harfbuzz/dist/lib/pkgconfig
-LIBASS_PC_PATH = $(FONTCONFIG_PC_PATH):../fribidi/dist/lib/pkgconfig:../harfbuzz/dist/lib/pkgconfig
+LIBASS_PC_PATH = $(FONTCONFIG_PC_PATH):../fribidi/dist/lib/pkgconfig:../fontconfig/dist/lib/pkgconfig:../harfbuzz/dist/lib/pkgconfig
 LIBASSJS_PC_PATH = $(LIBASS_PC_PATH):../libass/dist/lib/pkgconfig
 	
 LIBASS_DEPS = \
 	build/fribidi/dist/lib/libfribidi.so \
 	build/freetype/dist/lib/libfreetype.so \
 	build/expat/expat/dist/lib/libexpat.so \
-	build/harfbuzz/dist/lib/libharfbuzz.so
-#	build/fontconfig/dist/lib/libfontconfig.so
+	build/harfbuzz/dist/lib/libharfbuzz.so \
+	build/fontconfig/dist/lib/libfontconfig.so
 LIBASSJS_DEPS = \
 	$(LIBASS_DEPS) \
 	build/libass/dist/lib/libass.so
@@ -48,7 +47,7 @@ build/freetype/dist/lib/libfreetype.so:
 	cd build/freetype && \
 	git reset --hard && \
 	patch -p1 < ../freetype-speedup.patch && \
-	./autogen.sh && \
+	./autogen.sh --help && \
 	emconfigure ./configure \
 		CFLAGS="-O3" \
 		--prefix="$$(pwd)/dist" \
@@ -81,24 +80,23 @@ build/expat/expat/dist/lib/libexpat.so: build/expat/expat/configure
 	emmake make -j8 && \
 	emmake make install
 
-# build/fontconfig/dist/lib/libfontconfig.so: build/freetype/dist/lib/libfreetype.so build/expat/expat/dist/lib/libexpat.so
-# 	cd build/fontconfig && \
-# 	git reset --hard && \
-# 	patch -p1 < ../fontconfig-fixbuild.patch && \
-# 	patch -p1 < ../fontconfig-disablepthreads.patch && \
-# 	./autogen.sh && \
-# 	EM_PKG_CONFIG_PATH=$(FONTCONFIG_PC_PATH) emconfigure ./configure \
-# 		CFLAGS=-O3 \
-# 		--prefix="$$(pwd)/dist" \
-# 		--host=x86-none-linux \
-# 		--build=x86_64 \
-# 		--disable-docs \
-# 		&& \
-# 	emmake make -j8 && \
-# 	emmake make install
-# Disable the Fontconfig for tests
-# build/harfbuzz/dist/lib/libharfbuzz.so: build/freetype/dist/lib/libfreetype.so build/fontconfig/dist/lib/libfontconfig.so
-build/harfbuzz/dist/lib/libharfbuzz.so: build/freetype/dist/lib/libfreetype.so
+build/fontconfig/dist/lib/libfontconfig.so: build/freetype/dist/lib/libfreetype.so build/expat/expat/dist/lib/libexpat.so
+	cd build/fontconfig && \
+	git reset --hard && \
+	patch -p1 < ../fontconfig-fixbuild.patch && \
+	patch -p1 < ../fontconfig-disablepthreads.patch && \
+	NOCONFIGURE=1 ./autogen.sh && \
+	EM_PKG_CONFIG_PATH=$(FONTCONFIG_PC_PATH) emconfigure ./configure \
+		CFLAGS=-O3 \
+		--prefix="$$(pwd)/dist" \
+		--host=x86-none-linux \
+		--build=x86_64 \
+		--disable-docs \
+		&& \
+	emmake make -j8 && \
+	emmake make install
+
+build/harfbuzz/dist/lib/libharfbuzz.so: build/freetype/dist/lib/libfreetype.so build/fontconfig/dist/lib/libfontconfig.so
 	cd build/harfbuzz && \
 	git reset --hard && \
 	patch -p1 < ../harfbuzz-disablepthreads.patch && \
@@ -112,7 +110,7 @@ build/harfbuzz/dist/lib/libharfbuzz.so: build/freetype/dist/lib/libfreetype.so
 		--disable-dependency-tracking \
 		\
 		--without-cairo \
-		--without-fontconfig \
+		--with-fontconfig \
 		--without-icu \
 		--with-freetype \
 		--without-glib \
@@ -145,7 +143,7 @@ build/fribidi/dist/lib/libfribidi.so: build/fribidi/configure
 	emmake make install
 
 build/libass/configure:
-	cd build/libass && ./autogen.sh
+	cd build/libass && ./autogen.sh --help
 
 # Use --enable-large-tiles to incrase speed?
 build/libass/dist/lib/libass.so: build/libass/configure $(LIBASS_DEPS)
@@ -158,7 +156,7 @@ build/libass/dist/lib/libass.so: build/libass/configure $(LIBASS_DEPS)
 		--disable-static \
 		--enable-harfbuzz \
 		--disable-asm \
-		--disable-require-system-font-provider \
+		--with-fontconfig \
 		&& \
 	emmake make -j8 && \
 	emmake make install
