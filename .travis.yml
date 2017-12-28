@@ -1,0 +1,31 @@
+# Note: It seems that cache doesn't work when "sudo: required". :(
+sudo: required
+dist: trusty
+language: node_js
+
+before_install:
+  # Download and verify alpine-chroot-install script.
+  - wget https://raw.githubusercontent.com/alpinelinux/alpine-chroot-install/master/alpine-chroot-install
+
+install:
+  # Install Alpine Linux into /alpine and prepare there a chroot environment;
+  # add testing repository and install packages for Emscripten.
+  - sudo sh alpine-chroot-install -b v3.7
+      -r 'https://nl.alpinelinux.org/alpine/edge/testing'
+      -p 'emscripten emscripten-libs-asmjs closure-compiler musl python2 glib busybox'
+      -k 'CI TRAVIS_.* EM_.*'
+
+script:
+  - /alpine/enter-chroot -u $USER
+      make git-release
+
+# deploy:
+#   - provider: releases
+#     api_key:
+#       secure: ""
+#     file:
+#       - "*.tgz"
+#     file_glob: true
+#     skip_cleanup: true
+#     on:
+#       tags: true

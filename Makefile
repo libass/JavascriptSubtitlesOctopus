@@ -40,6 +40,50 @@ clean-octopus:
 server:
 	python -m SimpleHTTPServer
 
+git-update: git-freetype git-fribidi git-fontconfig git-expat git-harfbuzz git-libass
+
+git-freetype:
+	cd build/freetype && \
+	git reset --hard && \
+	git clean -dfx && \
+	git pull origin
+
+git-fribidi:
+	cd build/fribidi && \
+	git reset --hard && \
+	git clean -dfx && \
+	git pull origin
+	
+git-fontconfig:
+	cd build/fontconfig && \
+	git reset --hard && \
+	git clean -dfx && \
+	git pull origin
+	
+git-expat:
+	cd build/expat && \
+	git reset --hard && \
+	git clean -dfx && \
+	git pull origin
+	
+git-harfbuzz:
+	cd build/harfbuzz && \
+	git reset --hard && \
+	git clean -dfx && \
+	git pull origin
+	
+git-libass:
+	cd build/libass && \
+	git reset --hard && \
+	git clean -dfx && \
+	git pull origin
+
+git-release: libass
+	VER=$(shell git log -1 --pretty=format:"%H") && \
+	tar -czf OctopusSubtitle-$(VER)-Wasm.tgz js/wasm && \
+	tar -czf OctopusSubtitle-$(VER)-Asm.js.tgz js/asmjs
+	tar -czf OctopusSubtitle-$(VER)-Both.js.tgz js/both
+	
 # host/build flags are used to enable cross-compiling
 # (values must differ) but there should be some better way to achieve
 # that: it probably isn't possible to build on x86 now.
@@ -47,7 +91,7 @@ build/freetype/dist/lib/libfreetype.so:
 	cd build/freetype && \
 	git reset --hard && \
 	patch -p1 < ../freetype-speedup.patch && \
-	./autogen.sh --help && \
+	NOCONFIGURE=1 ./autogen.sh && \
 	emconfigure ./configure \
 		CFLAGS="-O3" \
 		--prefix="$$(pwd)/dist" \
@@ -100,7 +144,7 @@ build/harfbuzz/dist/lib/libharfbuzz.so: build/freetype/dist/lib/libfreetype.so b
 	cd build/harfbuzz && \
 	git reset --hard && \
 	patch -p1 < ../harfbuzz-disablepthreads.patch && \
-	./autogen.sh && \
+	NOCONFIGURE=1 ./autogen.sh && \
 	EM_PKG_CONFIG_PATH=$(LIBASS_PC_PATH) emconfigure ./configure \
 		CFLAGS="-O3" \
 		--prefix="$$(pwd)/dist" \
