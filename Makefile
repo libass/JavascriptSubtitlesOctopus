@@ -80,9 +80,7 @@ git-libass:
 
 git-release: libass
 	VER=$(shell git log -1 --pretty=format:"%H") && \
-	tar -czf OctopusSubtitle-$(VER)-Wasm.tgz js/wasm && \
-	tar -czf OctopusSubtitle-$(VER)-Asm.js.tgz js/asmjs
-	tar -czf OctopusSubtitle-$(VER)-Both.js.tgz js/both
+	tar -czf OctopusSubtitle-$(VER).tgz js
 	
 # host/build flags are used to enable cross-compiling
 # (values must differ) but there should be some better way to achieve
@@ -129,7 +127,8 @@ build/fontconfig/dist/lib/libfontconfig.so: build/freetype/dist/lib/libfreetype.
 	git reset --hard && \
 	patch -p1 < ../fontconfig-fixbuild.patch && \
 	patch -p1 < ../fontconfig-disablepthreads.patch && \
-	NOCONFIGURE=1 ./autogen.sh && \
+	patch -p1 < ../fontconfig-disable-uuid.patch && \
+	NOCONFIGURE=1 ./autogen.sh  && \
 	EM_PKG_CONFIG_PATH=$(FONTCONFIG_PC_PATH) emconfigure ./configure \
 		CFLAGS=-O3 \
 		--prefix="$$(pwd)/dist" \
@@ -163,15 +162,14 @@ build/harfbuzz/dist/lib/libharfbuzz.so: build/freetype/dist/lib/libfreetype.so b
 	emmake make install
 
 build/fribidi/configure:
-	cd build/fribidi && ./bootstrap
-
-build/fribidi/dist/lib/libfribidi.so: build/fribidi/configure
 	cd build/fribidi && \
 	git reset --hard && \
 	patch -p1 < ../fribidi-make.patch && \
 	patch -p1 < ../fribidi-fixclang.patch && \
-	touch configure.ac aclocal.m4 configure Makefile.am Makefile.in && \
-	aclocal && autoconf && autoheader && automake --add-missing && \
+	./bootstrap
+
+build/fribidi/dist/lib/libfribidi.so: build/fribidi/configure
+	cd build/fribidi && \
 	emconfigure ./configure \
 		CFLAGS='-O3' \
 		NM=llvm-nm \
@@ -187,7 +185,7 @@ build/fribidi/dist/lib/libfribidi.so: build/fribidi/configure
 	emmake make install
 
 build/libass/configure:
-	cd build/libass && ./autogen.sh --help
+	cd build/libass && NOCONFIGURE=1 ./autogen.sh
 
 # Use --enable-large-tiles to incrase speed?
 build/libass/dist/lib/libass.so: build/libass/configure $(LIBASS_DEPS)
@@ -200,7 +198,7 @@ build/libass/dist/lib/libass.so: build/libass/configure $(LIBASS_DEPS)
 		--disable-static \
 		--enable-harfbuzz \
 		--disable-asm \
-		--with-fontconfig \
+		--enable-fontconfig \
 		&& \
 	emmake make -j8 && \
 	emmake make install
@@ -208,7 +206,7 @@ build/libass/dist/lib/libass.so: build/libass/configure $(LIBASS_DEPS)
 build/subtitles-octopus/configure: $(LIBASSJS_DEPS)
 	cd build/subtitles-octopus && \
 	autoreconf -fi && \
-	EM_PKG_CONFIG_PATH=$(LIBASSJS_PC_PATH) emconfigure ./configure
+	EM_PKG_CONFIG_PATH=$(LIBASSJS_PC_PATH) emconfigure ./configure --host=x86-none-linux --build=x86_64
 	
 build/subtitles-octopus/subtitles-octopus-worker.bc: build/subtitles-octopus/configure $(LIBASSJS_DEPS)
 	cd build/subtitles-octopus && \

@@ -1,31 +1,21 @@
-# Note: It seems that cache doesn't work when "sudo: required". :(
 sudo: required
 dist: trusty
 language: node_js
-
 before_install:
-  # Download and verify alpine-chroot-install script.
-  - wget https://raw.githubusercontent.com/alpinelinux/alpine-chroot-install/master/alpine-chroot-install
-
+- wget https://raw.githubusercontent.com/alpinelinux/alpine-chroot-install/master/alpine-chroot-install
 install:
-  # Install Alpine Linux into /alpine and prepare there a chroot environment;
-  # add testing repository and install packages for Emscripten.
-  - sudo sh alpine-chroot-install -b v3.7
-      -r 'https://nl.alpinelinux.org/alpine/edge/testing'
-      -p 'emscripten emscripten-libs-asmjs closure-compiler musl python2 glib busybox'
-      -k 'CI TRAVIS_.* EM_.*'
-
+- sudo sh alpine-chroot-install -b v3.7 -r 'https://nl.alpinelinux.org/alpine/edge/testing'
+  -p 'emscripten emscripten-libs-asmjs emscripten-libs-wasm ragel emscripten-optimizer binaryen closure-compiler musl python2 glib busybox make enca-dev pkgconf python2-dev gperf build-base autoconf automake libtool glib-dev intltool git patch tar alpine-sdk m4 autoconf2.13 autoconf-archive llvm5 clang clang-libs itstool'
+  -k 'CI TRAVIS_.* EM_.*'
 script:
-  - /alpine/enter-chroot -u $USER
-      make git-release
-
-# deploy:
-#   - provider: releases
-#     api_key:
-#       secure: ""
-#     file:
-#       - "*.tgz"
-#     file_glob: true
-#     skip_cleanup: true
-#     on:
-#       tags: true
+- "/alpine/enter-chroot -u root patch -p1 -d /usr/bin < build/gettextize-Fix-CI-Builds.patch"
+- "/alpine/enter-chroot -u $USER make git-release"
+deploy:
+  provider: releases
+  api_key:
+    secure: 2AKoH11ekUbeMw5jeh2JO2qOfxc4GgSKEOvVAwYIOpEC5gpi7srPKTZkHAXQqErljQ69N6eIRX96/1UYHgiMcAaEPsoT8L9GiL6zbkpJRJ9V3mFAtJbyzmwMDGcr+GoZWQPHrgdWvnAC6R3GmVwVNf5RvvqdMKd2Qh3YV7xmZs7iQioLI1QUWbOiSdde3psa2Cn+rMJ6cKD7QFA7cafoDKEd6vxJA2FTqRNc3ulwDNI1bVosOEu/LQYqkLW2L2kje5QBXu7wWZpWp9PeHyvAp2xmy4TBOZ+YMAut6uP9rnUVciZe1pJEOzjUa2cH+1e+NNwlm7GW9uNTBT4pTLdqPLzbNYnB2+a5rxVzFt4RGaMuT39eMb67M8/wew/DKN1ypQFGbMZ3Z5VRY/2SLhH1vCcV8APQyxzovY++qrsOusVelBbj/47QQTXpBkkJ5KpN1BsJ2WYBKwdrxrrGEr/s2pWOLmNuBWyhm+FpW/DjcXj6Cmu3YpcGM5Ua3uFMvPw29r5q0Neg3jrSIaVx9a9yu+jzmJ1JvNgyWGVW7SfRNvwJi8hUs2Z0OTXKZSmIQkdthsBgPSFqGCm9ScvD4HO5jL1r3RVLldCDabtWp+In2N6quvhir62jjKQ3myW3C7r9l2YbeVXId/KJmol1eZBXN3oL9HIjsNMqnUNtlDMGFeI=
+  file: '*.tgz'
+  file_blob: true
+  skip-cleanup: true
+  on:
+    tags: true
