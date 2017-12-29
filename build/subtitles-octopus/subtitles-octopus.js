@@ -340,10 +340,8 @@ var SubtitlesOctopus = function (options) {
         }
     };
 
-    self.resize = function (width, height, top, left) {
+    self.resize = function (width, height) {
         var videoSize = null;
-        top = top || 0;
-        left = left || 0;
         if ((!width || !height) && self.video) {
             videoSize = self.getVideoPosition();
             width = videoSize.width * self.pixelRatio;
@@ -356,12 +354,7 @@ var SubtitlesOctopus = function (options) {
             return;
         }
 
-        if (
-          self.canvas.width != width ||
-          self.canvas.height != height ||
-          self.canvas.style.top != top ||
-          self.canvas.style.left != left
-        ) {
+        if (self.canvas.width != width || self.canvas.height != height) {
             self.canvas.width = width;
             self.canvas.height = height;
 
@@ -371,17 +364,16 @@ var SubtitlesOctopus = function (options) {
                 self.canvas.style.position = 'absolute';
                 self.canvas.style.width = videoSize.width + 'px';
                 self.canvas.style.height = videoSize.height + 'px';
-                self.canvas.style.top = top + 'px';
-                self.canvas.style.left = left + 'px';
+                self.canvas.style.left = videoSize.x + 'px';
+                var offset = self.canvasParent.getBoundingClientRect().top - self.video.getBoundingClientRect().top;
+                self.canvas.style.top = (videoSize.y - offset) + 'px';
                 self.canvas.style.pointerEvents = 'none';
             }
 
             self.worker.postMessage({
                 target: 'canvas',
                 width: self.canvas.width,
-                height: self.canvas.height,
-                top: top,
-                left: left
+                height: self.canvas.height
             });
         }
     };
