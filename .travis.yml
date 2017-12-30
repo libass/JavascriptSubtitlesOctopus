@@ -13,7 +13,7 @@ script:
 - /alpine/enter-chroot -u $USER tar -zxvf ./emsdk-portable.tar.gz
 - /alpine/enter-chroot -u $USER ./emsdk-portable/emsdk update
 - /alpine/enter-chroot -u $USER ./emsdk-portable/emsdk install latest
-- /alpine/enter-chroot -u $USER "./emsdk-portable/emsdk activate latest && source ./emsdk-portable/emsdk_env.sh && make"
+- /alpine/enter-chroot -u $USER ./ci-starter.sh
 - /alpine/enter-chroot -u $USER zip -r SubtitleOctopus-v$(git rev-parse --short HEAD).zip js
 deploy:
   provider: releases
