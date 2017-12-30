@@ -1,6 +1,6 @@
 #!/bin/sh
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-cd "$DIR"
+echo Start build on CI
+echo $cd
 ./emsdk-portable/emsdk activate latest
 source ./emsdk-portable/emsdk_env.sh
 make
