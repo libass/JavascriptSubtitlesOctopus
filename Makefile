@@ -77,10 +77,6 @@ git-libass:
 	git reset --hard && \
 	git clean -dfx && \
 	git pull origin
-
-git-release: libass
-	VER=$(shell git log -1 --pretty=format:"%H") && \
-	tar -czf OctopusSubtitle-$(VER).tgz js
 	
 # host/build flags are used to enable cross-compiling
 # (values must differ) but there should be some better way to achieve
