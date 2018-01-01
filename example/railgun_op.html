@@ -15,7 +15,7 @@
 
 <video class="video-js vjs-big-play-centered" id="video" src="https://openings.moe/video/Opening1-ToaruKagakuNoRailgunS.webm" width="600" height="500" controls data-setup="{}"></video>
 <script src="https://vjs.zencdn.net/5.14.1/video.js"></script>
-<script src="/js/subtitles-octopus.js"></script>
+<script src="/js/wasm/subtitles-octopus.js"></script>
 
 <script>
     var player = videojs('video');
@@ -26,10 +26,10 @@
             var options = {
                 video: video,
                 subUrl: '/example/railgun_op.ass',
-                fonts: ['/example/fonts/CabinCondensed-Regular.ttf', '/example/fonts/SourceSansPro-SemiBold.ttf'],
+                fonts: ["/example/fonts/SourceSansPro-SemiBold.ttf", "/example/fonts/CabinCondensed-Regular.ttf"],
                 //onReady: onReadyFunction,
                 //debug: true,
-                workerUrl: '/js/subtitles-octopus-worker.js'
+                workerUrl: '/js/wasm/subtitles-octopus-worker.js'
             };
             window.octopusInstance = new SubtitlesOctopus(options); // You can experiment in console
         };

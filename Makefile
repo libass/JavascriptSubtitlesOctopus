@@ -2,16 +2,15 @@
 # You need emsdk environment installed and activated, see:
 # <https://kripken.github.io/emscripten-site/docs/getting_started/downloads.html>.
 
-# TODO: use harfbuzz? (at least need to compare performance)
-
-FONTCONFIG_PC_PATH = ../freetype/dist/lib/pkgconfig:../expat/dist/lib/pkgconfig
-LIBASS_PC_PATH = $(FONTCONFIG_PC_PATH):../fribidi/dist/lib/pkgconfig:../fontconfig/dist/lib/pkgconfig
+FONTCONFIG_PC_PATH = ../freetype/dist/lib/pkgconfig:../expat/expat/dist/lib/pkgconfig
+LIBASS_PC_PATH = $(FONTCONFIG_PC_PATH):../fribidi/dist/lib/pkgconfig:../fontconfig/dist/lib/pkgconfig:../harfbuzz/dist/lib/pkgconfig
 LIBASSJS_PC_PATH = $(LIBASS_PC_PATH):../libass/dist/lib/pkgconfig
 	
 LIBASS_DEPS = \
 	build/fribidi/dist/lib/libfribidi.so \
 	build/freetype/dist/lib/libfreetype.so \
-	build/expat/dist/lib/libexpat.so \
+	build/expat/expat/dist/lib/libexpat.so \
+	build/harfbuzz/dist/lib/libharfbuzz.so \
 	build/fontconfig/dist/lib/libfontconfig.so
 LIBASSJS_DEPS = \
 	$(LIBASS_DEPS) \
@@ -20,7 +19,7 @@ LIBASSJS_DEPS = \
 all: libass
 libass: subtitles-octopus-worker.js
 
-clean: clean-js clean-freetype clean-fribidi clean-fontconfig clean-expat clean-libass clean-octopus
+clean: clean-js clean-freetype clean-fribidi clean-harfbuzz clean-fontconfig clean-expat clean-libass clean-octopus
 clean-js:
 	rm -f -- libass*
 clean-freetype:
@@ -30,7 +29,9 @@ clean-fribidi:
 clean-fontconfig:
 	-cd build/fontconfig && rm -rf dist && make clean
 clean-expat:
-	-cd build/expat && rm -rf dist && make clean
+	-cd build/expat/expat && rm -rf dist && make clean
+clean-harfbuzz:
+	-cd build/harfbuzz && rm -rf dist && make clean
 clean-libass:
 	-cd build/libass && rm -rf dist && make clean
 clean-octopus:
@@ -39,16 +40,52 @@ clean-octopus:
 server:
 	python -m SimpleHTTPServer
 
-build/freetype/builds/unix/configure:
-	cd build/freetype && ./autogen.sh
+git-update: git-freetype git-fribidi git-fontconfig git-expat git-harfbuzz git-libass
 
+git-freetype:
+	cd build/freetype && \
+	git reset --hard && \
+	git clean -dfx && \
+	git pull origin
+
+git-fribidi:
+	cd build/fribidi && \
+	git reset --hard && \
+	git clean -dfx && \
+	git pull origin
+	
+git-fontconfig:
+	cd build/fontconfig && \
+	git reset --hard && \
+	git clean -dfx && \
+	git pull origin
+	
+git-expat:
+	cd build/expat && \
+	git reset --hard && \
+	git clean -dfx && \
+	git pull origin
+	
+git-harfbuzz:
+	cd build/harfbuzz && \
+	git reset --hard && \
+	git clean -dfx && \
+	git pull origin
+	
+git-libass:
+	cd build/libass && \
+	git reset --hard && \
+	git clean -dfx && \
+	git pull origin
+	
 # host/build flags are used to enable cross-compiling
 # (values must differ) but there should be some better way to achieve
 # that: it probably isn't possible to build on x86 now.
-build/freetype/dist/lib/libfreetype.so: build/freetype/builds/unix/configure
+build/freetype/dist/lib/libfreetype.so:
 	cd build/freetype && \
 	git reset --hard && \
-	patch -p1 < ../freetype-asmjs.patch && \
+	patch -p1 < ../freetype-speedup.patch && \
+	NOCONFIGURE=1 ./autogen.sh && \
 	emconfigure ./configure \
 		CFLAGS="-O3" \
 		--prefix="$$(pwd)/dist" \
@@ -64,20 +101,30 @@ build/freetype/dist/lib/libfreetype.so: build/freetype/builds/unix/configure
 	emmake make -j8 && \
 	emmake make install
 
-build/expat/dist/lib/libexpat.so:
-	cd build/expat && \
+build/expat/expat/configure:
+	cd build/expat/expat && ./buildconf.sh
+
+build/expat/expat/dist/lib/libexpat.so: build/expat/expat/configure
+	cd build/expat/expat && \
 	emconfigure ./configure \
 		CFLAGS=-O3 \
 		--prefix="$$(pwd)/dist" \
+		--host=x86-none-linux \
+		--build=x86_64 \
+		--disable-dependency-tracking \
+		--without-docbook \
+		--without-xmlwf \
 		&& \
 	emmake make -j8 && \
 	emmake make install
 
-build/fontconfig/dist/lib/libfontconfig.so: build/freetype/dist/lib/libfreetype.so build/expat/dist/lib/libexpat.so
+build/fontconfig/dist/lib/libfontconfig.so: build/freetype/dist/lib/libfreetype.so build/expat/expat/dist/lib/libexpat.so
 	cd build/fontconfig && \
 	git reset --hard && \
-	patch -p1 < ../fontconfig-speedscan.patch && \
-	./autogen.sh && \
+	patch -p1 < ../fontconfig-fixbuild.patch && \
+	patch -p1 < ../fontconfig-disablepthreads.patch && \
+	patch -p1 < ../fontconfig-disable-uuid.patch && \
+	NOCONFIGURE=1 ./autogen.sh  && \
 	EM_PKG_CONFIG_PATH=$(FONTCONFIG_PC_PATH) emconfigure ./configure \
 		CFLAGS=-O3 \
 		--prefix="$$(pwd)/dist" \
@@ -88,37 +135,64 @@ build/fontconfig/dist/lib/libfontconfig.so: build/freetype/dist/lib/libfreetype.
 	emmake make -j8 && \
 	emmake make install
 
-build/fribidi/configure:
-	cd build/fribidi && ./bootstrap
-
-build/fribidi/dist/lib/libfribidi.so: build/fribidi/configure
-	cd build/fribidi && \
+build/harfbuzz/dist/lib/libharfbuzz.so: build/freetype/dist/lib/libfreetype.so build/fontconfig/dist/lib/libfontconfig.so
+	cd build/harfbuzz && \
 	git reset --hard && \
-	patch -p1 < ../fribidi-make.patch && \
-	touch configure.ac aclocal.m4 configure Makefile.am Makefile.in && \
-	aclocal && autoconf && autoheader && automake --add-missing && \
-	emconfigure ./configure \
-		CFLAGS=-O3 \
-		NM=llvm-nm \
+	patch -p1 < ../harfbuzz-disablepthreads.patch && \
+	NOCONFIGURE=1 ./autogen.sh && \
+	EM_PKG_CONFIG_PATH=$(LIBASS_PC_PATH) emconfigure ./configure \
+		CFLAGS="-O3" \
 		--prefix="$$(pwd)/dist" \
+		--host=x86-none-linux \
+		--build=x86_64 \
+		--disable-static \
 		--disable-dependency-tracking \
-		--disable-debug \
+		\
+		--without-cairo \
+		--with-fontconfig \
+		--without-icu \
+		--with-freetype \
 		--without-glib \
 		&& \
 	emmake make -j8 && \
 	emmake make install
 
-build/libass/configure:
-	cd build/libass && ./autogen.sh
+build/fribidi/configure:
+	cd build/fribidi && \
+	git reset --hard && \
+	patch -p1 < ../fribidi-make.patch && \
+	patch -p1 < ../fribidi-fixclang.patch && \
+	./bootstrap
 
+build/fribidi/dist/lib/libfribidi.so: build/fribidi/configure
+	cd build/fribidi && \
+	emconfigure ./configure \
+		CFLAGS='-O3' \
+		NM=llvm-nm \
+		--prefix="$$(pwd)/dist" \
+		--host=x86-none-linux \
+		--build=x86_64 \
+		--disable-dependency-tracking \
+		--disable-debug \
+		--without-glib \
+		--disable-pthreads \
+		&& \
+	emmake make -j8 && \
+	emmake make install
+
+build/libass/configure:
+	cd build/libass && NOCONFIGURE=1 ./autogen.sh
+
+# Use --enable-large-tiles to incrase speed?
 build/libass/dist/lib/libass.so: build/libass/configure $(LIBASS_DEPS)
 	cd build/libass && \
 	EM_PKG_CONFIG_PATH=$(LIBASS_PC_PATH) emconfigure ./configure \
-		CFLAGS="-O3" \
+		CFLAGS='-O3' \
 		--prefix="$$(pwd)/dist" \
+		--host=x86-none-linux \
+		--build=x86_64 \
 		--disable-static \
-		--disable-enca \
-		--disable-harfbuzz \
+		--enable-harfbuzz \
 		--disable-asm \
 		--enable-fontconfig \
 		&& \
@@ -128,7 +202,7 @@ build/libass/dist/lib/libass.so: build/libass/configure $(LIBASS_DEPS)
 build/subtitles-octopus/configure: $(LIBASSJS_DEPS)
 	cd build/subtitles-octopus && \
 	autoreconf -fi && \
-	EM_PKG_CONFIG_PATH=$(LIBASSJS_PC_PATH) emconfigure ./configure
+	EM_PKG_CONFIG_PATH=$(LIBASSJS_PC_PATH) emconfigure ./configure --host=x86-none-linux --build=x86_64
 	
 build/subtitles-octopus/subtitles-octopus-worker.bc: build/subtitles-octopus/configure $(LIBASSJS_DEPS)
 	cd build/subtitles-octopus && \
@@ -155,10 +229,32 @@ subtitles-octopus-sync.js: build/subtitles-octopus/subtitles-octopus-worker.bc
 		--pre-js build/subtitles-octopus/pre-sync.js \
 		--post-js build/subtitles-octopus/post-sync.js \
 		$(EMCC_COMMON_ARGS) && \
-		mv subtitles-octopus-sync.data subtitles-octopus-sync.js subtitles-octopus-sync.js.mem js/ & \
-		cp build/subtitles-octopus/subtitles-octopus.js js/
+		cp subtitles-octopus-sync.data subtitles-octopus-sync.js subtitles-octopus-sync.js.mem js/wasm/ && \
+		cp build/subtitles-octopus/subtitles-octopus.js js/wasm/ && \
+		cp subtitles-octopus-sync.data subtitles-octopus-sync.js subtitles-octopus-sync.js.mem js/asmjs/ && \
+		cp build/subtitles-octopus/subtitles-octopus.js js/asmjs/ && \
+		mv subtitles-octopus-sync.data subtitles-octopus-sync.js subtitles-octopus-sync.js.mem js/both/ && \
+		cp build/subtitles-octopus/subtitles-octopus.js js/both/
 
 subtitles-octopus-worker.js: build/subtitles-octopus/subtitles-octopus-worker.bc
+	emcc build/subtitles-octopus/subtitles-octopus-worker.bc $(LIBASSJS_DEPS) \
+		--pre-js build/subtitles-octopus/pre-worker.js \
+		--post-js build/subtitles-octopus/post-worker.js \
+		-s WASM=1 \
+		-s "BINARYEN_METHOD='native-wasm'" \
+		-s "BINARYEN_TRAP_MODE='clamp'" \
+		$(EMCC_COMMON_ARGS) && \
+		mv subtitles-octopus-worker.* js/wasm/ && \
+		cp build/subtitles-octopus/subtitles-octopus.js js/wasm/  && \
+	emcc build/subtitles-octopus/subtitles-octopus-worker.bc $(LIBASSJS_DEPS) \
+		--pre-js build/subtitles-octopus/pre-worker.js \
+		--post-js build/subtitles-octopus/post-worker.js \
+		-s WASM=0 \
+		-s "BINARYEN_METHOD='asmjs'" \
+		-s "BINARYEN_TRAP_MODE='clamp'" \
+		$(EMCC_COMMON_ARGS) && \
+		mv subtitles-octopus-worker.* js/asmjs/ && \
+		cp build/subtitles-octopus/subtitles-octopus.js js/asmjs/ && \
 	emcc build/subtitles-octopus/subtitles-octopus-worker.bc $(LIBASSJS_DEPS) \
 		--pre-js build/subtitles-octopus/pre-worker.js \
 		--post-js build/subtitles-octopus/post-worker.js \
@@ -166,5 +262,5 @@ subtitles-octopus-worker.js: build/subtitles-octopus/subtitles-octopus-worker.bc
 		-s "BINARYEN_METHOD='native-wasm,asmjs'" \
 		-s "BINARYEN_TRAP_MODE='clamp'" \
 		$(EMCC_COMMON_ARGS) && \
-		mv subtitles-octopus-worker.* js/ && \
-		cp build/subtitles-octopus/subtitles-octopus.js js/
+		mv subtitles-octopus-worker.* js/both/ && \
+		cp build/subtitles-octopus/subtitles-octopus.js js/both/

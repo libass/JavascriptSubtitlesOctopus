@@ -1,0 +1,176 @@
+diff --git a/include/freetype/config/ftoption.h b/include/freetype/config/ftoption.h
+index 3d5e5a45..46649714 100644
+--- a/include/freetype/config/ftoption.h
++++ b/include/freetype/config/ftoption.h
+@@ -175,7 +175,7 @@ FT_BEGIN_HEADER
+   /*                                                                       */
+   /*   Define this macro if you want to enable this `feature'.             */
+   /*                                                                       */
+-#define FT_CONFIG_OPTION_USE_LZW
++/*#define FT_CONFIG_OPTION_USE_LZW*/
+ 
+ 
+   /*************************************************************************/
+@@ -190,7 +190,7 @@ FT_BEGIN_HEADER
+   /*   Define this macro if you want to enable this `feature'.  See also   */
+   /*   the macro FT_CONFIG_OPTION_SYSTEM_ZLIB below.                       */
+   /*                                                                       */
+-#define FT_CONFIG_OPTION_USE_ZLIB
++/*#define FT_CONFIG_OPTION_USE_ZLIB*/
+ 
+ 
+   /*************************************************************************/
+@@ -321,7 +321,7 @@ FT_BEGIN_HEADER
+   /*                                                                       */
+   /*   Note that the `FOND' resource isn't checked.                        */
+   /*                                                                       */
+-#define FT_CONFIG_OPTION_MAC_FONTS
++/*#define FT_CONFIG_OPTION_MAC_FONTS*/
+ 
+ 
+   /*************************************************************************/
+diff --git a/modules.cfg b/modules.cfg
+index 56a2340e..d856c7e3 100644
+--- a/modules.cfg
++++ b/modules.cfg
+@@ -38,7 +38,7 @@ FONT_MODULES += truetype
+ #
+ # This driver needs the `psaux', `pshinter', and `psnames' modules.
+ # No FT_CONFIG_OPTION_PIC support.
+-FONT_MODULES += type1
++#FONT_MODULES += type1
+ 
+ # CFF/OpenType font driver.
+ #
+@@ -49,30 +49,30 @@ FONT_MODULES += cff
+ #
+ # This driver needs the `psaux', `pshinter', and `psnames' modules.
+ # No FT_CONFIG_OPTION_PIC support.
+-FONT_MODULES += cid
++#FONT_MODULES += cid
+ 
+ # PFR/TrueDoc font driver.  See optional extension ftpfr.c below also.
+ # No FT_CONFIG_OPTION_PIC support.
+-FONT_MODULES += pfr
++#FONT_MODULES += pfr
+ 
+ # PostScript Type 42 font driver.
+ #
+ # This driver needs the `truetype' and `psaux' modules.
+ # No FT_CONFIG_OPTION_PIC support.
+-FONT_MODULES += type42
++#FONT_MODULES += type42
+ 
+ # Windows FONT/FNT font driver.  See optional extension ftwinfnt.c below
+ # also.
+ # No FT_CONFIG_OPTION_PIC support.
+-FONT_MODULES += winfonts
++#FONT_MODULES += winfonts
+ 
+ # PCF font driver.
+ # No FT_CONFIG_OPTION_PIC support.
+-FONT_MODULES += pcf
++#FONT_MODULES += pcf
+ 
+ # BDF font driver.  See optional extension ftbdf.c below also.
+ # No FT_CONFIG_OPTION_PIC support.
+-FONT_MODULES += bdf
++#FONT_MODULES += bdf
+ 
+ # SFNT files support.  If used without `truetype' or `cff', it supports
+ # bitmap-only fonts within an SFNT wrapper.
+@@ -115,7 +115,7 @@ RASTER_MODULES += smooth
+ # that its public API is subject to change if necessary).  See
+ # include/freetype/ftcache.h.  Needs ftglyph.c.
+ # No FT_CONFIG_OPTION_PIC support.
+-AUX_MODULES += cache
++#AUX_MODULES += cache
+ 
+ # TrueType GX/AAT table validation.  Needs ftgxval.c below.
+ #
+@@ -126,19 +126,19 @@ AUX_MODULES += cache
+ #
+ # See include/freetype/ftgzip.h for the API.
+ # No FT_CONFIG_OPTION_PIC support.
+-AUX_MODULES += gzip
++#AUX_MODULES += gzip
+ 
+ # Support for streams compressed with LZW (files with suffix .Z).
+ #
+ # See include/freetype/ftlzw.h for the API.
+ # No FT_CONFIG_OPTION_PIC support.
+-AUX_MODULES += lzw
++#AUX_MODULES += lzw
+ 
+ # Support for streams compressed with bzip2 (files with suffix .bz2).
+ #
+ # See include/freetype/ftbzip2.h for the API.
+ # No FT_CONFIG_OPTION_PIC support.
+-AUX_MODULES += bzip2
++#AUX_MODULES += bzip2
+ 
+ # OpenType table validation.  Needs ftotval.c below.
+ #
+@@ -170,7 +170,7 @@ BASE_EXTENSIONS += ftbbox.c
+ # Access BDF-specific strings.  Needs BDF font driver.
+ #
+ # See include/freetype/ftbdf.h for the API.
+-BASE_EXTENSIONS += ftbdf.c
++#BASE_EXTENSIONS += ftbdf.c
+ 
+ # Utility functions for converting 1bpp, 2bpp, 4bpp, and 8bpp bitmaps into
+ # 8bpp format, and for emboldening of bitmap glyphs.
+@@ -191,12 +191,12 @@ BASE_EXTENSIONS += ftfntfmt.c
+ # Access FSType information.  Needs fttype1.c.
+ #
+ # See include/freetype/freetype.h for the API.
+-BASE_EXTENSIONS += ftfstype.c
++#BASE_EXTENSIONS += ftfstype.c
+ 
+ # Support for GASP table queries.
+ #
+ # See include/freetype/ftgasp.h for the API.
+-BASE_EXTENSIONS += ftgasp.c
++#BASE_EXTENSIONS += ftgasp.c
+ 
+ # Convenience functions to handle glyphs.  Needs ftbitmap.c.
+ #
+@@ -206,7 +206,7 @@ BASE_EXTENSIONS += ftglyph.c
+ # Interface for gxvalid module.
+ #
+ # See include/freetype/ftgxval.h for the API.
+-BASE_EXTENSIONS += ftgxval.c
++#BASE_EXTENSIONS += ftgxval.c
+ 
+ # Support for LCD color filtering of subpixel bitmaps.
+ #
+@@ -221,17 +221,17 @@ BASE_EXTENSIONS += ftmm.c
+ # Interface for otvalid module.
+ #
+ # See include/freetype/ftotval.h for the API.
+-BASE_EXTENSIONS += ftotval.c
++#BASE_EXTENSIONS += ftotval.c
+ 
+ # Support for FT_Face_CheckTrueTypePatents.
+ #
+ # See include/freetype/freetype.h for the API.
+-BASE_EXTENSIONS += ftpatent.c
++#BASE_EXTENSIONS += ftpatent.c
+ 
+ # Interface for accessing PFR-specific data.  Needs PFR font driver.
+ #
+ # See include/freetype/ftpfr.h for the API.
+-BASE_EXTENSIONS += ftpfr.c
++#BASE_EXTENSIONS += ftpfr.c
+ 
+ # Path stroker.  Needs ftglyph.c.
+ #
+@@ -253,7 +253,7 @@ BASE_EXTENSIONS += fttype1.c
+ # driver.
+ #
+ # See include/freetype/ftwinfnt.h for the API.
+-BASE_EXTENSIONS += ftwinfnt.c
++#BASE_EXTENSIONS += ftwinfnt.c
+ 
+ ####
+ #### The components `ftsystem.c' (for memory allocation and stream I/O

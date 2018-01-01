@@ -14,3 +14,15 @@
 	path = build/freetype
 	url = git://git.sv.gnu.org/freetype/freetype2.git
 	ignore = dirty
+[submodule "build/expat"]
+	path = build/expat
+	url = https://github.com/libexpat/libexpat.git
+	ignore = dirty
+[submodule "build/zlib"]
+	path = build/zlib
+	url = https://github.com/madler/zlib.git
+	ignore = dirty
+[submodule "build/harfbuzz"]
+	path = build/harfbuzz
+	url = https://github.com/behdad/harfbuzz.git
+	ignore = dirty

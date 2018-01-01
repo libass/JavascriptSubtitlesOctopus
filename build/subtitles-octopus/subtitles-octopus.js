@@ -126,6 +126,9 @@ var SubtitlesOctopus = function (options) {
             self.video.addEventListener("timeupdate", function () {
                 self.setCurrentTime(video.currentTime + self.timeOffset);
             }, false);
+            self.video.addEventListener("waiting", function () {
+                self.setIsPaused(true, video.currentTime + self.timeOffset);
+            }, false);
 
             document.addEventListener("fullscreenchange", self.resizeWithTimeout, false);
             document.addEventListener("mozfullscreenchange", self.resizeWithTimeout, false);
@@ -421,6 +424,9 @@ var SubtitlesOctopus = function (options) {
 
     self.dispose = function () {
         self.worker.terminate();
+        self.workerActive = false;
+        // Remove the canvas element to remove residual subtitles rendered on player
+        self.video.parentNode.removeChild(self.canvasParent);
     };
 
     self.init();
