@@ -213,6 +213,7 @@ EMCC_COMMON_ARGS = \
 	-s TOTAL_MEMORY=134217728 \
 	-O3 \
 	-s EXPORTED_FUNCTIONS="['_main', '_malloc', '_libassjs_init', '_libassjs_quit', '_libassjs_resize', '_libassjs_render']" \
+	-s EXTRA_EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'getValue']" \
 	-s NO_EXIT_RUNTIME=1 \
 	--use-preload-plugins \
 	--preload-file default.ttf \
