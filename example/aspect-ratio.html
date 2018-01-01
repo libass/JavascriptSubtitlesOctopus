@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://vjs.zencdn.net/5.14.1/video-js.css" rel="stylesheet">
+    <style type="text/css">
+        body {
+            font-family: sans-serif;
+        }
+    </style>
+</head>
+<body>
+<a href="index.html">Index</a><br><br>
+
+<video class="video-js vjs-big-play-centered" id="video" src="https://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4" width="1000" height="400" controls data-setup="{}"></video>
+<script src="https://vjs.zencdn.net/5.14.1/video.js"></script>
+<script src="/js/both/subtitles-octopus.js"></script>
+
+<script>
+    videojs('video').ready(function () {
+        // This would look more nice as a plugin but is's just as showcase of using with custom players
+        var video = this.tech_.el_;
+        window.SubtitlesOctopusOnLoad = function () {
+            var options = {
+                video: video,
+                subUrl: '/example/test.ass',
+                fonts: ['/example/fonts/Arial.ttf', '/example/fonts/TimesNewRoman.ttf'],
+                //onReady: onReadyFunction,
+                //debug: true,
+                workerUrl: '/js/both/subtitles-octopus-worker.js'
+            };
+            window.octopusInstance = new SubtitlesOctopus(options); // You can experiment in console
+        };
+        if (SubtitlesOctopus) {
+            SubtitlesOctopusOnLoad();
+        }
+    });
+</script>
+</body>
+</html>
