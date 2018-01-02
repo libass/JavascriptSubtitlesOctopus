@@ -348,6 +348,9 @@ var SubtitlesOctopus = function (options) {
             videoSize = self.getVideoPosition();
             width = videoSize.width * self.pixelRatio;
             height = videoSize.height * self.pixelRatio;
+            var offset = self.canvasParent.getBoundingClientRect().top - self.video.getBoundingClientRect().top;
+            top = videoSize.y - offset;
+            left = videoSize.x;
         }
         if (!width || !height) {
             if (!self.video) {
@@ -355,6 +358,7 @@ var SubtitlesOctopus = function (options) {
             }
             return;
         }
+
 
         if (
           self.canvas.width != width ||
@@ -379,9 +383,7 @@ var SubtitlesOctopus = function (options) {
             self.worker.postMessage({
                 target: 'canvas',
                 width: self.canvas.width,
-                height: self.canvas.height,
-                top: top,
-                left: left
+                height: self.canvas.height
             });
         }
     };
