@@ -124,7 +124,7 @@ build/fontconfig/dist/lib/libfontconfig.so: build/freetype/dist/lib/libfreetype.
 	patch -p1 < ../fontconfig-fixbuild.patch && \
 	patch -p1 < ../fontconfig-disablepthreads.patch && \
 	patch -p1 < ../fontconfig-disable-uuid.patch && \
-	NOCONFIGURE=1 ./autogen.sh  && \
+	autoreconf -fiv  && \
 	EM_PKG_CONFIG_PATH=$(FONTCONFIG_PC_PATH) emconfigure ./configure \
 		CFLAGS=-O3 \
 		--prefix="$$(pwd)/dist" \
