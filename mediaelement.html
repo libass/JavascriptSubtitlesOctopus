@@ -21,17 +21,63 @@
     <track src="/JavascriptSubtitlesOctopus/test.ass" srclang="jp" label="Test Lang" kind="subtitles" type="application/x-ass">
 </video>
 
+<br>
+<br>
+<button onclick="toggleScriptMode('both');">Both Mode</button>
+<button onclick="toggleScriptMode('asmjs');">ASM.JS Mode</button>
+<button onclick="toggleScriptMode('wasm');">WASM Mode</button>
+
 <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mediaelement/4.2.6/mediaelement-and-player.js" integrity="sha256-GHaL+e25urcUodCnzBxIywtm9yXVT5/SDfFj2yM/Qwo=" crossorigin="anonymous"></script>
-<script src="/JavascriptSubtitlesOctopus/subtitles-octopus.js"></script>
+<script src="/JavascriptSubtitlesOctopus/js/both/subtitles-octopus.js"></script>
 
 <script>
+    var workurl = '/JavascriptSubtitlesOctopus/js/both/subtitles-octopus-worker.js'
+    var toggleScriptMode = function(mode) {
+        if (mode == "asmjs") {
+            setasmjsmode();
+            window.location.reload(false); 
+        } else if (mode == "wasm") {
+            setwasmmode();
+            window.location.reload(false); 
+        } else {
+            setbothmode();
+            window.location.reload(false); 
+        }
+    };
+
+    var setbothmode = function() {
+        localStorage.setItem("scriptmode","both");
+        workurl = '/JavascriptSubtitlesOctopus/js/both/subtitles-octopus-worker.js'
+    };
+
+    var setasmjsmode = function() {
+        localStorage.setItem("scriptmode","asmjs");
+        workurl = '/JavascriptSubtitlesOctopus/js/asmjs/subtitles-octopus-worker.js'
+    };
+
+    var setwasmmode = function() {
+        localStorage.setItem("scriptmode","wasm");
+        workurl = '/JavascriptSubtitlesOctopus/js/wasm/subtitles-octopus-worker.js'
+    };
+    
     mejs.i18n.language('en');
     $('video').mediaelementplayer({
         success: function (player, node) {
             var video = node;
             
             player.addEventListener('captionschange', function(e) {
+                if("undefined" != typeof Storage){
+                    if (localStorage.getItem("scriptmode") === "both") {
+                        setbothmode();
+                    } else if (localStorage.getItem("scriptmode") === "asmjs") {
+                        setasmjsmode();
+                    } else if (localStorage.getItem("scriptmode") === "wasm") {
+                        setwasmmode();
+                    } else {
+                        setbothmode();
+                    }
+                }
                 console.log('Charging Track ' + e.detail.caption);
                 if (e.detail.caption !== null) {
                     window.SubtitlesOctopusOnLoad = function () {
@@ -41,7 +87,7 @@
                         fonts: ['/JavascriptSubtitlesOctopus/fonts/CabinCondensed-Regular.ttf', '/JavascriptSubtitlesOctopus/fonts/SourceSansPro-SemiBold.ttf'],
                         //onReady: onReadyFunction,
                         //debug: true,
-                        workerUrl: '/JavascriptSubtitlesOctopus/subtitles-octopus-worker.js'
+                        workerUrl: workurl
                     };
                         window.octopusInstance = new SubtitlesOctopus(options); // You can experiment in console
                     };
