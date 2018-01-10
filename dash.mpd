@@ -2,7 +2,7 @@
 <MPD mediaPresentationDuration="PT12M14S" minBufferTime="PT3.00S" profiles="urn:mpeg:dash:profile:isoff-live:2011" type="static" xmlns="urn:mpeg:dash:schema:mpd:2011">
   <!-- Created with Bento4 mp4-dash.py, VERSION=1.6.0-588 -->
   <Period>
-    <BaseURL>http://www.bok.net/dash/tears_of_steel/cleartext/</BaseURL>
+    <BaseURL>https://www.bok.net/dash/tears_of_steel/cleartext/</BaseURL>
     <AdaptationSet lang="en" mimeType="audio/mp4" segmentAlignment="true" startWithSAP="1">
       <SegmentTemplate duration="3000" initialization="$RepresentationID$/init.mp4" media="$RepresentationID$/seg-$Number$.m4f" startNumber="1" timescale="1000"/>
       <Representation audioSamplingRate="44100" bandwidth="132348" codecs="mp4a.40.2" id="audio/en">
