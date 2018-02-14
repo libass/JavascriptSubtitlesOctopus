@@ -1,18 +1,18 @@
 diff --git a/Makefile.am b/Makefile.am
-index 66f4a4e..bd3d141 100644
+index 4767d69..3dba0d8 100644
 --- a/Makefile.am
 +++ b/Makefile.am
-@@ -11,7 +11,7 @@
+@@ -4,7 +4,7 @@
  ACLOCAL_AMFLAGS = -I m4
  
  ## The order of subdirs is important, don't change without a reason.
--SUBDIRS = gen.tab charset lib bin doc test fribidi-vs-unicode
+-SUBDIRS = gen.tab charset lib bin doc test
 +SUBDIRS = gen.tab charset lib
  
- EXTRA_DIST = bootstrap ChangeLog.old
+ EXTRA_DIST = autogen.sh ChangeLog.old
  
 diff --git a/gen.tab/Makefile.am b/gen.tab/Makefile.am
-index 3b185a9..97df2b5 100644
+index d178fc9..a8d4dc5 100644
 --- a/gen.tab/Makefile.am
 +++ b/gen.tab/Makefile.am
 @@ -1,3 +1,4 @@

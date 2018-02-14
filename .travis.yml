@@ -34,6 +34,8 @@ arch:
     - jdk8-openjdk
     - gperf
   script:
+    - ln -sf /usr/bin/python2 /usr/bin/python
+    - ln -sf /usr/bin/python2-config /usr/bin/python-config 
     - make
 
 script:
