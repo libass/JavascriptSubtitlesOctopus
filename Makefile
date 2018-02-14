@@ -212,12 +212,10 @@ build/libass/dist/lib/libass.so: build/libass/configure $(LIBASS_DEPS)
 build/subtitles-octopus/configure: $(LIBASSJS_DEPS)
 	cd build/subtitles-octopus && \
 	autoreconf -fi && \
-	alias python=/usr/bin/&& \
 	EM_PKG_CONFIG_PATH=$(LIBASSJS_PC_PATH) emconfigure ./configure --host=x86-none-linux --build=x86_64
 	
 build/subtitles-octopus/subtitles-octopus-worker.bc: build/subtitles-octopus/configure $(LIBASSJS_DEPS)
 	cd build/subtitles-octopus && \
-	alias python=/usr/bin/&& \
 	emmake make -j8 && \
 	mv subtitlesoctopus subtitles-octopus-worker.bc
 
@@ -238,7 +236,6 @@ EMCC_COMMON_ARGS = \
 	#-s OUTLINING_LIMIT=20000 \
 
 subtitles-octopus-sync.js: build/subtitles-octopus/subtitles-octopus-worker.bc
-	alias python=/usr/bin/&& \
 	emcc build/subtitles-octopus/subtitles-octopus-worker.bc $(LIBASSJS_DEPS) \
 		--pre-js build/subtitles-octopus/pre-sync.js \
 		--post-js build/subtitles-octopus/post-sync.js \
@@ -251,7 +248,6 @@ subtitles-octopus-sync.js: build/subtitles-octopus/subtitles-octopus-worker.bc
 		cp build/subtitles-octopus/subtitles-octopus.js js/both/
 
 subtitles-octopus-worker.js: build/subtitles-octopus/subtitles-octopus-worker.bc
-	alias python=/usr/bin/&& \
 	emcc build/subtitles-octopus/subtitles-octopus-worker.bc $(LIBASSJS_DEPS) \
 		--pre-js build/subtitles-octopus/pre-worker.js \
 		--post-js build/subtitles-octopus/post-worker.js \

@@ -56,7 +56,8 @@ repo_line=70
 get_base_archive() {
   local months=(
     #$(date +%Y.%m)
-    $(date +%Y.%m -d "-1 month")
+    #$(date +%Y.%m -d "-1 month")
+    '2017.12'
   )
 
   for mirror in "${mirrors[@]}"; do
