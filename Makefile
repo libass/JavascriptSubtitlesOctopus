@@ -136,6 +136,7 @@ build/fontconfig/dist/lib/libfontconfig.so: build/freetype/dist/lib/libfreetype.
 		--disable-static \
 		--enable-shared \
 		--disable-docs \
+		--with-default-fonts=/fonts \
 		&& \
 	emmake make -j8 && \
 	emmake make install
@@ -223,12 +224,13 @@ EMCC_COMMON_ARGS = \
 	-s TOTAL_MEMORY=134217728 \
 	-O3 \
 	-s EXPORTED_FUNCTIONS="['_main', '_malloc', '_libassjs_init', '_libassjs_quit', '_libassjs_resize', '_libassjs_render']" \
-	-s EXTRA_EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'getValue']" \
+	-s EXTRA_EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'getValue', 'FS_createPreloadedFile', 'FS_createFolder']" \
 	-s NO_EXIT_RUNTIME=1 \
 	--use-preload-plugins \
 	--preload-file default.ttf \
 	--preload-file fonts.conf \
 	-s ALLOW_MEMORY_GROWTH=1 \
+	-s FORCE_FILESYSTEM=1 \
 	-o $@
 	#--js-opts 0 -g4 \
 	#--closure 1 \
