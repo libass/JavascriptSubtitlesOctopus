@@ -249,7 +249,7 @@ subtitles-octopus-sync.js: build/subtitles-octopus/subtitles-octopus-worker.bc
 		mv subtitles-octopus-sync.data subtitles-octopus-sync.js subtitles-octopus-sync.js.mem js/both/ && \
 		cp build/subtitles-octopus/subtitles-octopus.js js/both/
 
-subtitles-octopus-worker.js: build/subtitles-octopus/subtitles-octopus-worker.bc
+subtitles-octopus-worker.js: build/subtitles-octopus/subtitles-octopus-worker.bc subtitles-octopus-sync.js
 	emcc build/subtitles-octopus/subtitles-octopus-worker.bc $(LIBASSJS_DEPS) \
 		--pre-js build/subtitles-octopus/pre-worker.js \
 		--post-js build/subtitles-octopus/post-worker.js \
