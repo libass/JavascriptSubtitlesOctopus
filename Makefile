@@ -46,37 +46,37 @@ git-freetype:
 	cd build/freetype && \
 	git reset --hard && \
 	git clean -dfx && \
-	git pull origin
+	git pull origin master
 
 git-fribidi:
 	cd build/fribidi && \
 	git reset --hard && \
 	git clean -dfx && \
-	git pull origin
+	git pull origin master
 	
 git-fontconfig:
 	cd build/fontconfig && \
 	git reset --hard && \
 	git clean -dfx && \
-	git pull origin
+	git pull origin master
 	
 git-expat:
 	cd build/expat && \
 	git reset --hard && \
 	git clean -dfx && \
-	git pull origin
+	git pull origin master
 	
 git-harfbuzz:
 	cd build/harfbuzz && \
 	git reset --hard && \
 	git clean -dfx && \
-	git pull origin
+	git pull origin master
 	
 git-libass:
 	cd build/libass && \
 	git reset --hard && \
 	git clean -dfx && \
-	git pull origin
+	git pull origin master
 	
 # host/build flags are used to enable cross-compiling
 # (values must differ) but there should be some better way to achieve
@@ -92,6 +92,7 @@ build/freetype/dist/lib/libfreetype.so:
 		--host=x86-none-linux \
 		--build=x86_64 \
 		--disable-static \
+		--enable-shared \
 		\
 		--without-zlib \
 		--without-bzip2 \
@@ -111,6 +112,8 @@ build/expat/expat/dist/lib/libexpat.so: build/expat/expat/configure
 		--prefix="$$(pwd)/dist" \
 		--host=x86-none-linux \
 		--build=x86_64 \
+		--disable-static \
+		--enable-shared \
 		--disable-dependency-tracking \
 		--without-docbook \
 		--without-xmlwf \
@@ -124,13 +127,16 @@ build/fontconfig/dist/lib/libfontconfig.so: build/freetype/dist/lib/libfreetype.
 	patch -p1 < ../fontconfig-fixbuild.patch && \
 	patch -p1 < ../fontconfig-disablepthreads.patch && \
 	patch -p1 < ../fontconfig-disable-uuid.patch && \
-	NOCONFIGURE=1 ./autogen.sh  && \
+	autoreconf -fiv  && \
 	EM_PKG_CONFIG_PATH=$(FONTCONFIG_PC_PATH) emconfigure ./configure \
 		CFLAGS=-O3 \
 		--prefix="$$(pwd)/dist" \
 		--host=x86-none-linux \
 		--build=x86_64 \
+		--disable-static \
+		--enable-shared \
 		--disable-docs \
+		--with-default-fonts=/fonts \
 		&& \
 	emmake make -j8 && \
 	emmake make install
@@ -146,6 +152,7 @@ build/harfbuzz/dist/lib/libharfbuzz.so: build/freetype/dist/lib/libfreetype.so b
 		--host=x86-none-linux \
 		--build=x86_64 \
 		--disable-static \
+		--enable-shared \
 		--disable-dependency-tracking \
 		\
 		--without-cairo \
@@ -160,9 +167,9 @@ build/harfbuzz/dist/lib/libharfbuzz.so: build/freetype/dist/lib/libfreetype.so b
 build/fribidi/configure:
 	cd build/fribidi && \
 	git reset --hard && \
-	patch -p1 < ../fribidi-make.patch && \
+	patch -p1 < ../0001-Fix-Fribidi-Build.patch && \
 	patch -p1 < ../fribidi-fixclang.patch && \
-	./bootstrap
+	NOCONFIGURE=1 ./autogen.sh
 
 build/fribidi/dist/lib/libfribidi.so: build/fribidi/configure
 	cd build/fribidi && \
@@ -172,6 +179,9 @@ build/fribidi/dist/lib/libfribidi.so: build/fribidi/configure
 		--prefix="$$(pwd)/dist" \
 		--host=x86-none-linux \
 		--build=x86_64 \
+		--disable-docs \
+		--disable-static \
+		--enable-shared \
 		--disable-dependency-tracking \
 		--disable-debug \
 		--without-glib \
@@ -192,6 +202,7 @@ build/libass/dist/lib/libass.so: build/libass/configure $(LIBASS_DEPS)
 		--host=x86-none-linux \
 		--build=x86_64 \
 		--disable-static \
+		--enable-shared \
 		--enable-harfbuzz \
 		--disable-asm \
 		--enable-fontconfig \
@@ -213,12 +224,13 @@ EMCC_COMMON_ARGS = \
 	-s TOTAL_MEMORY=134217728 \
 	-O3 \
 	-s EXPORTED_FUNCTIONS="['_main', '_malloc', '_libassjs_init', '_libassjs_quit', '_libassjs_resize', '_libassjs_render']" \
-	-s EXTRA_EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'getValue']" \
+	-s EXTRA_EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'getValue', 'FS_createPreloadedFile', 'FS_createFolder']" \
 	-s NO_EXIT_RUNTIME=1 \
 	--use-preload-plugins \
 	--preload-file default.ttf \
 	--preload-file fonts.conf \
 	-s ALLOW_MEMORY_GROWTH=1 \
+	-s FORCE_FILESYSTEM=1 \
 	-o $@
 	#--js-opts 0 -g4 \
 	#--closure 1 \
@@ -237,7 +249,7 @@ subtitles-octopus-sync.js: build/subtitles-octopus/subtitles-octopus-worker.bc
 		mv subtitles-octopus-sync.data subtitles-octopus-sync.js subtitles-octopus-sync.js.mem js/both/ && \
 		cp build/subtitles-octopus/subtitles-octopus.js js/both/
 
-subtitles-octopus-worker.js: build/subtitles-octopus/subtitles-octopus-worker.bc
+subtitles-octopus-worker.js: build/subtitles-octopus/subtitles-octopus-worker.bc subtitles-octopus-sync.js
 	emcc build/subtitles-octopus/subtitles-octopus-worker.bc $(LIBASSJS_DEPS) \
 		--pre-js build/subtitles-octopus/pre-worker.js \
 		--post-js build/subtitles-octopus/post-worker.js \

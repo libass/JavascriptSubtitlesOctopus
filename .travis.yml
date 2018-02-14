@@ -1,26 +1,54 @@
 sudo: required
 dist: trusty
-language: node_js
-before_install:
-- wget https://raw.githubusercontent.com/alpinelinux/alpine-chroot-install/master/alpine-chroot-install
-install:
-- sudo sh alpine-chroot-install -b v3.7 -r 'https://nl.alpinelinux.org/alpine/edge/testing'
-  -p 'cmake nodejs ragel wget closure-compiler musl python2 glib zip busybox make enca-dev pkgconf python2-dev gperf build-base autoconf automake libtool glib-dev intltool git patch tar alpine-sdk m4 autoconf2.13 autoconf-archive llvm5 clang clang-libs itstool'
-  -k 'CI TRAVIS_.* EM_.*'
+env:
+  - ARCH_TRAVIS_CLEAN_CHROOT=1 ARCH_TRAVIS_CONFIRM_YES=1
+language: nodejs
+arch:
+  repos:
+    - archlinuxfr=http://repo.archlinux.fr/$arch
+  packages:
+    - emscripten
+    - llvm
+    - clang
+    - cmake
+    - nodejs
+    - npm
+    - ragel
+    - wget
+    - zip
+    - make
+    - autoconf
+    - pkgconfig
+    - patch
+    - libtool
+    - itstool
+    - automake
+    - python2
+    - zip
+    - python2-lxml
+    - python2-pip
+    - python2-html5lib
+    - python2-setuptools
+    - python2-chardet
+    - python2-virtualenv
+    - jdk8-openjdk
+    - gperf
+  script:
+    - ln -sf /usr/bin/python2 /usr/bin/python
+    - ln -sf /usr/bin/python2-config /usr/bin/python-config 
+    - make
+
 script:
-- /alpine/enter-chroot -u root patch -p1 -d /usr/bin < build/gettextize-Fix-CI-Builds.patch
-- /alpine/enter-chroot -u $USER wget https://s3.amazonaws.com/mozilla-games/emscripten/releases/emsdk-portable.tar.gz
-- /alpine/enter-chroot -u $USER tar -zxvf ./emsdk-portable.tar.gz
-- /alpine/enter-chroot -u $USER ./emsdk-portable/emsdk update
-- /alpine/enter-chroot -u $USER ./emsdk-portable/emsdk install latest
-- /alpine/enter-chroot -u $USER sh ./ci-starter.sh
-- /alpine/enter-chroot -u $USER zip -r SubtitleOctopus-v$(git rev-parse --short HEAD).zip js
-deploy:
-  provider: releases
-  api_key:
-    secure: 2AKoH11ekUbeMw5jeh2JO2qOfxc4GgSKEOvVAwYIOpEC5gpi7srPKTZkHAXQqErljQ69N6eIRX96/1UYHgiMcAaEPsoT8L9GiL6zbkpJRJ9V3mFAtJbyzmwMDGcr+GoZWQPHrgdWvnAC6R3GmVwVNf5RvvqdMKd2Qh3YV7xmZs7iQioLI1QUWbOiSdde3psa2Cn+rMJ6cKD7QFA7cafoDKEd6vxJA2FTqRNc3ulwDNI1bVosOEu/LQYqkLW2L2kje5QBXu7wWZpWp9PeHyvAp2xmy4TBOZ+YMAut6uP9rnUVciZe1pJEOzjUa2cH+1e+NNwlm7GW9uNTBT4pTLdqPLzbNYnB2+a5rxVzFt4RGaMuT39eMb67M8/wew/DKN1ypQFGbMZ3Z5VRY/2SLhH1vCcV8APQyxzovY++qrsOusVelBbj/47QQTXpBkkJ5KpN1BsJ2WYBKwdrxrrGEr/s2pWOLmNuBWyhm+FpW/DjcXj6Cmu3YpcGM5Ua3uFMvPw29r5q0Neg3jrSIaVx9a9yu+jzmJ1JvNgyWGVW7SfRNvwJi8hUs2Z0OTXKZSmIQkdthsBgPSFqGCm9ScvD4HO5jL1r3RVLldCDabtWp+In2N6quvhir62jjKQ3myW3C7r9l2YbeVXId/KJmol1eZBXN3oL9HIjsNMqnUNtlDMGFeI=
-  file: '*.zip'
-  file_blob: true
-  skip-cleanup: true
-  on:
-    tags: true
+ - bash ./ci-starter.sh
+# - zip -r SubtitleOctopus-v$(TRAVIS_TAG).zip js
+#after_failure: 
+#   - cat ./build/fribidi/config.log
+#deploy:
+#  provider: releases
+#  api_key:
+#    secure: 2AKoH11ekUbeMw5jeh2JO2qOfxc4GgSKEOvVAwYIOpEC5gpi7srPKTZkHAXQqErljQ69N6eIRX96/1UYHgiMcAaEPsoT8L9GiL6zbkpJRJ9V3mFAtJbyzmwMDGcr+GoZWQPHrgdWvnAC6R3GmVwVNf5RvvqdMKd2Qh3YV7xmZs7iQioLI1QUWbOiSdde3psa2Cn+rMJ6cKD7QFA7cafoDKEd6vxJA2FTqRNc3ulwDNI1bVosOEu/LQYqkLW2L2kje5QBXu7wWZpWp9PeHyvAp2xmy4TBOZ+YMAut6uP9rnUVciZe1pJEOzjUa2cH+1e+NNwlm7GW9uNTBT4pTLdqPLzbNYnB2+a5rxVzFt4RGaMuT39eMb67M8/wew/DKN1ypQFGbMZ3Z5VRY/2SLhH1vCcV8APQyxzovY++qrsOusVelBbj/47QQTXpBkkJ5KpN1BsJ2WYBKwdrxrrGEr/s2pWOLmNuBWyhm+FpW/DjcXj6Cmu3YpcGM5Ua3uFMvPw29r5q0Neg3jrSIaVx9a9yu+jzmJ1JvNgyWGVW7SfRNvwJi8hUs2Z0OTXKZSmIQkdthsBgPSFqGCm9ScvD4HO5jL1r3RVLldCDabtWp+In2N6quvhir62jjKQ3myW3C7r9l2YbeVXId/KJmol1eZBXN3oL9HIjsNMqnUNtlDMGFeI=
+#  file: 'SubtitleOctopus-v$(TRAVIS_TAG).zip'
+#  file_blob: true
+#  skip-cleanup: true
+#  on:
+#    tags: true

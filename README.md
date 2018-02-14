@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/TFSThiagoBR98/JavascriptSubtitlesOctopus.svg?branch=master)](https://travis-ci.org/TFSThiagoBR98/JavascriptSubtitlesOctopus)
 SubtitlesOctopus displays subtitles in .ass format and easily integrates with HTML5 videos. It supports all SSA/ASS features and fully compatible with [libass](https://github.com/libass/libass).
 
 [ONLINE DEMO](https://dador.github.io/JavascriptSubtitlesOctopus/videojs.html) / [other examples with demo](https://dador.github.io/JavascriptSubtitlesOctopus/)
