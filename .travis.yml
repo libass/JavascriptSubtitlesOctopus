@@ -34,12 +34,10 @@ arch:
     - jdk8-openjdk
     - gperf
   script:
-    - ln -sf /usr/bin/python2 /usr/bin/python
-    - ln -sf /usr/bin/python2-config /usr/bin/python-config 
-    - make
+    - build/ci-build.sh
 
 script:
- - bash ./ci-starter.sh
+ - "curl -s https://raw.githubusercontent.com/mikkeloscar/arch-travis/master/arch-travis.sh | bash"
 # - zip -r SubtitleOctopus-v$(TRAVIS_TAG).zip js
 #after_failure: 
 #   - cat ./build/fribidi/config.log
