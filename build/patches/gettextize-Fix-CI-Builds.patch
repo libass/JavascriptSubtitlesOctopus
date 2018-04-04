@@ -1,0 +1,32 @@
+diff --git "a/gettextize" "b/gettextize-new"
+index d97736a..caec1f5 100644
+--- "a/gettextize"
++++ "b/gettextize-new"
+@@ -1321,27 +1321,4 @@ are
+ "
+ fi
+ 
+-if $doit; then
+-  echo "$please"
+-  echo "You might also want to copy the convenience header file gettext.h"
+-  echo "from the $gettext_datadir directory into your package."
+-  echo "It is a wrapper around <libintl.h> that implements the configure --disable-nls"
+-  echo "option."
+-  echo
+-  count=`echo "$please" | grep '^$' | wc -l`
+-  count=`echo "$count" | sed -e 's/[ 	]//g'`
+-  case "$count" in
+-    1) count="paragraph";;
+-    2) count="two paragraphs";;
+-    3) count="three paragraphs";;
+-    4) count="four paragraphs";;
+-    5) count="five paragraphs";;
+-    *) count="$count paragraphs";;
+-  esac
+-  echo "Press Return to acknowledge the previous $count."
+-  # Read from /dev/tty, not stdin, so that gettextize cannot be abused by
+-  # non-interactive tools.
+-  read dummy < /dev/tty
+-fi
+-
+ exit 0

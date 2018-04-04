@@ -2,11 +2,11 @@
 # You need emsdk environment installed and activated, see:
 # <https://kripken.github.io/emscripten-site/docs/getting_started/downloads.html>.
 
-FONTCONFIG_PC_PATH = ../lib/freetype/dist/lib/pkgconfig:../expat/expat/dist/lib/pkgconfig
+FONTCONFIG_PC_PATH = ../freetype/dist/lib/pkgconfig:../expat/expat/dist/lib/pkgconfig
 LIBASS_PC_PATH = $(FONTCONFIG_PC_PATH):../fribidi/dist/lib/pkgconfig:../fontconfig/dist/lib/pkgconfig:../harfbuzz/dist/lib/pkgconfig
 
 # For Octopus Build Task
-LIBASSJS_PC_PATH = ../lib/freetype/dist/lib/pkgconfig:../lib/expat/expat/dist/lib/pkgconfig:../lib/fribidi/dist/lib/pkgconfig:../lib/fontconfig/dist/lib/pkgconfig:../lib/harfbuzz/dist/lib/pkgconfig../lib/libass/dist/lib/pkgconfig
+LIBASSJS_PC_PATH = ../lib/freetype/dist/lib/pkgconfig:../lib/expat/expat/dist/lib/pkgconfig:../lib/fribidi/dist/lib/pkgconfig:../lib/fontconfig/dist/lib/pkgconfig:../lib/harfbuzz/dist/lib/pkgconfig:../lib/libass/dist/lib/pkgconfig
 	
 LIBASS_DEPS = \
 	lib/fribidi/dist/lib/libfribidi.so \
@@ -18,7 +18,7 @@ LIBASSJS_DEPS = \
 	$(LIBASS_DEPS) \
 	lib/libass/dist/lib/libass.so
 
-all: libass
+all: git-checkout libass
 libass: subtitles-octopus-worker.js
 
 clean: clean-js clean-freetype clean-fribidi clean-harfbuzz clean-fontconfig clean-expat clean-libass clean-octopus
@@ -80,6 +80,10 @@ git-libass:
 	git reset --hard && \
 	git clean -dfx && \
 	git pull origin master
+
+git-checkout:
+	git submodule sync --recursive && \
+	git submodule update --init --recursive
 	
 # host/build flags are used to enable cross-compiling
 # (values must differ) but there should be some better way to achieve
@@ -88,7 +92,7 @@ lib/freetype/dist/lib/libfreetype.so:
 	echo "Build Freetype ---------" && \
 	cd lib/freetype && \
 	git reset --hard && \
-	patch -p1 < ../../build/patchs/freetype-speedup.patch && \
+	patch -Np1 -i "../../build/patchs/freetype-speedup.patch" && \
 	NOCONFIGURE=1 ./autogen.sh && \
 	emconfigure ./configure \
 		CFLAGS="-O3" \
@@ -131,9 +135,9 @@ lib/fontconfig/dist/lib/libfontconfig.so: lib/freetype/dist/lib/libfreetype.so l
 	echo "Build Fontconfig ---------" && \
 	cd lib/fontconfig && \
 	git reset --hard && \
-	patch -p1 < ../../build/patchs/fontconfig-fixbuild.patch && \
-	patch -p1 < ../../build/patchs/fontconfig-disablepthreads.patch && \
-	patch -p1 < ../../build/patchs/fontconfig-disable-uuid.patch && \
+	patch -Np1 -i "../../build/patchs/fontconfig-fixbuild.patch" && \
+	patch -Np1 -i "../../build/patchs/fontconfig-disablepthreads.patch" && \
+	patch -Np1 -i "../../build/patchs/fontconfig-disable-uuid.patch" && \
 	autoreconf -fiv  && \
 	EM_PKG_CONFIG_PATH=$(FONTCONFIG_PC_PATH) emconfigure ./configure \
 		CFLAGS=-O3 \
@@ -152,7 +156,7 @@ lib/harfbuzz/dist/lib/libharfbuzz.so: lib/freetype/dist/lib/libfreetype.so lib/f
 	echo "Build Harfbuzz ---------" && \
 	cd lib/harfbuzz && \
 	git reset --hard && \
-	patch -p1 < ../../build/patchs/harfbuzz-disablepthreads.patch && \
+	patch -Np1 -i "../../build/patchs/harfbuzz-disablepthreads.patch" && \
 	NOCONFIGURE=1 ./autogen.sh && \
 	EM_PKG_CONFIG_PATH=$(LIBASS_PC_PATH) emconfigure ./configure \
 		CFLAGS="-O3" \
@@ -176,8 +180,8 @@ lib/fribidi/configure:
 	echo "Configure Fribidi ---------" && \
 	cd lib/fribidi && \
 	git reset --hard && \
-	patch -p1 < ../../build/patchs/Fix-Fribidi-Build.patch && \
-	patch -p1 < ../../build/patchs/fribidi-fixclang.patch && \
+	patch -Np1 -i "../../build/patchs/Fix-Fribidi-Build.patch" && \
+	patch -Np1 -i "../../build/patchs/fribidi-fixclang.patch" && \
 	NOCONFIGURE=1 ./autogen.sh
 
 lib/fribidi/dist/lib/libfribidi.so: lib/fribidi/configure

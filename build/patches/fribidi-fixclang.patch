@@ -1,0 +1,35 @@
+diff --git "a/lib/common.h" "b/lib/common.h"
+index 3e484b0..4de3b57 100644
+--- "a/lib/common.h"
++++ "b/lib/common.h"
+@@ -177,6 +177,30 @@
+ /* We respect our own rules. */
+ #define FRIBIDI_NO_DEPRECATED
+ 
++#include <stdio.h>
++
++#ifndef MSG
++#define MSG(s) \
++	FRIBIDI_BEGIN_STMT \
++	fprintf(stderr, s); \
++	FRIBIDI_END_STMT
++#define MSG2(s, t) \
++	FRIBIDI_BEGIN_STMT \
++	fprintf(stderr, s, t); \
++	FRIBIDI_END_STMT
++#define MSG3(s, t, u) \
++	FRIBIDI_BEGIN_STMT \
++	fprintf(stderr, s, t, u); \
++	FRIBIDI_END_STMT
++#define MSG5(s, t, u, v, w) \
++	FRIBIDI_BEGIN_STMT \
++	fprintf(stderr, s, t, u, v, w); \
++	FRIBIDI_END_STMT
++#define MSG6(s, t, u, v, w, z)                    \
++	FRIBIDI_BEGIN_STMT \
++	fprintf(stderr, s, t, u, v, w, z);        \
++	FRIBIDI_END_STMT
++#endif /* !MSG */
+ 
+ #include "debug.h"
+ 

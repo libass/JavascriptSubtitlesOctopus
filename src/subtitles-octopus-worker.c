@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
-#include "../libass/libass/ass.h"
+#include "../lib/libass/libass/ass.h"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
