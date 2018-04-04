@@ -23,6 +23,8 @@
 <button onclick="toggleScriptMode('asmjs');">ASM.JS Mode</button>
 <button onclick="toggleScriptMode('wasm');">WASM Mode</button>
 
+<button onclick="toggleScriptMode('sync');">Sync Mode</button>
+
 <script>
     var workurl = '/JavascriptSubtitlesOctopus/js/both/subtitles-octopus-worker.js'
     var toggleScriptMode = function(mode) {
@@ -31,6 +33,9 @@
             window.location.reload(false); 
         } else if (mode == "wasm") {
             setwasmmode();
+            window.location.reload(false); 
+        } else if (mode == "sync") {
+            setsyncmode();
             window.location.reload(false); 
         } else {
             setbothmode();
@@ -41,6 +46,11 @@
     var setbothmode = function() {
         localStorage.setItem("scriptmode","both");
         workurl = '/JavascriptSubtitlesOctopus/js/both/subtitles-octopus-worker.js'
+    };
+
+    var setsyncmode = function() {
+        localStorage.setItem("scriptmode","sync");
+        workurl = '/JavascriptSubtitlesOctopus/js/both/subtitles-octopus-sync.js'
     };
 
     var setasmjsmode = function() {
@@ -60,6 +70,8 @@
                 setasmjsmode();
             } else if (localStorage.getItem("scriptmode") === "wasm") {
                 setwasmmode();
+            } else if (localStorage.getItem("scriptmode") === "sync") {
+                setsyncmode();
             } else {
                 setbothmode();
             }

@@ -111,6 +111,10 @@ var SubtitlesOctopus = function (options) {
     self.setVideo = function (video) {
         self.video = video;
         if (self.video) {
+            var timeupdate = function () {
+                self.setCurrentTime(video.currentTime + self.timeOffset);
+            }
+            self.video.addEventListener("timeupdate", timeupdate, false);
             self.video.addEventListener("playing", function () {
                 self.setIsPaused(false, video.currentTime + self.timeOffset);
             }, false);
@@ -118,6 +122,10 @@ var SubtitlesOctopus = function (options) {
                 self.setIsPaused(true, video.currentTime + self.timeOffset);
             }, false);
             self.video.addEventListener("seeking", function () {
+                self.video.removeEventListener("timeupdate", timeupdate);
+            }, false);
+            self.video.addEventListener("seeked", function () {
+                self.video.addEventListener("timeupdate", timeupdate, false);
                 self.setCurrentTime(video.currentTime + self.timeOffset);
             }, false);
             self.video.addEventListener("ratechange", function () {
