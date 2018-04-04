@@ -20,7 +20,7 @@
 </div>
 <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
 <script src="https://releases.flowplayer.org/7.1.2/flowplayer.min.js"></script>
-<script src="/js/both/subtitles-octopus.js"></script>
+<script src="/dist/both/subtitles-octopus.js"></script>
 
 <script>
     $(function() {
@@ -34,7 +34,7 @@
                     fonts: ['/example/fonts/Arial.ttf', '/example/fonts/TimesNewRoman.ttf'],
                     //onReady: onReadyFunction,
                     //debug: true,
-                    workerUrl: '/js/both/subtitles-octopus-worker.js'
+                    workerUrl: '/dist/both/subtitles-octopus-worker.js'
                 };
                 window.octopusInstance = new SubtitlesOctopus(options); // You can experiment in console
             };

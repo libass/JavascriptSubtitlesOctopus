@@ -92,7 +92,7 @@ lib/freetype/dist/lib/libfreetype.so:
 	echo "Build Freetype ---------" && \
 	cd lib/freetype && \
 	git reset --hard && \
-	patch -Np1 -i "../../build/patchs/freetype-speedup.patch" && \
+	patch -Np1 -i "../../build/patches/freetype-speedup.patch" && \
 	NOCONFIGURE=1 ./autogen.sh && \
 	emconfigure ./configure \
 		CFLAGS="-O3" \
@@ -135,9 +135,9 @@ lib/fontconfig/dist/lib/libfontconfig.so: lib/freetype/dist/lib/libfreetype.so l
 	echo "Build Fontconfig ---------" && \
 	cd lib/fontconfig && \
 	git reset --hard && \
-	patch -Np1 -i "../../build/patchs/fontconfig-fixbuild.patch" && \
-	patch -Np1 -i "../../build/patchs/fontconfig-disablepthreads.patch" && \
-	patch -Np1 -i "../../build/patchs/fontconfig-disable-uuid.patch" && \
+	patch -Np1 -i "../../build/patches/fontconfig-fixbuild.patch" && \
+	patch -Np1 -i "../../build/patches/fontconfig-disablepthreads.patch" && \
+	patch -Np1 -i "../../build/patches/fontconfig-disable-uuid.patch" && \
 	autoreconf -fiv  && \
 	EM_PKG_CONFIG_PATH=$(FONTCONFIG_PC_PATH) emconfigure ./configure \
 		CFLAGS=-O3 \
@@ -156,7 +156,7 @@ lib/harfbuzz/dist/lib/libharfbuzz.so: lib/freetype/dist/lib/libfreetype.so lib/f
 	echo "Build Harfbuzz ---------" && \
 	cd lib/harfbuzz && \
 	git reset --hard && \
-	patch -Np1 -i "../../build/patchs/harfbuzz-disablepthreads.patch" && \
+	patch -Np1 -i "../../build/patches/harfbuzz-disablepthreads.patch" && \
 	NOCONFIGURE=1 ./autogen.sh && \
 	EM_PKG_CONFIG_PATH=$(LIBASS_PC_PATH) emconfigure ./configure \
 		CFLAGS="-O3" \
@@ -180,8 +180,8 @@ lib/fribidi/configure:
 	echo "Configure Fribidi ---------" && \
 	cd lib/fribidi && \
 	git reset --hard && \
-	patch -Np1 -i "../../build/patchs/Fix-Fribidi-Build.patch" && \
-	patch -Np1 -i "../../build/patchs/fribidi-fixclang.patch" && \
+	patch -Np1 -i "../../build/patches/Fix-Fribidi-Build.patch" && \
+	patch -Np1 -i "../../build/patches/fribidi-fixclang.patch" && \
 	NOCONFIGURE=1 ./autogen.sh
 
 lib/fribidi/dist/lib/libfribidi.so: lib/fribidi/configure

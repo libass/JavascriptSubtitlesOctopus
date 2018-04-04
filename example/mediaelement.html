@@ -23,7 +23,7 @@
 
 <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mediaelement/4.2.6/mediaelement-and-player.js" integrity="sha256-GHaL+e25urcUodCnzBxIywtm9yXVT5/SDfFj2yM/Qwo=" crossorigin="anonymous"></script>
-<script src="/js/both/subtitles-octopus.js"></script>
+<script src="/dist/both/subtitles-octopus.js"></script>
 
 <script>
     mejs.i18n.language('en');
@@ -41,7 +41,7 @@
                         fonts: ['/example/fonts/CabinCondensed-Regular.ttf', '/example/fonts/SourceSansPro-SemiBold.ttf'],
                         //onReady: onReadyFunction,
                         //debug: true,
-                        workerUrl: '/js/both/subtitles-octopus-worker.js'
+                        workerUrl: '/dist/both/subtitles-octopus-worker.js'
                     };
                         window.octopusInstance = new SubtitlesOctopus(options); // You can experiment in console
                     };

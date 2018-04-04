@@ -15,7 +15,7 @@
 
 <video class="video-js vjs-big-play-centered" id="video" src="https://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4" width="600" height="500" controls data-setup="{}"></video>
 <script src="https://vjs.zencdn.net/5.14.1/video.js"></script>
-<script src="/js/both/subtitles-octopus.js"></script>
+<script src="/dist/both/subtitles-octopus.js"></script>
 
 <script>
     videojs('video').ready(function () {
@@ -28,7 +28,7 @@
                 availableFonts: {'arial': '/example/fonts/Arial.ttf', 'times new roman': '/example/fonts/TimesNewRoman.ttf', 'for example this file wouldnt be used': '/nope.ttf'}, // All available fonts (font name should be lower case). It will load only fonts really used in sub.
                 //onReady: onReadyFunction,
                 //debug: true,
-                workerUrl: '/js/both/subtitles-octopus-worker.js'
+                workerUrl: '/dist/both/subtitles-octopus-worker.js'
             };
             window.octopusInstance = new SubtitlesOctopus(options); // You can experiment in console
         };
