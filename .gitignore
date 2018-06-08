@@ -20,3 +20,4 @@ lib/expat/xmlwf/xmlwf
 *.la
 *.o
 venv/
+node_modules/

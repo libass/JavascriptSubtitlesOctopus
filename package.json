@@ -1,0 +1,34 @@
+{
+  "name": "libass_wasm",
+  "version": "18.5.0",
+  "description": "libass Subtitle Renderer and Parser library for browsers",
+  "main": "dist/wasm/subtitles-octopus.js",
+  "directories": {
+    "example": "example",
+    "lib": "dist/wasm"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TFSThiagoBR98/JavascriptSubtitlesOctopus.git"
+  },
+  "keywords": [
+    "libass",
+    "subtitle",
+    "wasm",
+    "emscripten"
+  ],
+  "author": "TFSThiagoBR98, Dador",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/TFSThiagoBR98/JavascriptSubtitlesOctopus/issues"
+  },
+  "homepage": "https://github.com/TFSThiagoBR98/JavascriptSubtitlesOctopus#readme",
+  "devDependencies": {
+    "grunt": "^1.0.2",
+    "grunt-exec": "^3.0.0",
+    "http-server": "^0.11.1"
+  }
+}

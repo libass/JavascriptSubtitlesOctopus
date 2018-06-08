@@ -18,7 +18,7 @@ LIBASSJS_DEPS = \
 	$(LIBASS_DEPS) \
 	lib/libass/dist/lib/libass.so
 
-all: git-checkout libass
+all: libass
 libass: subtitles-octopus-worker.js
 
 clean: clean-js clean-freetype clean-fribidi clean-harfbuzz clean-fontconfig clean-expat clean-libass clean-octopus
@@ -90,9 +90,7 @@ git-checkout:
 # that: it probably isn't possible to build on x86 now.
 lib/freetype/dist/lib/libfreetype.so:
 	echo "Build Freetype ---------" && \
-	cd lib/freetype && \
-	git reset --hard && \
-	patch -Np1 -i "../../build/patches/freetype-speedup.patch" && \
+	cd "lib/freetype" && \
 	NOCONFIGURE=1 ./autogen.sh && \
 	emconfigure ./configure \
 		CFLAGS="-O3" \
@@ -135,9 +133,7 @@ lib/fontconfig/dist/lib/libfontconfig.so: lib/freetype/dist/lib/libfreetype.so l
 	echo "Build Fontconfig ---------" && \
 	cd lib/fontconfig && \
 	git reset --hard && \
-	patch -Np1 -i "../../build/patches/fontconfig-fixbuild.patch" && \
-	patch -Np1 -i "../../build/patches/fontconfig-disablepthreads.patch" && \
-	patch -Np1 -i "../../build/patches/fontconfig-disable-uuid.patch" && \
+	patch -Np1 -i "../../build/patches/fontconfig-fix.patch" && \
 	autoreconf -fiv  && \
 	EM_PKG_CONFIG_PATH=$(FONTCONFIG_PC_PATH) emconfigure ./configure \
 		CFLAGS=-O3 \
@@ -181,7 +177,7 @@ lib/fribidi/configure:
 	cd lib/fribidi && \
 	git reset --hard && \
 	patch -Np1 -i "../../build/patches/Fix-Fribidi-Build.patch" && \
-	patch -Np1 -i "../../build/patches/fribidi-fixclang.patch" && \
+    patch -Np1 -i "../../build/patches/fribidi-fixclang.patch" && \
 	NOCONFIGURE=1 ./autogen.sh
 
 lib/fribidi/dist/lib/libfribidi.so: lib/fribidi/configure
@@ -193,13 +189,10 @@ lib/fribidi/dist/lib/libfribidi.so: lib/fribidi/configure
 		--prefix="$$(pwd)/dist" \
 		--host=x86-none-linux \
 		--build=x86_64 \
-		--disable-docs \
 		--disable-static \
 		--enable-shared \
 		--disable-dependency-tracking \
 		--disable-debug \
-		--without-glib \
-		--disable-pthreads \
 		&& \
 	emmake make -j8 && \
 	emmake make install
@@ -254,20 +247,7 @@ EMCC_COMMON_ARGS = \
 	#--memory-init-file 0 \
 	#-s OUTLINING_LIMIT=20000 \
 
-subtitles-octopus-sync.js: src/subtitles-octopus-worker.bc
-	echo "Build Sync Version ---------" && \
-	emcc src/subtitles-octopus-worker.bc $(LIBASSJS_DEPS) \
-		--pre-js src/pre-sync.js \
-		--post-js src/post-sync.js \
-		$(EMCC_COMMON_ARGS) && \
-		cp subtitles-octopus-sync.data subtitles-octopus-sync.js subtitles-octopus-sync.js.mem dist/wasm/ && \
-		cp src/subtitles-octopus.js dist/wasm/ && \
-		cp subtitles-octopus-sync.data subtitles-octopus-sync.js subtitles-octopus-sync.js.mem dist/asmjs/ && \
-		cp src/subtitles-octopus.js dist/asmjs/ && \
-		mv subtitles-octopus-sync.data subtitles-octopus-sync.js subtitles-octopus-sync.js.mem dist/both/ && \
-		cp src/subtitles-octopus.js dist/both/
-
-subtitles-octopus-worker.js: src/subtitles-octopus-worker.bc subtitles-octopus-sync.js
+subtitles-octopus-worker.js: src/subtitles-octopus-worker.bc
 	echo "Build Workers ---------" && \
 	emcc src/subtitles-octopus-worker.bc $(LIBASSJS_DEPS) \
 		--pre-js src/pre-worker.js \
