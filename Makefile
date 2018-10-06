@@ -276,3 +276,41 @@ git-checkout:
 
 server: # Node http server npm i -g http-server
 	http-server
+
+git-update: git-freetype git-fribidi git-fontconfig git-expat git-harfbuzz git-libass
+
+git-freetype:
+	cd lib/freetype && \
+	git reset --hard && \
+	git clean -dfx && \
+	git pull origin master
+
+git-fribidi:
+	cd lib/fribidi && \
+	git reset --hard && \
+	git clean -dfx && \
+	git pull origin master
+	
+git-fontconfig:
+	cd lib/fontconfig && \
+	git reset --hard && \
+	git clean -dfx && \
+	git pull origin master
+	
+git-expat:
+	cd lib/expat && \
+	git reset --hard && \
+	git clean -dfx && \
+	git pull origin master
+	
+git-harfbuzz:
+	cd lib/harfbuzz && \
+	git reset --hard && \
+	git clean -dfx && \
+	git pull origin master
+	
+git-libass:
+	cd lib/libass && \
+	git reset --hard && \
+	git clean -dfx && \
+	git pull origin master
