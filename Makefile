@@ -1,100 +1,69 @@
-# Compile libass and all its dependencies to JavaScript.
-# You need emsdk environment installed and activated, see:
-# <https://kripken.github.io/emscripten-site/docs/getting_started/downloads.html>.
+# SubtitleOctopus.js - Makefile
 
-FONTCONFIG_PC_PATH = ../freetype/dist/lib/pkgconfig:../expat/expat/dist/lib/pkgconfig
-LIBASS_PC_PATH = $(FONTCONFIG_PC_PATH):../fribidi/dist/lib/pkgconfig:../fontconfig/dist/lib/pkgconfig:../harfbuzz/dist/lib/pkgconfig
+# make - Build Dependencies and the SubtitleOctopus.js
+BASE_DIR:=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
+DIST_DIR:=$(BASE_DIR)dist/libraries
 
-# For Octopus Build Task
-LIBASSJS_PC_PATH = ../lib/freetype/dist/lib/pkgconfig:../lib/expat/expat/dist/lib/pkgconfig:../lib/fribidi/dist/lib/pkgconfig:../lib/fontconfig/dist/lib/pkgconfig:../lib/harfbuzz/dist/lib/pkgconfig:../lib/libass/dist/lib/pkgconfig
-	
-LIBASS_DEPS = \
-	lib/fribidi/dist/lib/libfribidi.so \
-	lib/freetype/dist/lib/libfreetype.so \
-	lib/expat/expat/dist/lib/libexpat.so \
-	lib/harfbuzz/dist/lib/libharfbuzz.so \
-	lib/fontconfig/dist/lib/libfontconfig.so
-LIBASSJS_DEPS = \
-	$(LIBASS_DEPS) \
-	lib/libass/dist/lib/libass.so
+all: subtitleoctopus
 
-all: libass
-libass: subtitles-octopus-worker.js
+subtitleoctopus: dist
 
-clean: clean-js clean-freetype clean-fribidi clean-harfbuzz clean-fontconfig clean-expat clean-libass clean-octopus
-clean-js:
-	rm -f -- libass*
-clean-freetype:
-	cd lib/freetype && rm -rf dist && make clean
-clean-fribidi:
-	cd lib/fribidi && rm -rf dist && make clean
-clean-fontconfig:
-	cd lib/fontconfig && rm -rf dist && make clean
-clean-expat:
-	cd lib/expat/expat && rm -rf dist && make clean
-clean-harfbuzz:
-	cd lib/harfbuzz && rm -rf dist && make clean
-clean-libass:
-	cd lib/libass && rm -rf dist && make clean
-clean-octopus:
-	cd src && rm -f subtitles-octopus-worker.bc && make clean
+# Fribidi -- Need LLVM/CLANG llvm-nm
 
-server:
-	# Use Node Http Server npm i -g http-server
-	http-server
-
-git-update: git-freetype git-fribidi git-fontconfig git-expat git-harfbuzz git-libass
-
-git-freetype:
-	cd lib/freetype && \
-	git reset --hard && \
-	git clean -dfx && \
-	git pull origin master
-
-git-fribidi:
+lib/fribidi/configure:
 	cd lib/fribidi && \
 	git reset --hard && \
-	git clean -dfx && \
-	git pull origin master
-	
-git-fontconfig:
-	cd lib/fontconfig && \
-	git reset --hard && \
-	git clean -dfx && \
-	git pull origin master
-	
-git-expat:
-	cd lib/expat && \
-	git reset --hard && \
-	git clean -dfx && \
-	git pull origin master
-	
-git-harfbuzz:
-	cd lib/harfbuzz && \
-	git reset --hard && \
-	git clean -dfx && \
-	git pull origin master
-	
-git-libass:
-	cd lib/libass && \
-	git reset --hard && \
-	git clean -dfx && \
-	git pull origin master
+	patch -Np1 -i "../../build/patches/fribidi_enable-lib-only-build.patch" && \
+	NOCONFIGURE=1 ./autogen.sh
 
-git-checkout:
-	git submodule sync --recursive && \
-	git submodule update --init --recursive
-	
-# host/build flags are used to enable cross-compiling
-# (values must differ) but there should be some better way to achieve
-# that: it probably isn't possible to build on x86 now.
-lib/freetype/dist/lib/libfreetype.so:
-	echo "Build Freetype ---------" && \
+dist/libraries/lib/libfribidi.so: lib/fribidi/configure
+	cd lib/fribidi && \
+	emconfigure ./configure \
+		CFLAGS='-O3' \
+		NM=llvm-nm \
+		--prefix="$(DIST_DIR)" \
+		--host=x86-none-linux \
+		--build=x86_64 \
+		--disable-static \
+		--enable-shared \
+		--disable-dependency-tracking \
+		--disable-debug \
+	&& \
+	emmake make -j8 && \
+	emmake make install
+
+# Expat --
+
+lib/expat/expat/configure:
+	cd lib/expat/expat && \
+	./buildconf.sh
+
+dist/libraries/lib/libexpat.so: lib/expat/expat/configure
+	cd lib/expat/expat && \
+	emconfigure ./configure \
+		CFLAGS=-O3 \
+		--prefix="$(DIST_DIR)" \
+		--host=x86-none-linux \
+		--build=x86_64 \
+		--disable-static \
+		--enable-shared \
+		--disable-dependency-tracking \
+		--without-docbook \
+		--without-xmlwf \
+	&& \
+	emmake make -j8 && \
+	emmake make install
+
+# Freetype without Harfbuzz --
+
+lib/freetype/build_hb/dist_hb/lib/libfreetype.so:
 	cd "lib/freetype" && \
 	NOCONFIGURE=1 ./autogen.sh && \
-	emconfigure ./configure \
-		CFLAGS="-O3" \
-		--prefix="$$(pwd)/dist" \
+	mkdir -p build_hb && \
+	cd build_hb && \
+	emconfigure ../configure \
+		CFLAGS='-O3' \
+		--prefix="$$(pwd)/dist_hb" \
 		--host=x86-none-linux \
 		--build=x86_64 \
 		--disable-static \
@@ -104,59 +73,23 @@ lib/freetype/dist/lib/libfreetype.so:
 		--without-bzip2 \
 		--without-png \
 		--without-harfbuzz \
-		&& \
+	&& \
 	emmake make -j8 && \
 	emmake make install
 
-lib/expat/expat/configure:
-	echo "Configure Expat ---------" && \
-	cd lib/expat/expat && ./buildconf.sh
+# Harfbuzz
+harfbuzz: dist/libraries/lib/libharfbuzz.so
 
-lib/expat/expat/dist/lib/libexpat.so: lib/expat/expat/configure
-	echo "Build Expat ---------" && \
-	cd lib/expat/expat && \
-	emconfigure ./configure \
-		CFLAGS=-O3 \
-		--prefix="$$(pwd)/dist" \
-		--host=x86-none-linux \
-		--build=x86_64 \
-		--disable-static \
-		--enable-shared \
-		--disable-dependency-tracking \
-		--without-docbook \
-		--without-xmlwf \
-		&& \
-	emmake make -j8 && \
-	emmake make install
-
-lib/fontconfig/dist/lib/libfontconfig.so: lib/freetype/dist/lib/libfreetype.so lib/expat/expat/dist/lib/libexpat.so
-	echo "Build Fontconfig ---------" && \
-	cd lib/fontconfig && \
-	git reset --hard && \
-	patch -Np1 -i "../../build/patches/fontconfig-fix.patch" && \
-	autoreconf -fiv  && \
-	EM_PKG_CONFIG_PATH=$(FONTCONFIG_PC_PATH) emconfigure ./configure \
-		CFLAGS=-O3 \
-		--prefix="$$(pwd)/dist" \
-		--host=x86-none-linux \
-		--build=x86_64 \
-		--disable-static \
-		--enable-shared \
-		--disable-docs \
-		--with-default-fonts=/fonts \
-		&& \
-	emmake make -j8 && \
-	emmake make install
-
-lib/harfbuzz/dist/lib/libharfbuzz.so: lib/freetype/dist/lib/libfreetype.so lib/fontconfig/dist/lib/libfontconfig.so
-	echo "Build Harfbuzz ---------" && \
+lib/harfbuzz/configure:
 	cd lib/harfbuzz && \
-	git reset --hard && \
-	patch -Np1 -i "../../build/patches/harfbuzz-disablepthreads.patch" && \
-	NOCONFIGURE=1 ./autogen.sh && \
-	EM_PKG_CONFIG_PATH=$(LIBASS_PC_PATH) emconfigure ./configure \
+	NOCONFIGURE=1 ./autogen.sh
+
+dist/libraries/lib/libharfbuzz.so: lib/freetype/build_hb/dist_hb/lib/libfreetype.so lib/harfbuzz/configure
+	cd lib/harfbuzz && \
+	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig:$(BASE_DIR)lib/freetype/build_hb/dist_hb/lib/pkgconfig \
+	emconfigure ./configure \
 		CFLAGS="-O3" \
-		--prefix="$$(pwd)/dist" \
+		--prefix="$(DIST_DIR)" \
 		--host=x86-none-linux \
 		--build=x86_64 \
 		--disable-static \
@@ -164,49 +97,75 @@ lib/harfbuzz/dist/lib/libharfbuzz.so: lib/freetype/dist/lib/libfreetype.so lib/f
 		--disable-dependency-tracking \
 		\
 		--without-cairo \
-		--with-fontconfig \
+		--without-fontconfig \
 		--without-icu \
 		--with-freetype \
 		--without-glib \
-		&& \
+	&& \
 	emmake make -j8 && \
 	emmake make install
 
-lib/fribidi/configure:
-	echo "Configure Fribidi ---------" && \
-	cd lib/fribidi && \
+# Freetype with Harfbuzz
+dist/libraries/lib/libfreetype.so: dist/libraries/lib/libharfbuzz.so
+	cd "lib/freetype" && \
 	git reset --hard && \
-	patch -Np1 -i "../../build/patches/Fix-Fribidi-Build.patch" && \
-    patch -Np1 -i "../../build/patches/fribidi-fixclang.patch" && \
-	NOCONFIGURE=1 ./autogen.sh
-
-lib/fribidi/dist/lib/libfribidi.so: lib/fribidi/configure
-	echo "Build Fribidi ---------" && \
-	cd lib/fribidi && \
+	patch -Np1 -i "../../build/patches/freetype_disable-exports.patch" && \
+	NOCONFIGURE=1 ./autogen.sh && \
+	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
 	emconfigure ./configure \
 		CFLAGS='-O3' \
-		NM=llvm-nm \
-		--prefix="$$(pwd)/dist" \
+		--prefix="$(DIST_DIR)" \
 		--host=x86-none-linux \
 		--build=x86_64 \
 		--disable-static \
 		--enable-shared \
-		--disable-dependency-tracking \
-		--disable-debug \
-		&& \
+		\
+		--without-zlib \
+		--without-bzip2 \
+		--without-png \
+		--with-harfbuzz \
+	&& \
 	emmake make -j8 && \
 	emmake make install
 
-lib/libass/configure:
-	echo "Configure LibASS ---------" && \
-	cd lib/libass && NOCONFIGURE=1 ./autogen.sh
+# Fontconfig --
 
-lib/libass/dist/lib/libass.so: lib/libass/configure $(LIBASS_DEPS)
-	echo "Build LibASS ---------" && \
+lib/fontconfig/configure: 
+	cd lib/fontconfig && \
+	git reset --hard && \
+	patch -Np1 -i "../../build/patches/fontconfig_disable-tests.patch" && \
+	patch -Np1 -i "../../build/patches/fontconfig_fix-fcstats-emscripten.patch" && \
+	patch -Np1 -i "../../build/patches/fontconfig_use_uuid_generate.patch" && \
+	NOCONFIGURE=1 ./autogen.sh
+
+dist/libraries/lib/libfontconfig.so: dist/libraries/lib/libharfbuzz.so dist/libraries/lib/libexpat.so dist/libraries/lib/libfribidi.so dist/libraries/lib/libfreetype.so lib/fontconfig/configure
+	cd lib/fontconfig && \
+	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
+	emconfigure ./configure \
+		CFLAGS=-O3 \
+		--prefix="$(DIST_DIR)" \
+		--host=x86-none-linux \
+		--build=x86_64 \
+		--disable-static \
+		--enable-shared \
+		--disable-docs \
+		--with-default-fonts=/fonts \
+	&& \
+	emmake make -j8 && \
+	emmake make install
+
+# libass --
+
+lib/libass/configure:
 	cd lib/libass && \
-	EM_PKG_CONFIG_PATH=$(LIBASS_PC_PATH) emconfigure ./configure \
+	NOCONFIGURE=1 ./autogen.sh
+
+dist/libraries/lib/libass.so: dist/libraries/lib/libfontconfig.so dist/libraries/lib/libharfbuzz.so dist/libraries/lib/libexpat.so dist/libraries/lib/libfribidi.so dist/libraries/lib/libfreetype.so lib/libass/configure
+	cd lib/libass && \
+	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
+	emconfigure ./configure \
 		CFLAGS='-O3' \
-		--prefix="$$(pwd)/dist" \
+		--prefix="$(DIST_DIR)" \
 		--host=x86-none-linux \
 		--build=x86_64 \
 		--disable-static \
@@ -214,21 +173,32 @@ lib/libass/dist/lib/libass.so: lib/libass/configure $(LIBASS_DEPS)
 		--enable-harfbuzz \
 		--disable-asm \
 		--enable-fontconfig \
-		&& \
+	&& \
 	emmake make -j8 && \
 	emmake make install
-	
-src/configure: $(LIBASSJS_DEPS)
-	echo "Configure ---------" && \
+
+# SubtitleOctopus.js --
+
+OCTP_DEPS = \
+	$(DIST_DIR)/lib/libfribidi.so \
+	$(DIST_DIR)/lib/libfreetype.so \
+	$(DIST_DIR)/lib/libexpat.so \
+	$(DIST_DIR)/lib/libharfbuzz.so \
+	$(DIST_DIR)/lib/libfontconfig.so \
+	$(DIST_DIR)/lib/libass.so
+
+src/Makefile:
 	cd src && \
-	autoreconf -fi && \
-	EM_PKG_CONFIG_PATH=$(LIBASSJS_PC_PATH) emconfigure ./configure --host=x86-none-linux --build=x86_64
-	
-src/subtitles-octopus-worker.bc:src/configure $(LIBASSJS_DEPS)
-	echo "Prebuild ---------" && \
+	autoreconf -fi
+
+src/subtitles-octopus-worker.bc: dist/libraries/lib/libass.so src/Makefile
 	cd src && \
+	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
+	emconfigure ./configure --host=x86-none-linux --build=x86_64 && \
 	emmake make -j8 && \
 	mv subtitlesoctopus subtitles-octopus-worker.bc
+
+# Dist Files
 
 EMCC_COMMON_ARGS = \
 	-s TOTAL_MEMORY=134217728 \
@@ -247,32 +217,62 @@ EMCC_COMMON_ARGS = \
 	#--memory-init-file 0 \
 	#-s OUTLINING_LIMIT=20000 \
 
-subtitles-octopus-worker.js: src/subtitles-octopus-worker.bc
-	echo "Build Workers ---------" && \
-	emcc src/subtitles-octopus-worker.bc $(LIBASSJS_DEPS) \
+dist: src/subtitles-octopus-worker.bc dist/subtitles-octopus-wasm-worker.js dist/subtitles-octopus-asmjs-worker.js dist/subtitles-octopus-worker.js dist/subtitles-octopus.js
+
+dist/subtitles-octopus-wasm-worker.js: src/subtitles-octopus-worker.bc
+	emcc src/subtitles-octopus-worker.bc $(OCTP_DEPS) \
 		--pre-js src/pre-worker.js \
 		--post-js src/post-worker.js \
 		-s WASM=1 \
 		-s "BINARYEN_METHOD='native-wasm'" \
 		-s "BINARYEN_TRAP_MODE='clamp'" \
-		$(EMCC_COMMON_ARGS) && \
-		mv subtitles-octopus-worker.* dist/wasm/ && \
-		cp src/subtitles-octopus.js dist/wasm/  && \
-	emcc src/subtitles-octopus-worker.bc $(LIBASSJS_DEPS) \
+		$(EMCC_COMMON_ARGS)
+
+dist/subtitles-octopus-asmjs-worker.js: src/subtitles-octopus-worker.bc
+	emcc src/subtitles-octopus-worker.bc $(OCTP_DEPS) \
 		--pre-js src/pre-worker.js \
 		--post-js src/post-worker.js \
 		-s WASM=0 \
 		-s "BINARYEN_METHOD='asmjs'" \
 		-s "BINARYEN_TRAP_MODE='clamp'" \
-		$(EMCC_COMMON_ARGS) && \
-		mv subtitles-octopus-worker.* dist/asmjs/ && \
-		cp src/subtitles-octopus.js dist/asmjs/ && \
-	emcc src/subtitles-octopus-worker.bc $(LIBASSJS_DEPS) \
+		$(EMCC_COMMON_ARGS)
+
+dist/subtitles-octopus-worker.js: src/subtitles-octopus-worker.bc
+	emcc src/subtitles-octopus-worker.bc $(OCTP_DEPS) \
 		--pre-js src/pre-worker.js \
 		--post-js src/post-worker.js \
 		-s WASM=1 \
 		-s "BINARYEN_METHOD='native-wasm,asmjs'" \
 		-s "BINARYEN_TRAP_MODE='clamp'" \
-		$(EMCC_COMMON_ARGS) && \
-		mv subtitles-octopus-worker.* dist/both/ && \
-		cp src/subtitles-octopus.js dist/both/
+		$(EMCC_COMMON_ARGS)
+
+dist/subtitles-octopus.js:
+	cp src/subtitles-octopus.js dist/
+
+# Clean Tasks
+
+clean: clean-dist clean-freetype clean-fribidi clean-harfbuzz clean-fontconfig clean-expat clean-libass clean-octopus
+
+clean-dist:
+	cd dist && rm -frv ./*
+clean-freetype:
+	cd lib/freetype && git clean -fdx
+clean-fribidi:
+	cd lib/fribidi && git clean -fdx
+clean-fontconfig:
+	cd lib/fontconfig && git clean -fdx
+clean-expat:
+	cd lib/expat/expat && git clean -fdx
+clean-harfbuzz:
+	cd lib/harfbuzz && git clean -fdx
+clean-libass:
+	cd lib/libass && git clean -fdx
+clean-octopus:
+	cd src && git clean -fdx
+
+git-checkout:
+	git submodule sync --recursive && \
+	git submodule update --init --recursive
+
+server: # Node http server npm i -g http-server
+	http-server
