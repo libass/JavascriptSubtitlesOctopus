@@ -1,7 +1,8 @@
 [![Build Status](https://travis-ci.org/TFSThiagoBR98/JavascriptSubtitlesOctopus.svg?branch=master)](https://travis-ci.org/TFSThiagoBR98/JavascriptSubtitlesOctopus)
+
 SubtitlesOctopus displays subtitles in .ass format and easily integrates with HTML5 videos. It supports all SSA/ASS features and fully compatible with [libass](https://github.com/libass/libass).
 
-[ONLINE DEMO](https://dador.github.io/JavascriptSubtitlesOctopus/videojs.html) / [other examples with demo](https://dador.github.io/JavascriptSubtitlesOctopus/)
+[ONLINE DEMO]() / [other examples with demo]()
 
 ## Features
 
@@ -12,6 +13,14 @@ SubtitlesOctopus displays subtitles in .ass format and easily integrates with HT
 - Doesn't use DOM manipulations and render subtitles on single canvas
 - Fully compatible with [libass](https://github.com/libass/libass)
 - Easy to use - just connect it to video element
+
+## Included Libraries
+
+* expat
+* fontconfig
+* freetype
+* fribidi
+* harfbuzz
 
 ## How to use?
 
@@ -40,24 +49,48 @@ var instance = new SubtitlesOctopus(options);
 instance.setCurrentTime(15); // Render subtitles at 00:15 on your canvas
 ```
 
-[See other examples](https://github.com/Dador/JavascriptSubtitlesOctopus/tree/master/example).
+[See other examples]().
 
 ## How to build?
 
-1) Install [EMSDK](http://kripken.github.io/emscripten-site/docs/getting_started/downloads.html) (it will take awhile). We recommend using Linux because building on Windows isn't tested.
-2) Don't forget to activate emsdk environment:
-```
-source ./emsdk_env.sh
-```
-3) Clone repo with submodules:
-```
-git clone --recursive -j8 git@github.com:Dador/JavascriptSubtitlesOctopus.git
-```
-4) Run make:
-```
-cd JavascriptSubtitlesOctopus
-make
-```
+### Dependencies
+* emscripten
+* llvm
+* clang
+* ragel
+* make
+* nodejs
+* npm
+* npx
+* autoconf
+* python2
+* pkgconfig
+* patch
+* libtool
+* itstool
+* automake
+* python2-lxml
+* python2-pip
+* python2-html5lib
+* python2-chardet
+* gperf
+
+### Get the Source
+
+Run ´git clone --recursive https://github.com/TFSThiagoBR98/JavascriptSubtitlesOctopus.git´
+
+### Using Grunt
+
+1) Install Node and NPM
+2) Run ´npm install´
+3) Install Dependencies, see above
+4) Run ´npx grunt´
+5) Artifacts are in /dist
+
+### Using Make
+1) Install Dependencies, see above
+2) Run make
+3) Artifacts are in /dist
 
 ## Why "Octopus"?
 How am I an Octopus? [Ba da ba da ba!](https://www.youtube.com/watch?v=tOzOD-82mW0)

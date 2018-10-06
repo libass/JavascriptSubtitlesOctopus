@@ -14,6 +14,7 @@ Module["preRun"].push(function () {
             self.subContent = Module["read"](self.subUrl);
         }
         // TODO: It's better to check "Format:" before parsing styles because "Fontname" can be at different place
+        self.fonts = [];
         var regex1 = /\nStyle: [^,]*?,([^,]*?),/ig;
         var regex2 = /\\fn([^\\}]*?)[\\}]/g;
         var fontsInSub = {};

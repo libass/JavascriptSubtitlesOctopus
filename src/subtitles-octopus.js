@@ -69,7 +69,7 @@ var SubtitlesOctopus = function (options) {
             width: self.canvas.width,
             height: self.canvas.height,
             URL: document.URL,
-            currentScriptUrl: self.workerUrl,
+            currentScript: self.workerUrl,
             preMain: true,
             subUrl: self.subUrl,
             subContent: self.subContent,

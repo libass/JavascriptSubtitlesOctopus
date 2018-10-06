@@ -1,6 +1,7 @@
 module.exports = function(grunt) {
 
     // Project configuration.
+
     // Build order:
     // fribidi
     // expat
@@ -9,49 +10,46 @@ module.exports = function(grunt) {
     // harfbuzz
     // libass
     // octopus
-    // final
+
     const fs = require('fs');
     const path = require('path');
 
     var FREETYPE_PC_PATH = [
         path.resolve('./lib/harfbuzz/dist/lib/pkgconfig')
-        
     ];
     var FONTCONFIG_PC_PATH = [
+        path.resolve('./lib/harfbuzz/dist/lib/pkgconfig'),
+        path.resolve('./lib/fribidi/dist/lib/pkgconfig'),
         path.resolve('./lib/freetype/dist/lib/pkgconfig'),
         path.resolve('./lib/expat/expat/dist/lib/pkgconfig')
     ];
     var HARFBUZZ_PC_PATH = [
-        '../fribidi/dist/lib/pkgconfig',
-        '../freetype/dist_hb/lib/pkgconfig',
-        '../expat/expat/dist/lib/pkgconfig'
+        path.resolve('./lib/fribidi/dist/lib/pkgconfig'),
+        path.resolve('./lib/freetype/dist_hb/lib/pkgconfig'),
+        path.resolve('./lib/expat/expat/dist/lib/pkgconfig')
     ];
     var LIBASS_PC_PATH = [
-        '../fribidi/dist/lib/pkgconfig',
-        '../fontconfig/dist/lib/pkgconfig',
-        '../harfbuzz/dist/lib/pkgconfig'
+        path.resolve('./lib/fribidi/dist/lib/pkgconfig'),
+        path.resolve('./lib/fontconfig/dist/lib/pkgconfig'),
+        path.resolve('./lib/harfbuzz/dist/lib/pkgconfig')
     ];
 
     var LIBASSJS_PC_PATH = [
-        '../lib/freetype/dist/lib/pkgconfig',
-        '../lib/expat/expat/dist/lib/pkgconfig',
-        '../lib/fribidi/dist/lib/pkgconfig',
-        '../lib/fontconfig/dist/lib/pkgconfig',
-        '../lib/harfbuzz/dist/lib/pkgconfig',
-        '../lib/libass/dist/lib/pkgconfig'
+        path.resolve('./lib/lib/freetype/dist/lib/pkgconfig'),
+        path.resolve('./lib/lib/expat/expat/dist/lib/pkgconfig'),
+        path.resolve('./lib/lib/fribidi/dist/lib/pkgconfig'),
+        path.resolve('./lib/lib/fontconfig/dist/lib/pkgconfig'),
+        path.resolve('./lib/lib/harfbuzz/dist/lib/pkgconfig'),
+        path.resolve('./lib/lib/libass/dist/lib/pkgconfig')
     ];
 
     var LIBASS_DEPS = [
-        'lib/fribidi/dist/lib/libfribidi.so',
-	    'lib/freetype/dist/lib/libfreetype.so',
-	    'lib/expat/expat/dist/lib/libexpat.so',
-	    'lib/harfbuzz/dist/lib/libharfbuzz.so',
-        'lib/fontconfig/dist/lib/libfontconfig.so',
-        'lib/libass/dist/lib/libass.so'
-    ];
-
-    var LIBASSJS_DEPS = [
-        
+        path.resolve('lib/fribidi/dist/lib/libfribidi.so'),
+	    path.resolve('lib/freetype/dist/lib/libfreetype.so'),
+	    path.resolve('lib/expat/expat/dist/lib/libexpat.so'),
+	    path.resolve('lib/harfbuzz/dist/lib/libharfbuzz.so'),
+        path.resolve('lib/fontconfig/dist/lib/libfontconfig.so'),
+        path.resolve('lib/libass/dist/lib/libass.so')
     ];
 
     var EMCC_COMMON_ARGS = '' +
@@ -65,32 +63,20 @@ module.exports = function(grunt) {
 	'--preload-file fonts.conf ' +
 	'-s ALLOW_MEMORY_GROWTH=1 ' +
 	'-s FORCE_FILESYSTEM=1 ' +
-    '-o subtitles-octopus-worker.js ';
+    '-o "subtitles-octopus-worker.js" ';
     
     grunt.initConfig({
         pkg: grunt.file.readJSON('package.json'),
         exec: {
-            fribidi_stage1: {
+            fribidi_configure: {
                 cwd: './lib/fribidi',
                 cmd: function() {
-                    if (!fs.existsSync("./lib/fribidi/configure")) {
+                    if (!fs.existsSync("./lib/fribidi/config.status")) {
                         return [
                             'git reset --hard &&',
-                            'patch -Np1 -i "../../build/patches/Fix-Fribidi-Build.patch" &&',
-                            'patch -Np1 -i "../../build/patches/fribidi-fixclang.patch" && ',
-                            'NOCONFIGURE=1 ./autogen.sh'
-                        ].join(' ');
-                    } else {
-                        return 'echo Bypass';
-                    }
-                }
-            },
-            fribidi_stage2: {
-                cwd: './lib/fribidi',
-                cmd: function() {
-                    if (!fs.existsSync("./lib/fribidi/dist/lib/libfribidi.so")) {
-                        return [
-                            'emconfigure ./configure',
+                            'patch -Np1 -i "../../build/patches/fribidi_enable-lib-only-build.patch" &&',
+                            'NOCONFIGURE=1 ./autogen.sh &&',
+                            'emconfigure ./configure ',
                             'CFLAGS=\'-O3\' NM=llvm-nm',
                             '--prefix="' + path.resolve('./lib/fribidi/dist') + '" ' +
                             '--host=x86-none-linux',
@@ -98,8 +84,18 @@ module.exports = function(grunt) {
                             '--disable-static',
                             '--enable-shared',
                             '--disable-dependency-tracking',
-                            '--disable-debug',
-                            '&&',
+                            '--disable-debug'
+                        ].join(' ');
+                    } else {
+                        return 'echo Bypass';
+                    }
+                }
+            },
+            fribidi_build: {
+                cwd: './lib/fribidi',
+                cmd: function() {
+                    if (!fs.existsSync("./lib/fribidi/dist/lib/libfribidi.so")) {
+                        return [
                             'emmake make -j8 &&',
                             'emmake make install'
                         ].join(' ');
@@ -108,23 +104,13 @@ module.exports = function(grunt) {
                     }
                 }
             },
-            expat_stage1: {
+            expat_configure: {
                 cwd: './lib/expat/expat',
                 cmd: function() {
-                    if (!fs.existsSync("./lib/expat/expat/configure")) {
+                    if (!fs.existsSync("./lib/expat/expat/config.status")) {
                         return [
-                            './buildconf.sh'
-                        ].join(' ');
-                    } else {
-                        return 'echo Bypass';
-                    }
-                }
-            },
-            expat_stage2: {
-                cwd: './lib/expat/expat',
-                cmd: function() {
-                    if (!fs.existsSync("./lib/expat/expat/dist/lib/libexpat.so")) {
-                        return [
+                            './buildconf.sh',
+                            '&&',
                             'emconfigure ./configure',
                             'CFLAGS=\'-O3\'',
                             '--prefix="' + path.resolve('./lib/expat/expat/dist') + '" ' +
@@ -135,7 +121,17 @@ module.exports = function(grunt) {
                             '--disable-dependency-tracking',
                             '--without-docbook',
                             '--without-xmlwf',
-                            '&&',
+                        ].join(' ');
+                    } else {
+                        return 'echo Bypass';
+                    }
+                }
+            },
+            expat_build: {
+                cwd: './lib/expat/expat',
+                cmd: function() {
+                    if (!fs.existsSync("./lib/expat/expat/dist/lib/libexpat.so")) {
+                        return [
                             'emmake make -j8 &&',
                             'emmake make install'
                         ].join(' ');
@@ -144,14 +140,14 @@ module.exports = function(grunt) {
                     }
                 }
             },
-            freetype_hb: {
+            freetype_hb_configure: {
                 cwd: './lib/freetype',
                 cmd: function() {
-                    if (!fs.existsSync("./lib/freetype/dist_hb/lib/libfreetype.so")) {
+                    if (!fs.existsSync("./lib/freetype/build_hb/config.status")) {
                         return [
-                            'git reset --hard &&',
                             'NOCONFIGURE=1 ./autogen.sh &&',
-                            'emconfigure ./configure',
+                            'mkdir -p build_hb && cd build_hb &&',
+                            'emconfigure ../configure',
                             'CFLAGS=\'-O3\'',
                             '--prefix="' + path.resolve('./lib/freetype/dist_hb') + '" ' +
                             '--host=x86-none-linux',
@@ -162,7 +158,17 @@ module.exports = function(grunt) {
                             '--without-bzip2',
                             '--without-png',
                             '--without-harfbuzz',
-                            '&&',
+                        ].join(' ');
+                    } else {
+                        return 'echo Bypass';
+                    }
+                }
+            },
+            freetype_hb_build: {
+                cwd: './lib/freetype/build_hb',
+                cmd: function() {
+                    if (!fs.existsSync("./lib/freetype/dist_hb/lib/libfreetype.so")) {
+                        return [
                             'emmake make -j8 &&',
                             'emmake make install'
                         ].join(' ');
@@ -171,13 +177,11 @@ module.exports = function(grunt) {
                     }
                 }
             },
-            harfbuzz: {
+            harfbuzz_configure: {
                 cwd: './lib/harfbuzz',
                 cmd: function() {
-                    if (!fs.existsSync("./lib/harfbuzz/dist/lib/libharfbuzz.so")) {
+                    if (!fs.existsSync("./lib/harfbuzz/config.status")) {
                         return [
-                            'git reset --hard &&',
-                            'patch -Np1 -i "../../build/patches/harfbuzz-disablepthreads.patch" &&',
                             'NOCONFIGURE=1 ./autogen.sh &&',
                             'EM_PKG_CONFIG_PATH=' + HARFBUZZ_PC_PATH.join(':'),
                             'emconfigure ./configure',
@@ -193,8 +197,18 @@ module.exports = function(grunt) {
                             '--without-fontconfig',
                             '--without-icu',
                             '--with-freetype',
-                            '--without-glib',
-                            '&&',
+                            '--without-glib'
+                        ].join(' ');
+                    } else {
+                        return 'echo Bypass';
+                    }
+                }
+            },
+            harfbuzz_build: {
+                cwd: './lib/harfbuzz',
+                cmd: function() {
+                    if (!fs.existsSync("./lib/harfbuzz/dist/lib/libharfbuzz.so")) {
+                        return [
                             'emmake make -j8 &&',
                             'emmake make install'
                         ].join(' ');
@@ -203,12 +217,13 @@ module.exports = function(grunt) {
                     }
                 }
             },
-            freetype: {
+            freetype_configure: {
                 cwd: './lib/freetype',
                 cmd: function() {
-                    if (!fs.existsSync("./lib/freetype/dist/lib/libfreetype.so")) {
+                    if (!fs.existsSync("./lib/freetype/builds/unix/config.status")) {
                         return [
                             'git reset --hard &&',
+                            'patch -Np1 -i "../../build/patches/freetype_disable-exports.patch" &&',
                             'NOCONFIGURE=1 ./autogen.sh &&',
                             'EM_PKG_CONFIG_PATH=' + FREETYPE_PC_PATH.join(':'),
                             'emconfigure ./configure',
@@ -221,8 +236,18 @@ module.exports = function(grunt) {
                             '--without-zlib',
                             '--without-bzip2',
                             '--without-png',
-                            '--with-harfbuzz',
-                            '&&',
+                            '--with-harfbuzz'
+                        ].join(' ');
+                    } else {
+                        return 'echo Bypass';
+                    }
+                }
+            },
+            freetype_build: {
+                cwd: './lib/freetype',
+                cmd: function() {
+                    if (!fs.existsSync("./lib/freetype/dist/lib/libfreetype.so")) {
+                        return [
                             'emmake make -j8 &&',
                             'emmake make install'
                         ].join(' ');
@@ -231,13 +256,15 @@ module.exports = function(grunt) {
                     }
                 }
             },
-            fontconfig: {
+            fontconfig_configure: {
                 cwd: './lib/fontconfig',
                 cmd: function() {
-                    if (!fs.existsSync("./lib/fontconfig/dist/lib/libfontconfig.so")) {
+                    if (!fs.existsSync("./lib/fontconfig/config.status")) {
                         return [
                             'git reset --hard &&',
-                            'patch -Np1 -i "../../build/patches/fontconfig-fix.patch" &&',
+                            'patch -Np1 -i "../../build/patches/fontconfig_disable-tests.patch" &&',
+                            'patch -Np1 -i "../../build/patches/fontconfig_fix-fcstats-emscripten.patch" &&',
+                            'patch -Np1 -i "../../build/patches/fontconfig_use_uuid_generate.patch" &&',
                             'NOCONFIGURE=1 ./autogen.sh &&',
                             'EM_PKG_CONFIG_PATH=' + FONTCONFIG_PC_PATH.join(':'),
                             'emconfigure ./configure',
@@ -248,8 +275,18 @@ module.exports = function(grunt) {
                             '--disable-static',
                             '--enable-shared',
                             '--disable-docs',
-                            '--with-default-fonts=/fonts',
-                            '&&',
+                            '--with-default-fonts=/fonts'
+                        ].join(' ');
+                    } else {
+                        return 'echo Bypass';
+                    }
+                }
+            },
+            fontconfig_build: {
+                cwd: './lib/fontconfig',
+                cmd: function() {
+                    if (!fs.existsSync("./lib/fontconfig/dist/lib/libfontconfig.so")) {
+                        return [
                             'emmake make -j8 &&',
                             'emmake make install'
                         ].join(' ');
@@ -258,12 +295,11 @@ module.exports = function(grunt) {
                     }
                 }
             },
-            libass: {
+            libass_configure: {
                 cwd: './lib/libass',
                 cmd: function() {
-                    if (!fs.existsSync("./lib/libass/dist/lib/libass.so")) {
+                    if (!fs.existsSync("./lib/libass/config.status")) {
                         return [
-                            'git reset --hard &&',
                             'NOCONFIGURE=1 ./autogen.sh &&',
                             'EM_PKG_CONFIG_PATH=' + FONTCONFIG_PC_PATH.join(':') + ':' + LIBASS_PC_PATH.join(':'),
                             'emconfigure ./configure',
@@ -285,7 +321,20 @@ module.exports = function(grunt) {
                     }
                 }
             },
-            stage1: {
+            libass_build: {
+                cwd: './lib/libass',
+                cmd: function() {
+                    if (!fs.existsSync("./lib/libass/dist/lib/libass.so")) {
+                        return [
+                            'emmake make -j8 &&',
+                            'emmake make install'
+                        ].join(' ');
+                    } else {
+                        return 'echo Bypass';
+                    }
+                }
+            },
+            octopus_configure: {
                 cwd: './src',
                 cmd: function() {
                     if (!fs.existsSync("./src/subtitles-octopus-worker.bc")) {
@@ -301,10 +350,12 @@ module.exports = function(grunt) {
                     }
                 }
             },
-            wasm: {
+            octopus_wasm: {
                 cmd: function() {
                     if (fs.existsSync("./src/subtitles-octopus-worker.bc")) {
                         return [
+                            'rm -frv subtitles-octopus-worker.* ./dist/wasm &&',
+                            'mkdir ./dist/wasm &&',
                             'emcc -v src/subtitles-octopus-worker.bc',
                             LIBASS_DEPS.join(' '),
                             '--pre-js src/pre-worker.js',
@@ -320,14 +371,230 @@ module.exports = function(grunt) {
                         return '';
                     }
                 }
+            },
+            octopus_asmjs: {
+                cmd: function() {
+                    if (fs.existsSync("./src/subtitles-octopus-worker.bc")) {
+                        return [
+                            'rm -frv subtitles-octopus-worker.* ./dist/asmjs &&',
+                            'mkdir ./dist/asmjs &&',
+                            'emcc -v src/subtitles-octopus-worker.bc',
+                            LIBASS_DEPS.join(' '),
+                            '--pre-js src/pre-worker.js',
+                            '--post-js src/post-worker.js',
+                            '-s WASM=0',
+                            '-s "BINARYEN_METHOD=\'asmjs\'"',
+                            '-s "BINARYEN_TRAP_MODE=\'clamp\'"',
+                            EMCC_COMMON_ARGS,
+                            '&& mv subtitles-octopus-worker.* dist/asmjs/ &&',
+                            'cp src/subtitles-octopus.js dist/asmjs/'
+                        ].join(' ');
+                    } else {
+                        return '';
+                    }
+                }
+            },
+            octopus_both: {
+                cmd: function() {
+                    if (fs.existsSync("./src/subtitles-octopus-worker.bc")) {
+                        return [
+                            'rm -frv subtitles-octopus-worker.* ./dist/both &&',
+                            'mkdir ./dist/both &&',
+                            'emcc -v src/subtitles-octopus-worker.bc',
+                            LIBASS_DEPS.join(' '),
+                            '--pre-js src/pre-worker.js',
+                            '--post-js src/post-worker.js',
+                            '-s WASM=1',
+                            '-s "BINARYEN_METHOD=\'native-wasm\'"',
+                            '-s "BINARYEN_TRAP_MODE=\'clamp\'"',
+                            EMCC_COMMON_ARGS,
+                            '&& mv subtitles-octopus-worker.* dist/both/ &&',
+                            'cp src/subtitles-octopus.js dist/both/'
+                        ].join(' ');
+                    } else {
+                        return '';
+                    }
+                }
+            },
+
+            // Clean
+
+            fribidi_clean: {
+                cwd: './lib/fribidi',
+                cmd: function() {
+                    return [
+                        'git reset --hard && ',
+                        'git clean -dfx'
+                    ].join(' ');
+                }
+            },
+            expat_clean: {
+                cwd: './lib/expat',
+                cmd: function() {
+                    return [
+                        'git reset --hard && ',
+                        'git clean -dfx'
+                    ].join(' ');
+                }
+            },
+            freetype_clean: {
+                cwd: './lib/freetype',
+                cmd: function() {
+                    return [
+                        'git reset --hard && ',
+                        'git clean -dfx'
+                    ].join(' ');
+                }
+            },
+            harfbuzz_clean: {
+                cwd: './lib/harfbuzz',
+                cmd: function() {
+                    return [
+                        'git reset --hard && ',
+                        'git clean -dfx'
+                    ].join(' ');
+                }
+            },
+            fontconfig_clean: {
+                cwd: './lib/fontconfig',
+                cmd: function() {
+                    return [
+                        'git reset --hard && ',
+                        'git clean -dfx'
+                    ].join(' ');
+                }
+            },
+            libass_clean: {
+                cwd: './lib/libass',
+                cmd: function() {
+                    return [
+                        'git reset --hard && ',
+                        'git clean -dfx'
+                    ].join(' ');
+                }
+            },
+            octopus_clean: {
+                cwd: './src',
+                cmd: function() {
+                    return [
+                        'git clean -dfx'
+                    ].join(' ');
+                }
+            },
+
+            // Update
+
+            fribidi_update: {
+                cwd: './lib/fribidi',
+                cmd: function() {
+                    return [
+                        'git pull origin master'
+                    ].join(' ');
+                }
+            },
+            expat_update: {
+                cwd: './lib/expat',
+                cmd: function() {
+                    return [
+                        'git pull origin master'
+                    ].join(' ');
+                }
+            },
+            freetype_update: {
+                cwd: './lib/freetype',
+                cmd: function() {
+                    return [
+                        'git pull origin master'
+                    ].join(' ');
+                }
+            },
+            harfbuzz_update: {
+                cwd: './lib/harfbuzz',
+                cmd: function() {
+                    return [
+                        'git pull origin master'
+                    ].join(' ');
+                }
+            },
+            fontconfig_update: {
+                cwd: './lib/fontconfig',
+                cmd: function() {
+                    return [
+                        'git pull origin master'
+                    ].join(' ');
+                }
+            },
+            libass_update: {
+                cwd: './lib/libass',
+                cmd: function() {
+                    return [
+                        'git pull origin master'
+                    ].join(' ');
+                }
+            },
+
+            getSubmodules: {
+                cmd: function() {
+                    return [
+                        'git submodule sync --recursive &&',
+                        'git submodule update --init --recursive'
+                    ].join(' ');
+                }
             }
-        }
+        },
+        
     });
   
     // Load the plugin that provides the "uglify" task.
     grunt.loadNpmTasks('grunt-exec');
   
     // Default task(s).
-    grunt.registerTask('default', ['exec']);
-  
+    grunt.registerTask('default', ['build']);
+    grunt.registerTask('build', 'build all dependencies and the project', function() {
+        grunt.task.run(
+            [
+                'exec:fribidi_configure',
+                'exec:fribidi_build',
+                'exec:expat_configure',
+                'exec:expat_build',
+                'exec:freetype_hb_configure',
+                'exec:freetype_hb_build',
+                'exec:harfbuzz_configure',
+                'exec:harfbuzz_build',
+                'exec:freetype_configure',
+                'exec:freetype_build',
+                'exec:fontconfig_configure',
+                'exec:fontconfig_build',
+                'exec:libass_configure',
+                'exec:libass_build',
+                'exec:octopus_configure',
+                'exec:octopus_wasm',
+                'exec:octopus_asmjs',
+                'exec:octopus_both'
+            ]);
+    });
+    grunt.registerTask('clean', function() {
+        grunt.task.run(
+            [
+                'exec:fribidi_clean',
+                'exec:expat_clean',
+                'exec:harfbuzz_clean',
+                'exec:freetype_clean',
+                'exec:fontconfig_clean',
+                'exec:libass_clean',
+                'exec:octopus_clean'
+            ]);
+    });
+    grunt.registerTask('update', function() {
+        grunt.task.run(
+            [
+                'exec:fribidi_update',
+                'exec:expat_update',
+                'exec:harfbuzz_update',
+                'exec:freetype_update',
+                'exec:fontconfig_update',
+                'exec:libass_update'
+            ]);
+    });
+    grunt.registerTask('getsubmodules', ['exec:getSubmodules']);
   };
