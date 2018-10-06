@@ -589,7 +589,7 @@ function onMessageFromMainEmscriptenThread(message) {
             screen.height = self.height = message.data.height;
             self.subUrl = message.data.subUrl;
             self.subContent = message.data.subContent;
-            self.fonts = message.data.fonts;
+            self.fontFiles = message.data.fonts;
             self.availableFonts = message.data.availableFonts;
             if (Module.canvas) {
                 Module.canvas.width_ = message.data.width;

@@ -8,13 +8,13 @@ Module["preRun"] = Module["preRun"] || [];
 Module["preRun"].push(function () {
     var i;
 
-    if (self.availableFonts) {
+    if (self.availableFonts && self.availableFonts.length != 0) {
         if (!self.subContent) {
             // We can use sync xhr cause we're inside Web Worker
             self.subContent = Module["read"](self.subUrl);
         }
         // TODO: It's better to check "Format:" before parsing styles because "Fontname" can be at different place
-        self.fonts = [];
+        self.fontFiles = [];
         var regex1 = /\nStyle: [^,]*?,([^,]*?),/ig;
         var regex2 = /\\fn([^\\}]*?)[\\}]/g;
         var fontsInSub = {};
@@ -25,7 +25,7 @@ Module["preRun"].push(function () {
             if (!(font in fontsInSub)) {
                 fontsInSub[font] = true;
                 if (font in self.availableFonts) {
-                    self.fonts.push(self.availableFonts[font]);
+                    self.fontFiles.push(self.availableFonts[font]);
                 }
             }
         }
@@ -41,9 +41,9 @@ Module["preRun"].push(function () {
 
     Module["FS_createFolder"]("/", "fonts", true, true);
     //Module["FS"].mount(Module["FS"].filesystems.IDBFS, {}, '/fonts');
-    fonts = self.fonts || [];
-    for (i = 0; i < fonts.length; i++) {
-        Module["FS_createPreloadedFile"]("/fonts", 'font' + i + '-' + fonts[i].split('/').pop(), fonts[i], true, true);
+    fontFiles = self.fontFiles || [];
+    for (i = 0; i < fontFiles.length; i++) {
+        Module["FS_createPreloadedFile"]("/fonts", 'font' + i + '-' + fontFiles[i].split('/').pop(), fontFiles[i], true, true);
     }
 });
 
