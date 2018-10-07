@@ -8,8 +8,7 @@ all: subtitleoctopus
 
 subtitleoctopus: dist
 
-# Fribidi -- Need LLVM/CLANG llvm-nm
-
+# Fribidi
 lib/fribidi/configure:
 	cd lib/fribidi && \
 	git reset --hard && \
@@ -32,8 +31,7 @@ dist/libraries/lib/libfribidi.so: lib/fribidi/configure
 	emmake make -j8 && \
 	emmake make install
 
-# Expat --
-
+# Expat
 lib/expat/expat/configure:
 	cd lib/expat/expat && \
 	./buildconf.sh
@@ -54,8 +52,7 @@ dist/libraries/lib/libexpat.so: lib/expat/expat/configure
 	emmake make -j8 && \
 	emmake make install
 
-# Freetype without Harfbuzz --
-
+# Freetype without Harfbuzz
 lib/freetype/build_hb/dist_hb/lib/libfreetype.so:
 	cd "lib/freetype" && \
 	NOCONFIGURE=1 ./autogen.sh && \
@@ -78,8 +75,6 @@ lib/freetype/build_hb/dist_hb/lib/libfreetype.so:
 	emmake make install
 
 # Harfbuzz
-harfbuzz: dist/libraries/lib/libharfbuzz.so
-
 lib/harfbuzz/configure:
 	cd lib/harfbuzz && \
 	NOCONFIGURE=1 ./autogen.sh
@@ -128,8 +123,7 @@ dist/libraries/lib/libfreetype.so: dist/libraries/lib/libharfbuzz.so
 	emmake make -j8 && \
 	emmake make install
 
-# Fontconfig --
-
+# Fontconfig
 lib/fontconfig/configure: 
 	cd lib/fontconfig && \
 	git reset --hard && \
@@ -170,15 +164,15 @@ dist/libraries/lib/libass.so: dist/libraries/lib/libfontconfig.so dist/libraries
 		--build=x86_64 \
 		--disable-static \
 		--enable-shared \
-		--enable-harfbuzz \
 		--disable-asm \
+		\
+		--enable-harfbuzz \
 		--enable-fontconfig \
 	&& \
 	emmake make -j8 && \
 	emmake make install
 
-# SubtitleOctopus.js --
-
+# SubtitleOctopus.js
 OCTP_DEPS = \
 	$(DIST_DIR)/lib/libfribidi.so \
 	$(DIST_DIR)/lib/libfreetype.so \
@@ -199,7 +193,6 @@ src/subtitles-octopus-worker.bc: dist/libraries/lib/libass.so src/Makefile
 	mv subtitlesoctopus subtitles-octopus-worker.bc
 
 # Dist Files
-
 EMCC_COMMON_ARGS = \
 	-s TOTAL_MEMORY=134217728 \
 	-O3 \

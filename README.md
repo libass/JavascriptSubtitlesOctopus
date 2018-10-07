@@ -1,8 +1,8 @@
-[![Build Status](https://travis-ci.org/TFSThiagoBR98/JavascriptSubtitlesOctopus.svg?branch=master)](https://travis-ci.org/TFSThiagoBR98/JavascriptSubtitlesOctopus)
+[![Build Status](https://gitlab.com/TFSThiagoBR98/JavascriptSubtitlesOctopus/badges/master/build.svg)](https://gitlab.com/TFSThiagoBR98/JavascriptSubtitlesOctopus/pipelines)
 
 SubtitlesOctopus displays subtitles in .ass format and easily integrates with HTML5 videos. It supports all SSA/ASS features and fully compatible with [libass](https://github.com/libass/libass).
 
-[ONLINE DEMO]() / [other examples with demo]()
+[ONLINE DEMO](https://dador.github.io/JavascriptSubtitlesOctopus/videojs.html) / [other examples with demo](https://dador.github.io/JavascriptSubtitlesOctopus/)
 
 ## Features
 
@@ -49,19 +49,16 @@ var instance = new SubtitlesOctopus(options);
 instance.setCurrentTime(15); // Render subtitles at 00:15 on your canvas
 ```
 
-[See other examples]().
+[See other examples](https://github.com/Dador/JavascriptSubtitlesOctopus/tree/master/example).
 
 ## How to build?
 
 ### Dependencies
-* emscripten
+* emscripten (Configure the enviroment)
 * llvm
 * clang
 * ragel
 * make
-* nodejs
-* npm
-* npx
 * autoconf
 * python2
 * pkgconfig
@@ -77,20 +74,17 @@ instance.setCurrentTime(15); // Render subtitles at 00:15 on your canvas
 
 ### Get the Source
 
-Run ´git clone --recursive https://github.com/TFSThiagoBR98/JavascriptSubtitlesOctopus.git´
+Run `git clone --recursive https://github.com/TFSThiagoBR98/JavascriptSubtitlesOctopus.git`
 
-### Using Grunt
-
-1) Install Node and NPM
-2) Run ´npm install´
-3) Install Dependencies, see above
-4) Run ´npx grunt´
-5) Artifacts are in /dist
-
-### Using Make
+### Build
 1) Install Dependencies, see above
-2) Run make
+2) `cd JavascriptSubtitlesOctopus`
+2) `make`
 3) Artifacts are in /dist
+
+## Branches
+* Master - Development Branch with upstream libraries
+* stable - Stable Libraries
 
 ## Why "Octopus"?
 How am I an Octopus? [Ba da ba da ba!](https://www.youtube.com/watch?v=tOzOD-82mW0)
