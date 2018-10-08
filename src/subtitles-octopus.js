@@ -450,6 +450,14 @@ var SubtitlesOctopus = function (options) {
     self.init();
 };
 
+module.exports = SubtitlesOctopus
+
 if (typeof SubtitlesOctopusOnLoad == 'function') {
     SubtitlesOctopusOnLoad();
+}
+
+if (typeof exports !== 'undefined') {
+    if (typeof module !== 'undefined' && module.exports) {
+        exports = module.exports = SubtitlesOctopus
+    }
 }

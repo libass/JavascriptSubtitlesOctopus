@@ -453,3 +453,9 @@ var SubtitlesOctopus = function (options) {
 if (typeof SubtitlesOctopusOnLoad == 'function') {
     SubtitlesOctopusOnLoad();
 }
+
+if (typeof exports !== 'undefined') {
+    if (typeof module !== 'undefined' && module.exports) {
+        exports = module.exports = SubtitlesOctopus
+    }
+}
