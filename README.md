@@ -82,9 +82,5 @@ Run `git clone --recursive https://github.com/TFSThiagoBR98/JavascriptSubtitlesO
 2) `make`
 3) Artifacts are in /dist
 
-## Branches
-* Master - Development Branch with upstream libraries
-* stable - Stable Libraries
-
 ## Why "Octopus"?
 How am I an Octopus? [Ba da ba da ba!](https://www.youtube.com/watch?v=tOzOD-82mW0)
