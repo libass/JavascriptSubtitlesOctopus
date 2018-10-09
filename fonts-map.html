@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="no-referrer" />
+    <link rel="shortcut icon" href="./favicon.ico?v=wAOz4X2G7G">
+    <title>SubtitlesOctopus - Advanced Substation Alpha Render for WebAssembly</title>
+    <link integrity="" rel="stylesheet" href="./assets/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js" integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T" crossorigin="anonymous"></script>
+    
+    
+    
+    <script src="./assets/js/subtitles-octopus.js"></script>
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <a class="navbar-brand" href="./index.html">SubtitlesOctopus</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarColor02" aria-controls="navbarColor02" aria-expanded="false" aria-label="Toggle navigation" style="">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+    
+      <div class="collapse navbar-collapse" id="navbarColor02">
+        <ul class="navbar-nav mr-auto">
+          <li class="nav-item active">
+            <a class="nav-link" href="./index.html">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="https://github.com/Dador/JavascriptSubtitlesOctopus">Github</a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <div id="content" style="padding-top: 25px;">
+      <div id="main" class="container container-body">
+        <h1>Font Map</h1>
+        
+        <div style="width: 800px; height: 500px;">
+            <video src="http://distribution.bbb3d.renderfarming.net/video/mp4/bbb_sunflower_1080p_30fps_normal.mp4" 
+        id="player" controls data-plyr-config='{ "volume": 1, "debug": true }'></video>
+        </div>
+        <br><br><br>
+
+        <script src="https://cdn.plyr.io/3.4.4/plyr.js"></script>
+        <link rel="stylesheet" href="https://cdn.plyr.io/3.4.4/plyr.css">
+        <script>
+            const player = new Plyr('#player');
+            player.on('ready', function () {
+                var video = document.getElementById('player');
+                window.SubtitlesOctopusOnLoad = function() {
+                    var options = {
+                        video: video,
+                        subUrl: '/JavascriptSubtitlesOctopus/subtitles/test.ass',
+                        availableFonts: {
+                          'arial': '/JavascriptSubtitlesOctopus/fonts/Arial.ttf', 
+                          'times new roman': '/JavascriptSubtitlesOctopus/fonts/TimesNewRoman.ttf', 
+                          'for example this file wouldnt be used': '/nope.ttf'
+                        }, // All available fonts (font name should be lower case). It will load only fonts really used in sub.
+                        //onReady: onReadyFunction,
+                        //debug: true,
+                        workerUrl: '/JavascriptSubtitlesOctopus/assets/js/subtitles-octopus-worker.js'
+                    };
+                    window.octopusInstance = new SubtitlesOctopus(options); // You can experiment in console
+                };
+                if (SubtitlesOctopus) {
+                    SubtitlesOctopusOnLoad();
+                }
+            });
+        </script>
+      </div>
+    </div>
+  </body>
+</html>

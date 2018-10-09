@@ -1,25 +1,63 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
+
 <head>
     <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style type="text/css">
-        body {
-            font-family: sans-serif;
-        }
-    </style>
+    <meta name="referrer" content="no-referrer" />
+    <link rel="shortcut icon" href="./favicon.ico?v=wAOz4X2G7G">
+    <title>SubtitleOctopus - Advanced Substation Alpha Library for WebAssembly & asm.js</title>
+    <link integrity="" rel="stylesheet" href="./assets/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js" integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T" crossorigin="anonymous"></script>
+    <script src="./assets/js/subtitles-octopus.js"></script>
 </head>
+
 <body>
-<a href="videojs.html">Using with Video.js player</a><br>
-<a href="jwplayer.html">Using with JW Player</a><br>
-<a href="flowplayer.html">Using with Flowplayer</a><br>
-<a href="mediaelement.html">Using with Mediaelement Multitrack</a><br>
-<a href="fonts_map.html">Fonts map example</a><br>
-<a href="railgun_op.html">Railgun OP example</a><br>
-<a href="pure.html">Using with pure HTML5 video</a><br>
-<br>
-<br>
-<a href="aspect-ratio.html">Aspect ratio (test)</a><br>
-<a href="mediaelement-dash.html">Mediaelement with Dash</a><br>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="./index.html">SubtitlesOctopus</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#nb" aria-controls="nb" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="nb">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item active">
+                    <a class="nav-link" href="./index.html">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="https://github.com/Dador/JavascriptSubtitlesOctopus">Github</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div id="content" style="padding-top: 25px;">
+        <div id="main" class="container container-body">
+            <h1>SubtitlesOctopus</h1>
+            <p>SubtitlesOctopus is a library for WebAssembly and asm.js to 
+                displays subtitles in .ass format and easily
+                integrates with HTML5 videos. It supports all SSA/ASS features
+                and fully compatible with libass.</p>
+
+            <div class="list-group">
+                <a href="./videojs.html" class="list-group-item list-group-item-action">Video.JS</a>
+                <a href="./flowplayer.html" class="list-group-item list-group-item-action">Flowplayer</a>
+                <a href="./jwplayer.html" class="list-group-item list-group-item-action">JWPlayer</a>
+                <a href="./mediaelement.html" class="list-group-item list-group-item-action">MediaElement player</a>
+                <a href="./plyr.html" class="list-group-item list-group-item-action">Plyr player</a>
+                <a href="./clappr.html" class="list-group-item list-group-item-action">Clappr player</a>
+                <a href="./native.html" class="list-group-item list-group-item-action">HTML5 Native player</a>
+                
+                <a href="./railgun.html" class="list-group-item list-group-item-action">Railgun S Karaoke Test</a>
+                <a href="./aspect-ratio.html" class="list-group-item list-group-item-action">Aspect Ratio Test</a>
+                <a href="./fonts-map.html" class="list-group-item list-group-item-action">Fonts Map Test</a>
+            </div>
+            <br/><br/><br/>
+        </div>
+    </div>
+
 </body>
 </html>

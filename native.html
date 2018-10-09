@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="no-referrer" />
+    <link rel="shortcut icon" href="./favicon.ico?v=wAOz4X2G7G">
+    <title>SubtitleOctopus - Advanced Substation Alpha Library for WebAssembly & asm.js</title>
+    <link integrity="" rel="stylesheet" href="./assets/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js" integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T" crossorigin="anonymous"></script>
+    <script src="./assets/js/subtitles-octopus.js"></script>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="./index.html">SubtitlesOctopus</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#nb" aria-controls="nb" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="nb">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item active">
+                    <a class="nav-link" href="./index.html">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="https://github.com/Dador/JavascriptSubtitlesOctopus">Github</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div id="content" style="padding-top: 25px;">
+      <div id="main" class="container container-body">
+        <h1>Native HTML5 Example</h1>
+        <div style="width: 800px; height: 500px;">
+            <video src="http://distribution.bbb3d.renderfarming.net/video/mp4/bbb_sunflower_1080p_30fps_normal.mp4" 
+              id="player" width="840" height="480" controls></video>
+        </div>
+        
+        <br>
+        Subtitles not shown in fullscreen when using with pure HTML5 video. Fullscreen working in any player with custom controls (<a href="videojs.html">see example with Video.js player</a>). <a href="https://github.com/Dador/JavascriptSubtitlesOctopus/issues/1#issuecomment-271834400">Why this happens?</a>
+        <br><br><br>
+        <script>
+            var video = document.getElementById("player");
+            window.SubtitlesOctopusOnLoad = function() {
+                var options = {
+                    video: video,
+                    subUrl: '/JavascriptSubtitlesOctopus/subtitles/test.ass',
+                    fonts: ['/JavascriptSubtitlesOctopus/fonts/Arial.ttf', '/JavascriptSubtitlesOctopus/fonts/TimesNewRoman.ttf'],
+                    //onReady: onReadyFunction,
+                    //debug: true,
+                    workerUrl: '/JavascriptSubtitlesOctopus/assets/js/subtitles-octopus-worker.js'
+                };
+                window.octopusInstance = new SubtitlesOctopus(options); // You can experiment in console
+            };
+            if (SubtitlesOctopus) {
+                SubtitlesOctopusOnLoad();
+            }
+            
+        </script>
+      </div>
+    </div>
+  </body>
+</html>
