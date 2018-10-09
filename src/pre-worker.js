@@ -41,7 +41,7 @@ Module["preRun"].push(function () {
 
     Module["FS_createFolder"]("/", "fonts", true, true);
     //Module["FS"].mount(Module["FS"].filesystems.IDBFS, {}, '/fonts');
-    fontFiles = self.fontFiles || [];
+    var fontFiles = self.fontFiles || [];
     for (i = 0; i < fontFiles.length; i++) {
         Module["FS_createPreloadedFile"]("/fonts", 'font' + i + '-' + fontFiles[i].split('/').pop(), fontFiles[i], true, true);
     }
