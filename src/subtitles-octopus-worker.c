@@ -21,7 +21,7 @@ void msg_callback(int level, const char *fmt, va_list va, void *data)
     printf("\n");
 }
 
-void libassjs_init(int frame_w, int frame_h)
+void libassjs_init(int frame_w, int frame_h, int cacheSize)
 {
     char *subfile = "sub.ass";
     ass_library = ass_library_init();
@@ -37,7 +37,7 @@ void libassjs_init(int frame_w, int frame_h)
         printf("ass_renderer_init failed!\n");
         exit(3);
     }
-
+    ass_set_cache_limits(ass_renderer, 0, cacheSize);
     ass_set_frame_size(ass_renderer, frame_w, frame_h);
     ass_set_fonts(ass_renderer, "default.ttf", NULL, ASS_FONTPROVIDER_FONTCONFIG, "/fonts.conf", 1);
 

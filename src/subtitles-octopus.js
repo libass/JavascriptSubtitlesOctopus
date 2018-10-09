@@ -1,5 +1,6 @@
 var SubtitlesOctopus = function (options) {
     var self = this;
+    self.cacheSize = options.cacheSize || 128; // Cache Size in Megabytes
     self.canvas = options.canvas; // HTML canvas element (optional if video specified)
     self.isOurCanvas = false; // (internal) we created canvas and manage it
     self.video = options.video; // HTML video element (optional if canvas specified)
@@ -66,6 +67,7 @@ var SubtitlesOctopus = function (options) {
         self.setSubUrl(options.subUrl);
         self.worker.postMessage({
             target: 'worker-init',
+            cacheSize: self.cacheSize,
             width: self.canvas.width,
             height: self.canvas.height,
             URL: document.URL,

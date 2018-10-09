@@ -43,18 +43,22 @@ Module["preRun"].push(function () {
     //Module["FS"].mount(Module["FS"].filesystems.IDBFS, {}, '/fonts');
     var fontFiles = self.fontFiles || [];
     for (i = 0; i < fontFiles.length; i++) {
-        Module["FS_createPreloadedFile"]("/fonts", 'font' + i + '-' + fontFiles[i].split('/').pop(), fontFiles[i], true, true);
+        try {
+            Module["FS_createPreloadedFile"]("/fonts", 'font' + i + '-' + fontFiles[i].split('/').pop(), fontFiles[i], true, true);
+        } catch (e) { 
+            Module["printErr"](e);
+        }
     }
 });
 
 Module['onRuntimeInitialized'] = function () {
-    self.init = Module['cwrap']('libassjs_init', 'number', ['number', 'number']);
+    self.init = Module['cwrap']('libassjs_init', 'number', ['number', 'number', 'number']);
     self._resize = Module['cwrap']('libassjs_resize', null, ['number', 'number']);
     self._render = Module['cwrap']('libassjs_render', null, ['number', 'number']);
     self.quit = Module['cwrap']('libassjs_quit', null, []);
     self.changed = Module._malloc(4);
 
-    self.init(screen.width, screen.height);
+    self.init(screen.width, screen.height, cacheSize);
 };
 
 Module["print"] = function (text) {

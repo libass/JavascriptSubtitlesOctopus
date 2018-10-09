@@ -456,6 +456,8 @@ var screen = {
     height: 0
 };
 
+var cacheSize = 128; // Megabytes
+
 //Module.canvas = document.createElement('canvas');
 
 Module.setStatus = function () {
@@ -587,6 +589,7 @@ function onMessageFromMainEmscriptenThread(message) {
             //Module.canvas = document.createElement('canvas');
             screen.width = self.width = message.data.width;
             screen.height = self.height = message.data.height;
+            cacheSize = message.data.cacheSize;
             self.subUrl = message.data.subUrl;
             self.subContent = message.data.subContent;
             self.fontFiles = message.data.fonts;
