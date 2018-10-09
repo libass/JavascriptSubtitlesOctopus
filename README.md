@@ -74,7 +74,7 @@ instance.setCurrentTime(15); // Render subtitles at 00:15 on your canvas
 
 ### Get the Source
 
-Run `git clone --recursive https://github.com/TFSThiagoBR98/JavascriptSubtitlesOctopus.git`
+Run `git clone --recursive https://github.com/Dador/JavascriptSubtitlesOctopus.git`
 
 ### Build
 1) Install Dependencies, see above
