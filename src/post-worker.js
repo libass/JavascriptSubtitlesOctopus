@@ -11,6 +11,73 @@ self.targetFps = 30;
 self.width = 0;
 self.height = 0;
 
+self.fontMap_ = {};
+self.fontId = 0;
+
+/**
+ * Make the font accessible by libass by writing it to the virtual FS.
+ * @param {!string} font the font name.
+ */
+self.writeFontToFS = function(font) {
+    font = font.trim().toLowerCase();
+    if (self.fontMap_.hasOwnProperty(font)) return;
+
+    self.fontMap_[font] = true;
+
+    if (!self.availableFonts.hasOwnProperty(font)) return;
+    var content = Module["readBinary"](self.availableFonts[font]);
+
+    Module["FS"].writeFile('/fonts/font' + (self.fontId++) + '-' + self.availableFonts[font].split('/').pop(), content, { encoding: 'binary' });
+};
+
+/**
+ * Write all font's mentioned in the .ass file to the virtual FS.
+ * @param {!string} content the file content.
+ */
+self.writeAvailableFontsToFS = function(content) {
+    if (!self.availableFonts) return;
+
+    var sections = parseAss(content);
+
+    for (var i = 0; i < sections.length; i++) {
+        for (var j = 0; j < sections[i].body; j++) {
+            if (sections[i].body[j].key === 'Style') {
+                self.writeFontToFS(sections[i].body[j].value['Fontname']);
+            }
+        }
+    }
+    
+    var regex = /\\fn([^\\}]*?)[\\}]/g;
+    var matches;
+    while (matches = regex.exec(self.subContent)) {
+        self.writeFontToFS(matches[1]);
+    }
+};
+
+/**
+ * Set the subtitle track.
+ * @param {!string} content the content of the subtitle file.
+ */
+self.setTrack = function (content) {
+    // Make sure that the fonts are loaded
+    self.writeAvailableFontsToFS(content);
+
+    // Write the subtitle file to the virtual FS.
+    Module["FS"].writeFile("/sub.ass", content);
+
+    // Tell libass to render the new track
+    self._create_track("/sub.ass");
+    self.render(true);
+};
+
+/**
+ * Set the subtitle track.
+ * @param {!string} url the URL of the subtitle file.
+ */
+self.setTrackByUrl = function (url) {
+    self.setTrack(Module["read"](url));
+};
+
 self.resize = function (width, height) {
     self.width = width;
     self.height = height;
@@ -35,7 +102,7 @@ self.setCurrentTime = function (currentTime) {
     self.lastCurrentTimeReceivedAt = Date.now();
     if (!self.rafId) {
         if (self.nextIsRaf) {
-            self.rafId = window.requestAnimationFrame(self.render);
+            self.rafId = self.requestAnimationFrame(self.render);
         }
         else {
             self.render();
@@ -62,7 +129,7 @@ self.setIsPaused = function (isPaused) {
         }
         else {
             self.lastCurrentTimeReceivedAt = Date.now();
-            self.rafId = window.requestAnimationFrame(self.render);
+            self.rafId = self.requestAnimationFrame(self.render);
         }
     }
 };
@@ -86,7 +153,7 @@ self.render = function (force) {
     }
 
     if (!self._isPaused) {
-        self.rafId = window.requestAnimationFrame(self.render);
+        self.rafId = self.requestAnimationFrame(self.render);
     }
 };
 
@@ -202,6 +269,67 @@ var IndexedObjects = {
     }
 };
 
+/**
+ * Parse the content of an .ass file.
+ * @param {!string} content the content of the file
+ */
+function parseAss(content) {
+    var m, format, lastPart, parts, key, value, tmp, i, j, body;
+    var sections = [];
+    var lines = content.split(/[\r\n]+/g);
+    for (i = 0; i < lines.length; i++) {
+        m = lines[i].match(/^\[(.*)\]$/);
+        if (m) {
+            format = null;
+            sections.push({
+                name: m[1],
+                body: []
+            });
+        } else {
+            if (/^\s*$/.test(lines[i])) continue;
+            if (sections.length === 0) continue;
+            body = sections[sections.length - 1].body;
+            if (lines[i][0] === ';') {
+                body.push({
+                    type: 'comment',
+                    value: lines[i].substring(1)
+                });
+            } else {
+                parts = lines[i].split(":");
+                key = parts[0];
+                value = parts.slice(1).join(':').trim();
+                if (format || key === 'Format') {
+                    value = value.split(',');
+                    if (format && value.length > format.length) {
+                        lastPart = value.slice(format.length - 1).join(',');
+                        value = value.slice(0, format.length - 1);
+                        value.push(lastPart);
+                    }
+                    value = value.map(function(s) {
+                        return s.trim();
+                    });
+                    if (format) {
+                        tmp = {};
+                        for (j = 0; j < value.length; j++) {
+                            tmp[format[j]] = value[j];
+                        }
+                        value = tmp;
+                    }
+                }
+                if (key === 'Format') {
+                    format = value;
+                }
+                body.push({
+                    key: key,
+                    value: value
+                });
+            }
+        }
+    }
+
+    return sections;
+};
+
 function EventListener() {
     this.listeners = {};
 
@@ -252,22 +380,22 @@ Image.prototype.onerror = function () {
 
 var HTMLImageElement = Image;
 var windowExtra = new EventListener();
-for (var x in windowExtra) window[x] = windowExtra[x];
+for (var x in windowExtra) self[x] = windowExtra[x];
 
-window.close = function window_close() {
+self.close = function window_close() {
     postMessage({target: 'window', method: 'close'});
 };
 
-window.alert = function (text) {
+self.alert = function (text) {
     Module.printErr('alert forever: ' + text);
     while (1) {
     }
     ;
 };
 
-window.scrollX = window.scrollY = 0; // TODO: proxy these
+self.scrollX = self.scrollY = 0; // TODO: proxy these
 
-window.requestAnimationFrame = (function () {
+self.requestAnimationFrame = (function () {
     // similar to Browser.requestAnimationFrame
     var nextRAF = 0;
     return function (func) {
@@ -525,7 +653,7 @@ function onMessageFromMainEmscriptenThread(message) {
             break;
         }
         case 'window': {
-            window.fireEvent(message.data.event);
+            self.fireEvent(message.data.event);
             break;
         }
         case 'canvas': {
@@ -581,9 +709,6 @@ function onMessageFromMainEmscriptenThread(message) {
             break;
         }
         case 'worker-init': {
-            if (self.subUrl) {
-                self.quit();
-            }
             //Module.canvas = document.createElement('canvas');
             screen.width = self.width = message.data.width;
             screen.height = self.height = message.data.height;
@@ -599,12 +724,21 @@ function onMessageFromMainEmscriptenThread(message) {
                 }
             }
             document.URL = message.data.URL;
-            window.fireEvent({type: 'load'});
+            self.fireEvent({type: 'load'});
             removeRunDependency('worker-init');
             break;
         }
+        case 'destory':
+            self.quit();
+            break;
+        case 'set-track':
+            self.setTrack(message.data.content);
+            break;
+        case 'set-track-by-url':
+            self.setTrackByUrl(message.data.url);
+            break;
         case 'runBenchmark': {
-            window.runBenchmark();
+            self.runBenchmark();
             break;
         }
         case 'custom': {
@@ -630,7 +764,7 @@ function postCustomMessage(data) {
     postMessage({target: 'custom', userData: data});
 }
 
-window.runBenchmark = function (seconds, pos, async) {
+self.runBenchmark = function (seconds, pos, async) {
     var totalTime = 0;
     var i = 0;
     pos = pos || 0;
@@ -655,7 +789,7 @@ window.runBenchmark = function (seconds, pos, async) {
             i++;
 
             if (async) {
-                window.requestAnimationFrame(run);
+                self.requestAnimationFrame(run);
                 return false;
             }
             else {

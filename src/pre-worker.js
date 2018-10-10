@@ -1,14 +1,11 @@
 var Module = Module || {};
 
-self.window = self;
-//var self = {};
-
 Module["preRun"] = Module["preRun"] || [];
 
 Module["preRun"].push(function () {
     var i;
 
-    if (self.availableFonts && self.availableFonts.length != 0) {
+    if (self.availableFonts && self.availableFonts.length !== 0) {
         if (!self.subContent) {
             // We can use sync xhr cause we're inside Web Worker
             self.subContent = Module["read"](self.subUrl);
@@ -33,10 +30,10 @@ Module["preRun"].push(function () {
 
     if (self.subContent) {
         Module["FS"].writeFile("/sub.ass", self.subContent);
+    } else {
+        Module["FS"].writeFile("/sub.ass", Module["read"](self.subUrl));
     }
-    else {
-        Module["FS_createPreloadedFile"]("/", "sub.ass", self.subUrl, true, false, null, Module["printErr"]);
-    }
+
     self.subContent = null;
 
     Module["FS_createFolder"]("/", "fonts", true, true);
@@ -48,13 +45,15 @@ Module["preRun"].push(function () {
 });
 
 Module['onRuntimeInitialized'] = function () {
-    self.init = Module['cwrap']('libassjs_init', 'number', ['number', 'number']);
+    self.init = Module['cwrap']('libassjs_init', 'number', ['number', 'number', 'string']);
     self._resize = Module['cwrap']('libassjs_resize', null, ['number', 'number']);
     self._render = Module['cwrap']('libassjs_render', null, ['number', 'number']);
+    self._free_track = Module['cwrap']('libassjs_free_track', null, null);
+    self._create_track = Module['cwrap']('libassjs_create_track', null, ['string']);
     self.quit = Module['cwrap']('libassjs_quit', null, []);
     self.changed = Module._malloc(4);
 
-    self.init(screen.width, screen.height);
+    self.init(screen.width, screen.height, "/sub.ass");
 };
 
 Module["print"] = function (text) {
@@ -89,18 +88,18 @@ if (typeof console === 'undefined') {
 }
 
 // performance.now() polyfill
-if ("performance" in window === false) {
-    window.performance = {};
+if ("performance" in self === false) {
+    self.performance = {};
 }
 Date.now = (Date.now || function () {
     return new Date().getTime();
 });
-if ("now" in window.performance === false) {
+if ("now" in self.performance === false) {
     var nowOffset = Date.now();
     if (performance.timing && performance.timing.navigationStart) {
         nowOffset = performance.timing.navigationStart
     }
-    window.performance.now = function now() {
+    self.performance.now = function now() {
         return Date.now() - nowOffset;
     }
 }
