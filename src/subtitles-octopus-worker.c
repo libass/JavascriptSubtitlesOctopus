@@ -21,9 +21,26 @@ void msg_callback(int level, const char *fmt, va_list va, void *data)
     printf("\n");
 }
 
-void libassjs_init(int frame_w, int frame_h)
+void libassjs_free_track()
 {
-    char *subfile = "sub.ass";
+    if (track)
+    {
+        ass_free_track(track);
+    }
+}
+
+void libassjs_create_track(char *subfile)
+{
+    libassjs_free_track();
+    track = ass_read_file(ass_library, subfile, NULL);
+    if (!track) {
+        printf("track init failed!\n");
+        exit(4);
+    }
+}
+
+void libassjs_init(int frame_w, int frame_h, char *subfile)
+{
     ass_library = ass_library_init();
     if (!ass_library) {
         printf("ass_library_init failed!\n");
@@ -41,11 +58,7 @@ void libassjs_init(int frame_w, int frame_h)
     ass_set_frame_size(ass_renderer, frame_w, frame_h);
     ass_set_fonts(ass_renderer, "default.ttf", NULL, ASS_FONTPROVIDER_FONTCONFIG, "/fonts.conf", 1);
 
-    track = ass_read_file(ass_library, subfile, NULL);
-    if (!track) {
-        printf("track init failed!\n");
-        exit(4);
-    }
+    libassjs_create_track(subfile);
 }
 
 void libassjs_resize(int frame_w, int frame_h)
