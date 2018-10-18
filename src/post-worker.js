@@ -71,6 +71,14 @@ self.setTrack = function (content) {
 };
 
 /**
+ * Remove subtitle track.
+ */
+self.freeTrack = function () {
+    self._free_track();
+    self.render(true);
+};
+
+/**
  * Set the subtitle track.
  * @param {!string} url the URL of the subtitle file.
  */
@@ -730,6 +738,9 @@ function onMessageFromMainEmscriptenThread(message) {
         }
         case 'destory':
             self.quit();
+            break;
+        case 'free-track':
+            self.freeTrack();
             break;
         case 'set-track':
             self.setTrack(message.data.content);

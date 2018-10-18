@@ -23,9 +23,10 @@ void msg_callback(int level, const char *fmt, va_list va, void *data)
 
 void libassjs_free_track()
 {
-    if (track)
+    if (track != NULL)
     {
         ass_free_track(track);
+        track = NULL;
     }
 }
 

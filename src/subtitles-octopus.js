@@ -437,6 +437,13 @@ var SubtitlesOctopus = function (options) {
         });
     };
 
+    self.freeTrack = function (content) {
+        self.worker.postMessage({
+            target: 'free-track'
+        });
+    };
+
+
     self.render = self.setCurrentTime;
 
     self.setIsPaused = function (isPaused, currentTime) {
