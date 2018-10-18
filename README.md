@@ -54,6 +54,7 @@ instance.setCurrentTime(15); // Render subtitles at 00:15 on your canvas
 ## How to build?
 
 ### Dependencies
+* git
 * emscripten (Configure the enviroment)
 * llvm
 * clang
@@ -79,8 +80,14 @@ Run `git clone --recursive https://github.com/Dador/JavascriptSubtitlesOctopus.g
 ### Build
 1) Install Dependencies, see above
 2) `cd JavascriptSubtitlesOctopus`
-2) `make`
-3) Artifacts are in /dist
+3) `make`
+4) Artifacts are in /dist
+
+### Build with Docker
+1) Install Docker
+2) `docker build -t dador/javascriptsubtitlesoctopus .`
+3) `docker run --rm -v ${PWD}:/code dador/javascriptsubtitlesoctopus:latest`
+4) Artifacts are in /dist
 
 ## Why "Octopus"?
 How am I an Octopus? [Ba da ba da ba!](https://www.youtube.com/watch?v=tOzOD-82mW0)
