@@ -36,7 +36,7 @@
 
     <div id="content" style="padding-top: 25px;">
       <div id="main" class="container container-body">
-        <h1>MediaElement.js Player Test</h1>
+        <h1>MediaElement.js Player Test with Multi-track</h1>
         
         <video width="800" height="480" controls="controls" preload="none">
             <source type="video/webm" src="https://animethemes.moe/video/ToaruKagakuNoRailgunS-OP1-NCBD1080.webm" />
@@ -47,33 +47,30 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mediaelement/4.2.9/mediaelement-and-player.js" integrity="sha256-v/q3qohPDUZGa9qvg4Xn+XhG18monaHHHSQeK55SA1k=" crossorigin="anonymous"></script>
         <script>
             mejs.i18n.language('en');
+
             $('video').mediaelementplayer({
                 success: function (player, node) {
                     var video = node;
                     player.addEventListener('captionschange', function(e) {
                         console.log('Charging Track ' + e.detail.caption);
                         if (e.detail.caption !== null) {
-                            window.SubtitlesOctopusOnLoad = function () {
-                              var options = {
-                                  video: video,
-                                  subUrl: e.detail.caption.src,
-                                  fonts: ['/JavascriptSubtitlesOctopus/fonts/CabinCondensed-Regular.ttf', '/JavascriptSubtitlesOctopus/fonts/SourceSansPro-SemiBold.ttf'],
-                                  //onReady: onReadyFunction,
-                                  //debug: true,
-                                  workerUrl: '/JavascriptSubtitlesOctopus/assets/js/subtitles-octopus-worker.js'
-                              };
-                              window.octopusInstance = new SubtitlesOctopus(options);
-                            };
-                            if (SubtitlesOctopus) {
-                                if (window.octopusInstance) {
-                                    window.octopusInstance.dispose();
-                                }
-                                SubtitlesOctopusOnLoad();
+                            if (window.octopusInstance) {
+                                window.octopusInstance.setTrackByUrl(e.detail.caption.src);
+                            } else if (SubtitlesOctopus) {
+                                var options = {
+                                    video: video,
+                                    subUrl: e.detail.caption.src,
+                                    fonts: ['/JavascriptSubtitlesOctopus/fonts/CabinCondensed-Regular.ttf', '/JavascriptSubtitlesOctopus/fonts/SourceSansPro-SemiBold.ttf'],
+                                    //onReady: onReadyFunction,
+                                    debug: true,
+                                    workerUrl: '/JavascriptSubtitlesOctopus/assets/js/subtitles-octopus-worker.js'
+                                };
+                                window.octopusInstance = new SubtitlesOctopus(options);
                             }
                         } else {
-                            if (SubtitlesOctopus) {
+                            if (SubtitlesOctopus || window.octopusInstance) {
                                 console.log('Disable Track ' + e.detail.caption);
-                                window.octopusInstance.dispose();
+                                window.octopusInstance.freeTrack();
                             }
                         }
                     });

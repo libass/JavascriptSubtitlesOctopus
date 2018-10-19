@@ -423,6 +423,27 @@ var SubtitlesOctopus = function (options) {
         });
     };
 
+    self.setTrackByUrl = function (url) {
+        self.worker.postMessage({
+            target: 'set-track-by-url',
+            url: url
+        });
+    };
+
+    self.setTrack = function (content) {
+        self.worker.postMessage({
+            target: 'set-track',
+            content: content
+        });
+    };
+
+    self.freeTrack = function (content) {
+        self.worker.postMessage({
+            target: 'free-track'
+        });
+    };
+
+
     self.render = self.setCurrentTime;
 
     self.setIsPaused = function (isPaused, currentTime) {
@@ -441,6 +462,10 @@ var SubtitlesOctopus = function (options) {
     };
 
     self.dispose = function () {
+        self.worker.postMessage({
+            target: 'destory'
+        });
+
         self.worker.terminate();
         self.workerActive = false;
         // Remove the canvas element to remove residual subtitles rendered on player
@@ -452,4 +477,10 @@ var SubtitlesOctopus = function (options) {
 
 if (typeof SubtitlesOctopusOnLoad == 'function') {
     SubtitlesOctopusOnLoad();
+}
+
+if (typeof exports !== 'undefined') {
+    if (typeof module !== 'undefined' && module.exports) {
+        exports = module.exports = SubtitlesOctopus
+    }
 }
