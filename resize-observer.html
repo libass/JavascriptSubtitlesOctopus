@@ -36,10 +36,10 @@
 
     <div id="content" style="padding-top: 25px;">
       <div id="main" class="container container-body">
-        <h1>Toaru Kagaku no Railgun S (Spring 2013) Karaoke Test</h1>
+        <h1>Resize Observer Test</h1>
         
         <video id="test" class="video-js" controls preload="auto" width="840" height="460" data-setup="{}">
-            <source src="https://animethemes.moe/video/ToaruKagakuNoRailgunS-OP1-NCBD1080.webm" type='video/webm'>
+            <source src="http://distribution.bbb3d.renderfarming.net/video/mp4/bbb_sunflower_1080p_30fps_normal.mp4" type='video/webm'>
             <p class="vjs-no-js">
                 To view this video please enable JavaScript, and consider upgrading to a web browser that
                 <a href="http://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
@@ -47,10 +47,7 @@
         </video>
 
         <br>
-        Example with Railgun OP. Thanks to <a href="https://animethemes.moe/" target="_blank">animethemes.moe</a> for hosting this video.
         <br>
-        <br>
-        <button type="button" class="btn btn-danger" onclick="runBenchmark();">Run benchmark</button>
         <button type="button" class="btn btn-primary" onclick="changeResolution(1280, 720);">Change resolution to 1280x720</button>
         <button type="button" class="btn btn-primary" onclick="changeResolution(1920, 1080);">Change resolution to 1920x1080</button>
         <button type="button" class="btn btn-primary" onclick="changeResolution(3840, 2160);">Change resolution to 3840x2160</button>
@@ -72,9 +69,8 @@
                 window.SubtitlesOctopusOnLoad = function () {
                     var options = {
                         video: video,
-                        subUrl: '/JavascriptSubtitlesOctopus/subtitles/railgun_op.ass',
-                        fonts: ['/JavascriptSubtitlesOctopus/fonts/SourceSansPro-SemiBold.ttf', 
-                        '/JavascriptSubtitlesOctopus/fonts/CabinCondensed-Regular.ttf'],
+                        subUrl: '/JavascriptSubtitlesOctopus/subtitles/test.ass',
+                        fonts: ['/JavascriptSubtitlesOctopus/fonts/Arial.ttf', '/JavascriptSubtitlesOctopus/fonts/TimesNewRoman.ttf'],
                         //onReady: onReadyFunction,
                         debug: true,
                         workerUrl: '/JavascriptSubtitlesOctopus/assets/js/subtitles-octopus-worker.js'
@@ -85,7 +81,7 @@
                     SubtitlesOctopusOnLoad();
                 }
             });
-            var isFirstRun = true;
+
             var changeResolution = function (width, height) {
                 player.width(width)
                 player.height(height);
@@ -95,14 +91,7 @@
                 player.width(width)
                 player.height(height);
             };
-            var runBenchmark = function () {
-                player.play();
-                window.octopusInstance.runBenchmark();
-                if (isFirstRun) {
-                    alert('See the result in console.');
-                    isFirstRun = false;
-                }
-            };
+
         </script>
       </div>
     </div>
