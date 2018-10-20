@@ -146,7 +146,7 @@ var SubtitlesOctopus = function (options) {
 
             // Support Element Resize Observer
             if (typeof ResizeObserver !== "undefined") {
-                self.ro = new ResizeObserver(self.resizeWithTimeout());
+                self.ro = new ResizeObserver(self.resizeWithTimeout);
                 self.ro.observe(self.video);
             }
 
