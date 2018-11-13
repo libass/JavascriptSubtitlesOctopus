@@ -144,6 +144,12 @@ var SubtitlesOctopus = function (options) {
             document.addEventListener("msfullscreenchange", self.resizeWithTimeout, false);
             window.addEventListener("resize", self.resizeWithTimeout, false);
 
+            // Support Element Resize Observer
+            if (typeof ResizeObserver !== "undefined") {
+                self.ro = new ResizeObserver(self.resizeWithTimeout);
+                self.ro.observe(self.video);
+            }
+
             if (self.video.videoWidth > 0) {
                 self.resize();
             }
