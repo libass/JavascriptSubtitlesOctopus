@@ -152,6 +152,8 @@ dist/libraries/lib/libfontconfig.so: dist/libraries/lib/libharfbuzz.so dist/libr
 
 lib/libass/configure:
 	cd lib/libass && \
+	git reset --hard && \
+	patch -Np1 -i "../../build/patches/libass-fix-harfbuzz-hb_set_glyph.patch" && \
 	NOCONFIGURE=1 ./autogen.sh
 
 dist/libraries/lib/libass.so: dist/libraries/lib/libfontconfig.so dist/libraries/lib/libharfbuzz.so dist/libraries/lib/libexpat.so dist/libraries/lib/libfribidi.so dist/libraries/lib/libfreetype.so lib/libass/configure
