@@ -4,15 +4,15 @@
 	ignore = dirty
 [submodule "lib/fribidi"]
 	path = lib/fribidi
-	url = https://github.com/behdad/fribidi.git
+	url = https://github.com/fribidi/fribidi.git
 	ignore = dirty
 [submodule "lib/fontconfig"]
 	path = lib/fontconfig
-	url = git://anongit.freedesktop.org/fontconfig
+	url = https://gitlab.freedesktop.org/fontconfig/fontconfig.git
 	ignore = dirty
 [submodule "lib/freetype"]
 	path = lib/freetype
-	url = git://git.sv.gnu.org/freetype/freetype2.git
+	url = https://git.savannah.gnu.org/git/freetype/freetype2.git
 	ignore = dirty
 [submodule "lib/expat"]
 	path = lib/expat
@@ -20,5 +20,5 @@
 	ignore = dirty
 [submodule "lib/harfbuzz"]
 	path = lib/harfbuzz
-	url = https://github.com/behdad/harfbuzz.git
+	url = https://github.com/harfbuzz/harfbuzz.git
 	ignore = dirty
