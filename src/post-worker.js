@@ -736,7 +736,7 @@ function onMessageFromMainEmscriptenThread(message) {
             removeRunDependency('worker-init');
             break;
         }
-        case 'destory':
+        case 'destroy':
             self.quit();
             break;
         case 'free-track':
