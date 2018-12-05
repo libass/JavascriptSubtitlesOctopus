@@ -469,7 +469,7 @@ var SubtitlesOctopus = function (options) {
 
     self.dispose = function () {
         self.worker.postMessage({
-            target: 'destory'
+            target: 'destroy'
         });
 
         self.worker.terminate();
