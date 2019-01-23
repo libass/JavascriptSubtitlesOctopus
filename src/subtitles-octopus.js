@@ -40,7 +40,7 @@ var SubtitlesOctopus = function (options) {
     self.workerError = function (error) {
         console.error('Worker error: ', error);
         if (self.onErrorEvent) {
-            self.onErrorEvent();
+            self.onErrorEvent(error);
         }
         if (!self.debug) {
             self.dispose();
@@ -475,7 +475,9 @@ var SubtitlesOctopus = function (options) {
         self.worker.terminate();
         self.workerActive = false;
         // Remove the canvas element to remove residual subtitles rendered on player
-        self.video.parentNode.removeChild(self.canvasParent);
+        if (self.video) {
+            self.video.parentNode.removeChild(self.canvasParent);
+        }
     };
 
     self.init();
