@@ -40,7 +40,7 @@ var SubtitlesOctopus = function (options) {
     self.workerError = function (error) {
         console.error('Worker error: ', error);
         if (self.onErrorEvent) {
-            self.onErrorEvent();
+            self.onErrorEvent(error);
         }
         if (!self.debug) {
             self.dispose();
