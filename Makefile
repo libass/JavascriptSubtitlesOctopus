@@ -212,32 +212,13 @@ EMCC_COMMON_ARGS = \
 	#--memory-init-file 0 \
 	#-s OUTLINING_LIMIT=20000 \
 
-dist: src/subtitles-octopus-worker.bc dist/subtitles-octopus-wasm-worker.js dist/subtitles-octopus-asmjs-worker.js dist/subtitles-octopus-worker.js dist/subtitles-octopus.js
-
-dist/subtitles-octopus-wasm-worker.js: src/subtitles-octopus-worker.bc
-	emcc src/subtitles-octopus-worker.bc $(OCTP_DEPS) \
-		--pre-js src/pre-worker.js \
-		--post-js src/post-worker.js \
-		-s WASM=1 \
-		-s "BINARYEN_METHOD='native-wasm'" \
-		-s "BINARYEN_TRAP_MODE='clamp'" \
-		$(EMCC_COMMON_ARGS)
-
-dist/subtitles-octopus-asmjs-worker.js: src/subtitles-octopus-worker.bc
-	emcc src/subtitles-octopus-worker.bc $(OCTP_DEPS) \
-		--pre-js src/pre-worker.js \
-		--post-js src/post-worker.js \
-		-s WASM=0 \
-		-s "BINARYEN_METHOD='asmjs'" \
-		-s "BINARYEN_TRAP_MODE='clamp'" \
-		$(EMCC_COMMON_ARGS)
+dist: src/subtitles-octopus-worker.bc dist/subtitles-octopus-worker.js dist/subtitles-octopus.js
 
 dist/subtitles-octopus-worker.js: src/subtitles-octopus-worker.bc
 	emcc src/subtitles-octopus-worker.bc $(OCTP_DEPS) \
 		--pre-js src/pre-worker.js \
 		--post-js src/post-worker.js \
 		-s WASM=1 \
-		-s "BINARYEN_METHOD='native-wasm,asmjs'" \
 		-s "BINARYEN_TRAP_MODE='clamp'" \
 		$(EMCC_COMMON_ARGS)
 
