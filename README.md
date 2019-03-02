@@ -22,7 +22,10 @@ SubtitlesOctopus displays subtitles in .ass format and easily integrates with HT
 * fribidi
 * harfbuzz
 
-## How to use?
+## Usage
+
+To start using SubtitlesOctopus you only need to instantiate a new instance of
+`SubtitlesOctopus` and specify its [Options](#options).
 
 ```javascript
 var options = {
@@ -34,9 +37,15 @@ var options = {
 var instance = new SubtitlesOctopus(options);
 ```
 
-After that SubtitlesOctopus automatically "connects" to your video and showing subtitles. You can use it with any HTML5 player.
+After that SubtitlesOctopus automatically "connects" to your video and it starts
+to display subtitles. You can use it with any HTML5 player.
 
-You can also use it without any video, like that:
+[See other examples](https://github.com/Dador/JavascriptSubtitlesOctopus/tree/master/example).
+
+### Using only with canvas
+You're also able to use it without any video. However, that requires you to set
+the time the subtitles should render at yourself:
+
 ```javascript
 var options = {
     canvas: document.getElementById('canvas'), // canvas element
@@ -49,7 +58,61 @@ var instance = new SubtitlesOctopus(options);
 instance.setCurrentTime(15); // Render subtitles at 00:15 on your canvas
 ```
 
-[See other examples](https://github.com/Dador/JavascriptSubtitlesOctopus/tree/master/example).
+### Changing subtitles
+You're not limited to only display the subtitle file you referenced in your
+options. You're able to dynamically change subtitles on the fly. There's three
+methods that you can use for this specifically:
+
+- `setTrackByUrl(url)`: works the same as the `subUrl` option. It will set the
+  subtitle to display by its URL.
+- `setTrack(content)`: works the same as the `subContent` option. It will set
+  the subtitle to dispaly by its content.
+- `freeTrack()`: this simply removes the subtitles. You can use the two methods
+  above to set a new subtitle file to be displayed.
+
+```JavaScript
+var instance = new SubtitlesOctopus(options);
+
+// ... we want to change the subtitles to the Railgun OP
+instance.setTrackByUrl('/test/railgun_op.ass');
+```
+
+### Cleaning up the object
+After you're finished with rendering the subtitles. You need to call the
+`instance.dispose()` method to correctly dispose of the object.
+
+```JavaScript
+var instance = new SubtitlesOctopus(options);
+
+// After you've finished using it...
+
+instance.dispose();
+```
+
+
+### Options
+When creating an instance of SubtitleOctopus, you can set the following options:
+
+- `video`: The video element to attach listeners to. (Optional)
+- `canvas`: The canvas to render the subtitles to. If none is given it will
+  create a new canvas and insert it as a sibling of the video element (only if
+  the video element exists). (Optional)
+- `subUrl`: The URL of the subtitle file to play. (Require either `subUrl` or
+  `subContent` to be specified)
+- `subContent`: The content of the subtitle file to play. (Require either
+  `subContent` or `subUrl` to be specified)
+- `workerUrl`: The URL of the worker. (Default: `libassjs-worker.js`)
+- `fonts`: An array of links to the fonts used in the subtitle. (Optional)
+- `availableFonts`: Object with all available fonts - Key is font name in lower
+  case, value is link: `{"arial": "/font1.ttf"}` (Optional)
+- `timeOffset`: The amount of time the subtitles should be offset from the
+  video. (Default: `0`)
+- `onReady`: Function that's called when SubtitlesOctopus is ready. (Optional)
+- `onError`: Function called in case of critical error meaning the subtitles
+  wouldn't be shown and you should use an alternative method (for instance it
+  occurs if browser doesn't support web workers). (Optional)
+- `debug`: Whether performance info is printed in the console. (Default:
+  `false`)
 
 ## How to build?
 
