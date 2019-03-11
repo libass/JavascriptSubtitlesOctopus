@@ -1,6 +1,6 @@
 {
   "name": "libass-wasm",
-  "version": "2.0.0",
+  "version": "2.0.2",
   "description": "libass Subtitle Renderer and Parser library for browsers",
   "main": "dist/subtitles-octopus.js",
   "files": [
