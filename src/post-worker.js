@@ -40,7 +40,7 @@ self.writeAvailableFontsToFS = function(content) {
     var sections = parseAss(content);
 
     for (var i = 0; i < sections.length; i++) {
-        for (var j = 0; j < sections[i].body; j++) {
+        for (var j = 0; j < sections[i].body.length; j++) {
             if (sections[i].body[j].key === 'Style') {
                 self.writeFontToFS(sections[i].body[j].value['Fontname']);
             }
