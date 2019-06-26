@@ -1,4 +1,5 @@
-var Module = Module || {};
+//var Module = Module || {};
+Module = Module || {};
 
 Module["preRun"] = Module["preRun"] || [];
 
