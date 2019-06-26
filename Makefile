@@ -12,14 +12,26 @@ subtitleoctopus: dist
 lib/fribidi/configure:
 	cd lib/fribidi && \
 	git reset --hard && \
-	patch -Np1 -i "../../build/patches/fribidi_enable-lib-only-build.patch" && \
+	$(foreach file, \
+	$(wildcard $(BASE_DIR)build/patches/fribidi/*.patch), \
+	patch -d "$(BASE_DIR)lib/fribidi" -Np1 -i $(file);) \
 	NOCONFIGURE=1 ./autogen.sh
 
+# NM=llvm-nm
 dist/libraries/lib/libfribidi.so: lib/fribidi/configure
 	cd lib/fribidi && \
 	emconfigure ./configure \
-		CFLAGS='-O3' \
 		NM=llvm-nm \
+		CFLAGS=" \
+		-s USE_PTHREADS=0 \
+		-Oz \
+		-s NO_FILESYSTEM=1 \
+		-s NO_EXIT_RUNTIME=1 \
+		--closure 1 \
+		-s STRICT=1 \
+		--llvm-lto 1 \
+		-s MODULARIZE=1 \
+		" \
 		--prefix="$(DIST_DIR)" \
 		--host=x86-none-linux \
 		--build=x86_64 \
@@ -34,12 +46,24 @@ dist/libraries/lib/libfribidi.so: lib/fribidi/configure
 # Expat
 lib/expat/expat/configure:
 	cd lib/expat/expat && \
+	$(foreach file, \
+	$(wildcard $(BASE_DIR)build/patches/expat/*.patch), \
+	patch -d "$(BASE_DIR)lib/expat" -Np1 -i $(file);) \
 	./buildconf.sh
 
 dist/libraries/lib/libexpat.so: lib/expat/expat/configure
 	cd lib/expat/expat && \
 	emconfigure ./configure \
-		CFLAGS=-O3 \
+		CFLAGS=" \
+		-s USE_PTHREADS=0 \
+		-Oz \
+		-s NO_FILESYSTEM=1 \
+		-s NO_EXIT_RUNTIME=1 \
+		--closure 1 \
+		-s STRICT=1 \
+		--llvm-lto 1 \
+		-s MODULARIZE=1 \
+		" \
 		--prefix="$(DIST_DIR)" \
 		--host=x86-none-linux \
 		--build=x86_64 \
@@ -59,7 +83,16 @@ lib/freetype/build_hb/dist_hb/lib/libfreetype.so:
 	mkdir -p build_hb && \
 	cd build_hb && \
 	emconfigure ../configure \
-		CFLAGS='-O3' \
+		CFLAGS=" \
+		-s USE_PTHREADS=0 \
+		-Oz \
+		-s NO_FILESYSTEM=1 \
+		-s NO_EXIT_RUNTIME=1 \
+		--closure 1 \
+		-s STRICT=1 \
+		--llvm-lto 1 \
+		-s MODULARIZE=1 \
+		" \
 		--prefix="$$(pwd)/dist_hb" \
 		--host=x86-none-linux \
 		--build=x86_64 \
@@ -77,13 +110,26 @@ lib/freetype/build_hb/dist_hb/lib/libfreetype.so:
 # Harfbuzz
 lib/harfbuzz/configure:
 	cd lib/harfbuzz && \
+	$(foreach file, \
+	$(wildcard $(BASE_DIR)build/patches/harfbuzz/*.patch), \
+	patch -d "$(BASE_DIR)lib/harfbuzz" -Np1 -i $(file);) \
 	NOCONFIGURE=1 ./autogen.sh
 
 dist/libraries/lib/libharfbuzz.so: lib/freetype/build_hb/dist_hb/lib/libfreetype.so lib/harfbuzz/configure
 	cd lib/harfbuzz && \
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig:$(BASE_DIR)lib/freetype/build_hb/dist_hb/lib/pkgconfig \
 	emconfigure ./configure \
-		CFLAGS="-O3" \
+		CFLAGS=" \
+		-s USE_PTHREADS=0 \
+		-Oz \
+		-s NO_FILESYSTEM=1 \
+		-s NO_EXIT_RUNTIME=1 \
+		--closure 1 \
+		-s STRICT=1 \
+		--llvm-lto 1 \
+		-s MODULARIZE=1 \
+		" \
+		LDFLAGS="" \
 		--prefix="$(DIST_DIR)" \
 		--host=x86-none-linux \
 		--build=x86_64 \
@@ -104,11 +150,22 @@ dist/libraries/lib/libharfbuzz.so: lib/freetype/build_hb/dist_hb/lib/libfreetype
 dist/libraries/lib/libfreetype.so: dist/libraries/lib/libharfbuzz.so
 	cd "lib/freetype" && \
 	git reset --hard && \
-	patch -Np1 -i "../../build/patches/freetype_disable-exports.patch" && \
+	$(foreach file, \
+	$(wildcard $(BASE_DIR)build/patches/freetype/*.patch), \
+	patch -d "$(BASE_DIR)lib/freetype" -Np1 -i $(file);) \
 	NOCONFIGURE=1 ./autogen.sh && \
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
 	emconfigure ./configure \
-		CFLAGS='-O3' \
+		CFLAGS=" \
+		-s USE_PTHREADS=0 \
+		-Oz \
+		-s NO_FILESYSTEM=1 \
+		-s NO_EXIT_RUNTIME=1 \
+		--closure 1 \
+		-s STRICT=1 \
+		--llvm-lto 1 \
+		-s MODULARIZE=1 \
+		" \
 		--prefix="$(DIST_DIR)" \
 		--host=x86-none-linux \
 		--build=x86_64 \
@@ -127,16 +184,24 @@ dist/libraries/lib/libfreetype.so: dist/libraries/lib/libharfbuzz.so
 lib/fontconfig/configure: 
 	cd lib/fontconfig && \
 	git reset --hard && \
-	patch -Np1 -i "../../build/patches/fontconfig_disable-tests.patch" && \
-	patch -Np1 -i "../../build/patches/fontconfig_fix-fcstats-emscripten.patch" && \
-	patch -Np1 -i "../../build/patches/fontconfig_use_uuid_generate.patch" && \
+	$(foreach file, \
+	$(wildcard $(BASE_DIR)build/patches/fontconfig/*.patch), \
+	patch -d "$(BASE_DIR)lib/fontconfig" -Np1 -i $(file);) \
 	NOCONFIGURE=1 ./autogen.sh
 
 dist/libraries/lib/libfontconfig.so: dist/libraries/lib/libharfbuzz.so dist/libraries/lib/libexpat.so dist/libraries/lib/libfribidi.so dist/libraries/lib/libfreetype.so lib/fontconfig/configure
 	cd lib/fontconfig && \
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
 	emconfigure ./configure \
-		CFLAGS=-O3 \
+		CFLAGS=" \
+		-s USE_PTHREADS=0 \
+		-Oz \
+		-s NO_EXIT_RUNTIME=1 \
+		--closure 1 \
+		--llvm-lto 1 \
+		-s STRICT=1 \
+		-s MODULARIZE=1 \
+		" \
 		--prefix="$(DIST_DIR)" \
 		--host=x86-none-linux \
 		--build=x86_64 \
@@ -153,14 +218,24 @@ dist/libraries/lib/libfontconfig.so: dist/libraries/lib/libharfbuzz.so dist/libr
 lib/libass/configure:
 	cd lib/libass && \
 	git reset --hard && \
-	patch -Np1 -i "../../build/patches/libass-fix-harfbuzz-hb_set_glyph.patch" && \
+	$(foreach file, \
+	$(wildcard $(BASE_DIR)build/patches/libass/*.patch), \
+	patch -d "$(BASE_DIR)lib/libass" -Np1 -i $(file);) \
 	NOCONFIGURE=1 ./autogen.sh
 
 dist/libraries/lib/libass.so: dist/libraries/lib/libfontconfig.so dist/libraries/lib/libharfbuzz.so dist/libraries/lib/libexpat.so dist/libraries/lib/libfribidi.so dist/libraries/lib/libfreetype.so lib/libass/configure
 	cd lib/libass && \
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
 	emconfigure ./configure \
-		CFLAGS='-O3' \
+		CFLAGS=" \
+		-s USE_PTHREADS=0 \
+		-Oz \
+		-s NO_EXIT_RUNTIME=1 \
+		--closure 1 \
+		-s STRICT=1 \
+		--llvm-lto 1 \
+		-s MODULARIZE=1 \
+		" \
 		--prefix="$(DIST_DIR)" \
 		--host=x86-none-linux \
 		--build=x86_64 \
@@ -196,8 +271,7 @@ src/subtitles-octopus-worker.bc: dist/libraries/lib/libass.so src/Makefile
 
 # Dist Files
 EMCC_COMMON_ARGS = \
-	-s TOTAL_MEMORY=134217728 \
-	-O3 \
+	-Oz \
 	-s EXPORTED_FUNCTIONS="['_main', '_malloc', '_libassjs_init', '_libassjs_quit', '_libassjs_resize', '_libassjs_render', '_libassjs_free_track', '_libassjs_create_track']" \
 	-s EXTRA_EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'getValue', 'FS_createPreloadedFile', 'FS_createFolder']" \
 	-s NO_EXIT_RUNTIME=1 \
@@ -205,7 +279,10 @@ EMCC_COMMON_ARGS = \
 	--preload-file default.ttf \
 	--preload-file fonts.conf \
 	-s ALLOW_MEMORY_GROWTH=1 \
+	-s STRICT=1 \
 	-s FORCE_FILESYSTEM=1 \
+	--llvm-lto 1 \
+	-g1 \
 	-o $@
 	#--js-opts 0 -g4 \
 	#--closure 1 \
