@@ -27,7 +27,6 @@ dist/libraries/lib/libfribidi.so: lib/fribidi/configure
 		-Oz \
 		-s NO_FILESYSTEM=1 \
 		-s NO_EXIT_RUNTIME=1 \
-		--closure 1 \
 		-s STRICT=1 \
 		--llvm-lto 1 \
 		-s MODULARIZE=1 \
@@ -43,39 +42,38 @@ dist/libraries/lib/libfribidi.so: lib/fribidi/configure
 	emmake make -j8 && \
 	emmake make install
 
-# Expat
-lib/expat/expat/configure:
+	
+lib/expat/expat/configured:
 	cd lib/expat/expat && \
 	$(foreach file, \
 	$(wildcard $(BASE_DIR)build/patches/expat/*.patch), \
 	patch -d "$(BASE_DIR)lib/expat" -Np1 -i $(file);) \
-	./buildconf.sh
+	touch configured
 
-dist/libraries/lib/libexpat.so: lib/expat/expat/configure
+dist/libraries/lib/libexpat.a: lib/expat/expat/configured
 	cd lib/expat/expat && \
-	emconfigure ./configure \
-		CFLAGS=" \
+	emconfigure cmake \
+		-DCMAKE_C_FLAGS=" \
 		-s USE_PTHREADS=0 \
 		-Oz \
 		-s NO_FILESYSTEM=1 \
 		-s NO_EXIT_RUNTIME=1 \
-		--closure 1 \
 		-s STRICT=1 \
 		--llvm-lto 1 \
 		-s MODULARIZE=1 \
 		" \
-		--prefix="$(DIST_DIR)" \
-		--host=x86-none-linux \
-		--build=x86_64 \
-		--disable-static \
-		--enable-shared \
-		--disable-dependency-tracking \
-		--without-docbook \
-		--without-xmlwf \
+		-DTARGET_SUPPORTS_SHARED_LIBS=true \
+		-DCMAKE_INSTALL_PREFIX=$(DIST_DIR) \
+		-DEXPAT_BUILD_DOCS=off \
+		-DEXPAT_SHARED_LIBS=on \
+		-DEXPAT_BUILD_EXAMPLES=off \
+		-DEXPAT_BUILD_FUZZERS=off \
+		-DEXPAT_BUILD_TESTS=off \
+		-DEXPAT_BUILD_TOOLS=off \
+		. \
 	&& \
 	emmake make -j8 && \
 	emmake make install
-
 # Freetype without Harfbuzz
 lib/freetype/build_hb/dist_hb/lib/libfreetype.so:
 	cd "lib/freetype" && \
@@ -88,7 +86,6 @@ lib/freetype/build_hb/dist_hb/lib/libfreetype.so:
 		-Oz \
 		-s NO_FILESYSTEM=1 \
 		-s NO_EXIT_RUNTIME=1 \
-		--closure 1 \
 		-s STRICT=1 \
 		--llvm-lto 1 \
 		-s MODULARIZE=1 \
@@ -124,7 +121,6 @@ dist/libraries/lib/libharfbuzz.so: lib/freetype/build_hb/dist_hb/lib/libfreetype
 		-Oz \
 		-s NO_FILESYSTEM=1 \
 		-s NO_EXIT_RUNTIME=1 \
-		--closure 1 \
 		-s STRICT=1 \
 		--llvm-lto 1 \
 		-s MODULARIZE=1 \
@@ -161,7 +157,6 @@ dist/libraries/lib/libfreetype.so: dist/libraries/lib/libharfbuzz.so
 		-Oz \
 		-s NO_FILESYSTEM=1 \
 		-s NO_EXIT_RUNTIME=1 \
-		--closure 1 \
 		-s STRICT=1 \
 		--llvm-lto 1 \
 		-s MODULARIZE=1 \
@@ -189,7 +184,7 @@ lib/fontconfig/configure:
 	patch -d "$(BASE_DIR)lib/fontconfig" -Np1 -i $(file);) \
 	NOCONFIGURE=1 ./autogen.sh
 
-dist/libraries/lib/libfontconfig.so: dist/libraries/lib/libharfbuzz.so dist/libraries/lib/libexpat.so dist/libraries/lib/libfribidi.so dist/libraries/lib/libfreetype.so lib/fontconfig/configure
+dist/libraries/lib/libfontconfig.so: dist/libraries/lib/libharfbuzz.so dist/libraries/lib/libexpat.a dist/libraries/lib/libfribidi.so dist/libraries/lib/libfreetype.so lib/fontconfig/configure
 	cd lib/fontconfig && \
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
 	emconfigure ./configure \
@@ -197,7 +192,6 @@ dist/libraries/lib/libfontconfig.so: dist/libraries/lib/libharfbuzz.so dist/libr
 		-s USE_PTHREADS=0 \
 		-Oz \
 		-s NO_EXIT_RUNTIME=1 \
-		--closure 1 \
 		--llvm-lto 1 \
 		-s STRICT=1 \
 		-s MODULARIZE=1 \
@@ -223,7 +217,7 @@ lib/libass/configure:
 	patch -d "$(BASE_DIR)lib/libass" -Np1 -i $(file);) \
 	NOCONFIGURE=1 ./autogen.sh
 
-dist/libraries/lib/libass.so: dist/libraries/lib/libfontconfig.so dist/libraries/lib/libharfbuzz.so dist/libraries/lib/libexpat.so dist/libraries/lib/libfribidi.so dist/libraries/lib/libfreetype.so lib/libass/configure
+dist/libraries/lib/libass.so: dist/libraries/lib/libfontconfig.so dist/libraries/lib/libharfbuzz.so dist/libraries/lib/libexpat.a dist/libraries/lib/libfribidi.so dist/libraries/lib/libfreetype.so lib/libass/configure
 	cd lib/libass && \
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
 	emconfigure ./configure \
@@ -231,7 +225,6 @@ dist/libraries/lib/libass.so: dist/libraries/lib/libfontconfig.so dist/libraries
 		-s USE_PTHREADS=0 \
 		-Oz \
 		-s NO_EXIT_RUNTIME=1 \
-		--closure 1 \
 		-s STRICT=1 \
 		--llvm-lto 1 \
 		-s MODULARIZE=1 \
@@ -253,7 +246,7 @@ dist/libraries/lib/libass.so: dist/libraries/lib/libfontconfig.so dist/libraries
 OCTP_DEPS = \
 	$(DIST_DIR)/lib/libfribidi.so \
 	$(DIST_DIR)/lib/libfreetype.so \
-	$(DIST_DIR)/lib/libexpat.so \
+	$(DIST_DIR)/lib/libexpat.a \
 	$(DIST_DIR)/lib/libharfbuzz.so \
 	$(DIST_DIR)/lib/libfontconfig.so \
 	$(DIST_DIR)/lib/libass.so
