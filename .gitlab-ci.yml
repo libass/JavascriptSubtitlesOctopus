@@ -1,12 +1,34 @@
-image: archlinux/base:latest
+image: debian:buster
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
-
+  PATH: $PATH:/opt/emsdk:/opt/emsdk/fastcomp/emscripten:/opt/emsdk/node/12.9.1_64bit/bin
 before_script:
-  - pacman -Sy --noconfirm --needed base-devel emscripten llvm clang cmake git ragel make autoconf pkgconfig patch libtool itstool automake python2 zip python2-lxml python2-pip python2-html5lib python2-setuptools python2-chardet python2-virtualenv gperf
-  - source /etc/profile.d/emscripten.sh
-  - emcc
+  - apt-get update && apt-get install -y \
+        llvm \
+        clang \
+        cmake \
+        git \
+        ragel \
+        build-essential \
+        patch \
+        libtool \
+        itstool \
+        pkg-config \
+        python2 \
+        zip \
+        python-lxml \
+        python-pip \
+        python-html5lib \
+        python-chardet \
+        gettext \
+        autopoint \
+        gperf && \
+    cd /opt && \
+    git clone https://github.com/emscripten-core/emsdk.git && \
+    cd emsdk && \
+    ./emsdk install latest && \
+    ./emsdk activate latest
 build: 
   script:
     - make
