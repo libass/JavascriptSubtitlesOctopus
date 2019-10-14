@@ -25,7 +25,7 @@ self.writeFontToFS = function(font) {
     self.fontMap_[font] = true;
 
     if (!self.availableFonts.hasOwnProperty(font)) return;
-    var content = Module["readBinary"](self.availableFonts[font]);
+    var content = readBinary(self.availableFonts[font]);
 
     Module["FS"].writeFile('/fonts/font' + (self.fontId++) + '-' + self.availableFonts[font].split('/').pop(), content, { encoding: 'binary' });
 };
@@ -83,7 +83,7 @@ self.freeTrack = function () {
  * @param {!string} url the URL of the subtitle file.
  */
 self.setTrackByUrl = function (url) {
-    self.setTrack(Module["read"](url));
+    self.setTrack(read_(url));
 };
 
 self.resize = function (width, height) {
@@ -332,7 +332,7 @@ self.requestAnimationFrame = (function () {
     height: 0
 };*/
 
-screen = {
+var screen = {
     width: 0,
     height: 0
 };

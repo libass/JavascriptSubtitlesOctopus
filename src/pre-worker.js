@@ -32,7 +32,7 @@ Module["preRun"].push(function () {
     if (self.subContent) {
         Module["FS"].writeFile("/sub.ass", self.subContent);
     } else {
-        Module["FS"].writeFile("/sub.ass", Module["read"](self.subUrl));
+        Module["FS"].writeFile("/sub.ass", read_(self.subUrl));
     }
 
     self.subContent = null;
