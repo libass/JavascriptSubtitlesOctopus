@@ -1,4 +1,4 @@
-image: debian:buster
+image: debian:sid
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
