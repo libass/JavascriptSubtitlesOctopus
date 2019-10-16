@@ -2,7 +2,6 @@ image: debian:buster
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
-  PATH: $PATH:/opt/emsdk:/opt/emsdk/fastcomp/emscripten:/opt/emsdk/node/12.9.1_64bit/bin
 before_script:
   - apt-get update && apt-get install -y \
         llvm \
@@ -31,7 +30,7 @@ before_script:
     ./emsdk activate latest
 build: 
   script:
-    - make
+    - export PATH=$PATH:/opt/emsdk:/opt/emsdk/fastcomp/emscripten:/opt/emsdk/node/12.9.1_64bit/bin && make
   artifacts:
     paths:
      - dist/*.*
