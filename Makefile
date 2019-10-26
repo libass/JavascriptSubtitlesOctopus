@@ -18,14 +18,14 @@ lib/fribidi/configure:
 	NOCONFIGURE=1 ./autogen.sh
 
 # NM=llvm-nm
-dist/libraries/lib/libfribidi.so: lib/fribidi/configure
+dist/libraries/lib/libfribidi.a: lib/fribidi/configure
 	cd lib/fribidi && \
 	emconfigure ./configure \
-		NM=llvm-nm \
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
-		-Oz \
+		-O2 \
 		-s NO_FILESYSTEM=1 \
+		-mnontrapping-fptoint \
 		-s NO_EXIT_RUNTIME=1 \
 		-s STRICT=1 \
 		--llvm-lto 1 \
@@ -34,8 +34,8 @@ dist/libraries/lib/libfribidi.so: lib/fribidi/configure
 		--prefix="$(DIST_DIR)" \
 		--host=x86-none-linux \
 		--build=x86_64 \
-		--disable-static \
-		--enable-shared \
+		--enable-static \
+		--disable-shared \
 		--disable-dependency-tracking \
 		--disable-debug \
 	&& \
@@ -55,17 +55,17 @@ dist/libraries/lib/libexpat.a: lib/expat/expat/configured
 	emconfigure cmake \
 		-DCMAKE_C_FLAGS=" \
 		-s USE_PTHREADS=0 \
-		-Oz \
+		-O2 \
 		-s NO_FILESYSTEM=1 \
+		-mnontrapping-fptoint \
 		-s NO_EXIT_RUNTIME=1 \
 		-s STRICT=1 \
 		--llvm-lto 1 \
 		-s MODULARIZE=1 \
 		" \
-		-DTARGET_SUPPORTS_SHARED_LIBS=true \
 		-DCMAKE_INSTALL_PREFIX=$(DIST_DIR) \
 		-DEXPAT_BUILD_DOCS=off \
-		-DEXPAT_SHARED_LIBS=on \
+		-DEXPAT_SHARED_LIBS=off \
 		-DEXPAT_BUILD_EXAMPLES=off \
 		-DEXPAT_BUILD_FUZZERS=off \
 		-DEXPAT_BUILD_TESTS=off \
@@ -75,7 +75,7 @@ dist/libraries/lib/libexpat.a: lib/expat/expat/configured
 	emmake make -j8 && \
 	emmake make install
 # Freetype without Harfbuzz
-lib/freetype/build_hb/dist_hb/lib/libfreetype.so:
+lib/freetype/build_hb/dist_hb/lib/libfreetype.a:
 	cd "lib/freetype" && \
 	NOCONFIGURE=1 ./autogen.sh && \
 	mkdir -p build_hb && \
@@ -83,8 +83,9 @@ lib/freetype/build_hb/dist_hb/lib/libfreetype.so:
 	emconfigure ../configure \
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
-		-Oz \
+		-O2 \
 		-s NO_FILESYSTEM=1 \
+		-mnontrapping-fptoint \
 		-s NO_EXIT_RUNTIME=1 \
 		-s STRICT=1 \
 		--llvm-lto 1 \
@@ -93,8 +94,8 @@ lib/freetype/build_hb/dist_hb/lib/libfreetype.so:
 		--prefix="$$(pwd)/dist_hb" \
 		--host=x86-none-linux \
 		--build=x86_64 \
-		--disable-static \
-		--enable-shared \
+		--enable-static \
+		--disable-shared \
 		\
 		--without-zlib \
 		--without-bzip2 \
@@ -112,13 +113,14 @@ lib/harfbuzz/configure:
 	patch -d "$(BASE_DIR)lib/harfbuzz" -Np1 -i $(file);) \
 	NOCONFIGURE=1 ./autogen.sh
 
-dist/libraries/lib/libharfbuzz.so: lib/freetype/build_hb/dist_hb/lib/libfreetype.so lib/harfbuzz/configure
+dist/libraries/lib/libharfbuzz.a: lib/freetype/build_hb/dist_hb/lib/libfreetype.a lib/harfbuzz/configure
 	cd lib/harfbuzz && \
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig:$(BASE_DIR)lib/freetype/build_hb/dist_hb/lib/pkgconfig \
 	emconfigure ./configure \
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
-		-Oz \
+		-O2 \
+		-mnontrapping-fptoint \
 		-s NO_FILESYSTEM=1 \
 		-s NO_EXIT_RUNTIME=1 \
 		-s STRICT=1 \
@@ -129,8 +131,8 @@ dist/libraries/lib/libharfbuzz.so: lib/freetype/build_hb/dist_hb/lib/libfreetype
 		--prefix="$(DIST_DIR)" \
 		--host=x86-none-linux \
 		--build=x86_64 \
-		--disable-static \
-		--enable-shared \
+		--enable-static \
+		--disable-shared \
 		--disable-dependency-tracking \
 		\
 		--without-cairo \
@@ -143,7 +145,7 @@ dist/libraries/lib/libharfbuzz.so: lib/freetype/build_hb/dist_hb/lib/libfreetype
 	emmake make install
 
 # Freetype with Harfbuzz
-dist/libraries/lib/libfreetype.so: dist/libraries/lib/libharfbuzz.so
+dist/libraries/lib/libfreetype.a: dist/libraries/lib/libharfbuzz.a
 	cd "lib/freetype" && \
 	git reset --hard && \
 	$(foreach file, \
@@ -154,7 +156,8 @@ dist/libraries/lib/libfreetype.so: dist/libraries/lib/libharfbuzz.so
 	emconfigure ./configure \
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
-		-Oz \
+		-O2 \
+		-mnontrapping-fptoint \
 		-s NO_FILESYSTEM=1 \
 		-s NO_EXIT_RUNTIME=1 \
 		-s STRICT=1 \
@@ -164,8 +167,8 @@ dist/libraries/lib/libfreetype.so: dist/libraries/lib/libharfbuzz.so
 		--prefix="$(DIST_DIR)" \
 		--host=x86-none-linux \
 		--build=x86_64 \
-		--disable-static \
-		--enable-shared \
+		--enable-static \
+		--disable-shared \
 		\
 		--without-zlib \
 		--without-bzip2 \
@@ -184,13 +187,15 @@ lib/fontconfig/configure:
 	patch -d "$(BASE_DIR)lib/fontconfig" -Np1 -i $(file);) \
 	NOCONFIGURE=1 ./autogen.sh
 
-dist/libraries/lib/libfontconfig.so: dist/libraries/lib/libharfbuzz.so dist/libraries/lib/libexpat.a dist/libraries/lib/libfribidi.so dist/libraries/lib/libfreetype.so lib/fontconfig/configure
+dist/libraries/lib/libfontconfig.a: dist/libraries/lib/libharfbuzz.a dist/libraries/lib/libexpat.a dist/libraries/lib/libfribidi.a dist/libraries/lib/libfreetype.a lib/fontconfig/configure
 	cd lib/fontconfig && \
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
 	emconfigure ./configure \
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
-		-Oz \
+		-DEMSCRIPTEN \
+		-O2 \
+		-mnontrapping-fptoint \
 		-s NO_EXIT_RUNTIME=1 \
 		--llvm-lto 1 \
 		-s STRICT=1 \
@@ -199,8 +204,8 @@ dist/libraries/lib/libfontconfig.so: dist/libraries/lib/libharfbuzz.so dist/libr
 		--prefix="$(DIST_DIR)" \
 		--host=x86-none-linux \
 		--build=x86_64 \
-		--disable-static \
-		--enable-shared \
+		--disable-shared \
+		--enable-static \
 		--disable-docs \
 		--with-default-fonts=/fonts \
 	&& \
@@ -217,13 +222,14 @@ lib/libass/configure:
 	patch -d "$(BASE_DIR)lib/libass" -Np1 -i $(file);) \
 	NOCONFIGURE=1 ./autogen.sh
 
-dist/libraries/lib/libass.so: dist/libraries/lib/libfontconfig.so dist/libraries/lib/libharfbuzz.so dist/libraries/lib/libexpat.a dist/libraries/lib/libfribidi.so dist/libraries/lib/libfreetype.so lib/libass/configure
+dist/libraries/lib/libass.a: dist/libraries/lib/libfontconfig.a dist/libraries/lib/libharfbuzz.a dist/libraries/lib/libexpat.a dist/libraries/lib/libfribidi.a dist/libraries/lib/libfreetype.a lib/libass/configure
 	cd lib/libass && \
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
 	emconfigure ./configure \
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
-		-Oz \
+		-O2 \
+		-mnontrapping-fptoint \
 		-s NO_EXIT_RUNTIME=1 \
 		-s STRICT=1 \
 		--llvm-lto 1 \
@@ -232,8 +238,8 @@ dist/libraries/lib/libass.so: dist/libraries/lib/libfontconfig.so dist/libraries
 		--prefix="$(DIST_DIR)" \
 		--host=x86-none-linux \
 		--build=x86_64 \
-		--disable-static \
-		--enable-shared \
+		--disable-shared \
+		--enable-static \
 		--disable-asm \
 		\
 		--enable-harfbuzz \
@@ -244,18 +250,18 @@ dist/libraries/lib/libass.so: dist/libraries/lib/libfontconfig.so dist/libraries
 
 # SubtitleOctopus.js
 OCTP_DEPS = \
-	$(DIST_DIR)/lib/libfribidi.so \
-	$(DIST_DIR)/lib/libfreetype.so \
+	$(DIST_DIR)/lib/libfribidi.a \
+	$(DIST_DIR)/lib/libfreetype.a \
 	$(DIST_DIR)/lib/libexpat.a \
-	$(DIST_DIR)/lib/libharfbuzz.so \
-	$(DIST_DIR)/lib/libfontconfig.so \
-	$(DIST_DIR)/lib/libass.so
+	$(DIST_DIR)/lib/libharfbuzz.a \
+	$(DIST_DIR)/lib/libfontconfig.a \
+	$(DIST_DIR)/lib/libass.a
 
 src/Makefile:
 	cd src && \
 	autoreconf -fi
 
-src/subtitles-octopus-worker.bc: dist/libraries/lib/libass.so src/Makefile
+src/subtitles-octopus-worker.bc: dist/libraries/lib/libass.a src/Makefile
 	cd src && \
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
 	emconfigure ./configure --host=x86-none-linux --build=x86_64 && \
@@ -264,7 +270,8 @@ src/subtitles-octopus-worker.bc: dist/libraries/lib/libass.so src/Makefile
 
 # Dist Files
 EMCC_COMMON_ARGS = \
-	-Oz \
+	-O2 \
+	-mnontrapping-fptoint \
 	-s EXPORTED_FUNCTIONS="['_main', '_malloc', '_libassjs_init', '_libassjs_quit', '_libassjs_resize', '_libassjs_render', '_libassjs_free_track', '_libassjs_create_track']" \
 	-s EXTRA_EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'getValue', 'FS_createPreloadedFile', 'FS_createFolder']" \
 	-s NO_EXIT_RUNTIME=1 \
@@ -289,7 +296,6 @@ dist/subtitles-octopus-worker.js: src/subtitles-octopus-worker.bc
 		--pre-js src/pre-worker.js \
 		--post-js src/post-worker.js \
 		-s WASM=1 \
-		-s "BINARYEN_TRAP_MODE='clamp'" \
 		$(EMCC_COMMON_ARGS)
 
 dist/subtitles-octopus.js:

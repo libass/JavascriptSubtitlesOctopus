@@ -1,0 +1,29 @@
+diff --git a/configure.ac b/configure.ac
+index 394c281..1cb2f74 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -681,22 +681,8 @@ if $fc_cv_have_solaris_atomic_ops; then
+ 	AC_DEFINE(HAVE_SOLARIS_ATOMIC_OPS, 1, [Have Solaris __machine_*_barrier and atomic_* operations])
+ fi
+ 
+-if test "$os_win32" = no && ! $have_pthread; then
+-	AC_CHECK_HEADERS(sched.h)
+-	AC_SEARCH_LIBS(sched_yield,rt,AC_DEFINE(HAVE_SCHED_YIELD, 1, [Have sched_yield]))
+-fi
+-
+-have_pthread=false
+-if test "$os_win32" = no; then
+-	AX_PTHREAD([have_pthread=true])
+-fi
+-if $have_pthread; then
+-	LIBS="$PTHREAD_LIBS $LIBS"
+-	CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+-	CC="$PTHREAD_CC"
+-	AC_DEFINE(HAVE_PTHREAD, 1, [Have POSIX threads])
+-fi
+-AM_CONDITIONAL(HAVE_PTHREAD, $have_pthread)
++AC_DEFINE(HAVE_PTHREAD, 0, [Have POSIX threads])
++AM_CONDITIONAL(HAVE_PTHREAD, false)
+ 
+ 
+ dnl ===========================================================================

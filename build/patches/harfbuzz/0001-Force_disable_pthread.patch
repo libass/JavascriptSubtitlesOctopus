@@ -1,0 +1,16 @@
+diff --git a/configure.ac b/configure.ac
+index c88cffea..a8f98078 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -128,9 +128,9 @@ AC_MSG_RESULT([$hb_os_win32])
+ AM_CONDITIONAL(OS_WIN32, test "$hb_os_win32" = "yes")
+ 
+ have_pthread=false
+-AX_PTHREAD([have_pthread=true])
++AX_PTHREAD([have_pthread=false])
+ if $have_pthread; then
+-	AC_DEFINE(HAVE_PTHREAD, 1, [Have POSIX threads])
++	AC_DEFINE(HAVE_PTHREAD, 0, [Have POSIX threads])
+ fi
+ AM_CONDITIONAL(HAVE_PTHREAD, $have_pthread)
+ 
