@@ -183,7 +183,7 @@ Module["preRun"].push(function() {
  var i;
  if (self.availableFonts && self.availableFonts.length !== 0) {
   if (!self.subContent) {
-   self.subContent = Module["read"](self.subUrl);
+   self.subContent = read_(self.subUrl);
   }
   self.fontFiles = [];
   var regex1 = /\nStyle: [^,]*?,([^,]*?),/gi;
