@@ -19,7 +19,7 @@ Module["preRun"].push(function () {
         var font;
         var matches;
         while ((matches = regex1.exec(self.subContent)) || (matches = regex2.exec(self.subContent))) {
-            font = matches[1].trim().toLowerCase();
+            font = matches[1].trim().toLowerCase().replace("@", "");
             if (!(font in fontsInSub)) {
                 fontsInSub[font] = true;
                 if (font in self.availableFonts) {
