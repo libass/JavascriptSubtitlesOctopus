@@ -192,7 +192,7 @@ Module["preRun"].push(function() {
   var font;
   var matches;
   while ((matches = regex1.exec(self.subContent)) || (matches = regex2.exec(self.subContent))) {
-   font = matches[1].trim().toLowerCase();
+   font = matches[1].trim().toLowerCase().replace("@", "");
    if (!(font in fontsInSub)) {
     fontsInSub[font] = true;
     if (font in self.availableFonts) {
@@ -5626,7 +5626,7 @@ self.fontMap_ = {};
 self.fontId = 0;
 
 self.writeFontToFS = function(font) {
- font = font.trim().toLowerCase();
+ font = font.trim().toLowerCase().replace("@", "");
  if (self.fontMap_.hasOwnProperty(font)) return;
  self.fontMap_[font] = true;
  if (!self.availableFonts.hasOwnProperty(font)) return;
