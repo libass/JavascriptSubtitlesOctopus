@@ -19,7 +19,7 @@ self.fontId = 0;
  * @param {!string} font the font name.
  */
 self.writeFontToFS = function(font) {
-    font = font.trim().toLowerCase();
+    font = font.trim().toLowerCase().replace("@", "");
     if (self.fontMap_.hasOwnProperty(font)) return;
 
     self.fontMap_[font] = true;
