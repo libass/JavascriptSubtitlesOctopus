@@ -9,7 +9,7 @@ Module["preRun"].push(function () {
     if (self.availableFonts && self.availableFonts.length !== 0) {
         if (!self.subContent) {
             // We can use sync xhr cause we're inside Web Worker
-            self.subContent = Module["read"](self.subUrl);
+            self.subContent = read_(self.subUrl);
         }
         // TODO: It's better to check "Format:" before parsing styles because "Fontname" can be at different place
         self.fontFiles = [];
