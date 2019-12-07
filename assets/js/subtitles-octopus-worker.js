@@ -171,7 +171,7 @@ Module.expectedDataFileDownloads++;
    "audio": 0
   } ],
   "remote_package_size": 146775,
-  "package_uuid": "b7d7dce7-7f0f-40d4-85be-ca44f18b24a6"
+  "package_uuid": "df329b65-746a-457f-ab29-e7d668479725"
  });
 })();
 
@@ -7070,6 +7070,9 @@ self.fontId = 0;
 
 self.writeFontToFS = function(font) {
  font = font.trim().toLowerCase();
+ if (font.startsWith("@")) {
+  font = font.substr(1);
+ }
  if (self.fontMap_.hasOwnProperty(font)) return;
  self.fontMap_[font] = true;
  if (!self.availableFonts.hasOwnProperty(font)) return;
