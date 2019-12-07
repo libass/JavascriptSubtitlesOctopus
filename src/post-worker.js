@@ -20,6 +20,11 @@ self.fontId = 0;
  */
 self.writeFontToFS = function(font) {
     font = font.trim().toLowerCase();
+    
+    if (font.startsWith("@")) {
+        font = font.substr(1);
+    }
+    
     if (self.fontMap_.hasOwnProperty(font)) return;
 
     self.fontMap_[font] = true;
