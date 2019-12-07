@@ -1,6 +1,7 @@
 var SubtitlesOctopus = function (options) {
     var self = this;
     self.canvas = options.canvas; // HTML canvas element (optional if video specified)
+    self.lossyRender = false; // Speedup render for heavy subs
     self.isOurCanvas = false; // (internal) we created canvas and manage it
     self.video = options.video; // HTML video element (optional if canvas specified)
     self.canvasParent = null; // (internal) HTML canvas parent element
@@ -71,6 +72,7 @@ var SubtitlesOctopus = function (options) {
             URL: document.URL,
             currentScript: self.workerUrl,
             preMain: true,
+            fastRender: self.lossyRender,
             subUrl: self.subUrl,
             subContent: self.subContent,
             fonts: self.fonts,
@@ -185,31 +187,7 @@ var SubtitlesOctopus = function (options) {
         self.subUrl = subUrl;
     };
 
-    self.cloneObject = function (event) {
-        var ret = {};
-        for (var x in event) {
-            if (x == x.toUpperCase()) continue;
-            var prop = event[x];
-            if (typeof prop === 'number' || typeof prop === 'string') ret[x] = prop;
-        }
-        return ret;
-    };
-
     self.renderFrameData = null;
-    function renderFrame() {
-        /*var dst = self.canvasData.data;
-         if (dst.set) {
-         dst.set(renderFrameData);
-         } else {
-         for (var i = 0; i < renderFrameData.length; i++) {
-         dst[i] = renderFrameData[i];
-         }
-         }
-         self.ctx.putImageData(self.canvasData, 0, 0);*/
-        self.ctx.putImageData(new ImageData(self.renderFrameData, self.canvas.width, self.canvas.height), 0, 0);
-        self.renderFrameData = null;
-    }
-
     function renderFrames() {
         var data = self.renderFramesData;
         var beforeDrawTime = performance.now();
@@ -226,6 +204,25 @@ var SubtitlesOctopus = function (options) {
         if (self.debug) {
             var drawTime = Math.round(performance.now() - beforeDrawTime);
             console.log(Math.round(data.spentTime) + ' ms (+ ' + drawTime + ' ms draw)');
+            self.renderStart = performance.now();
+        }
+    }
+    
+    /**
+     * Lossy Render Mode
+     * 
+     */
+    function renderFastFrames() {
+        var data = self.renderFramesData;
+        var beforeDrawTime = performance.now();
+        self.ctx.clearRect(0, 0, self.canvas.width, self.canvas.height);
+        for (var i = 0; i < data.bitmaps.length; i++) {
+            var image = data.bitmaps[i];
+            self.ctx.drawImage(image.bitmap, image.x, image.y);
+        }
+        if (self.debug) {
+            var drawTime = Math.round(performance.now() - beforeDrawTime);
+            console.log(data.bitmaps.length + ' bitmaps, libass: ' + Math.round(data.libassTime) + 'ms, decode: ' + Math.round(data.decodeTime) + 'ms, draw: ' + drawTime + 'ms');
             self.renderStart = performance.now();
         }
     }
@@ -264,25 +261,19 @@ var SubtitlesOctopus = function (options) {
                         self.resize(data.width, data.height);
                         break;
                     }
-                    case 'render': {
-                        // previous image was rendered so request another frame
-                        if (!self.renderFrameData) {
-                            window.requestAnimationFrame(renderFrame);
-                        }
-
-                        if (data.buffer) {
-                            self.renderFrameData = new Uint8ClampedArray(data.buffer);
-                        }
-                        else {
-                            self.renderFrameData = data.image.data;
-                        }
-                        break;
-                    }
-                    case 'renderMultiple': {
+                    case 'renderCanvas': {
                         if (self.lastRenderTime < data.time) {
                             self.lastRenderTime = data.time;
                             self.renderFramesData = data;
                             window.requestAnimationFrame(renderFrames);
+                        }
+                        break;
+                    }
+                    case 'renderFastCanvas': {
+                        if (self.lastRenderTime < data.time) {
+                            self.lastRenderTime = data.time;
+                            self.renderFramesData = data;
+                            window.requestAnimationFrame(renderFastFrames);
                         }
                         break;
                     }
@@ -301,38 +292,6 @@ var SubtitlesOctopus = function (options) {
                     target: 'tock',
                     id: self.frameId
                 });
-                break;
-            }
-            case 'Image': {
-                assert(data.method === 'src');
-                var img = new Image();
-                img.onload = function () {
-                    assert(img.complete);
-                    var canvas = document.createElement('canvas');
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    var ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0);
-                    var imageData = ctx.getImageData(0, 0, img.width, img.height);
-                    self.worker.postMessage({
-                        target: 'Image',
-                        method: 'onload',
-                        id: data.id,
-                        width: img.width,
-                        height: img.height,
-                        data: imageData.data,
-                        preMain: true
-                    });
-                };
-                img.onerror = function () {
-                    self.worker.postMessage({
-                        target: 'Image',
-                        method: 'onerror',
-                        id: data.id,
-                        preMain: true
-                    });
-                };
-                img.src = data.src;
                 break;
             }
             case 'custom': {
