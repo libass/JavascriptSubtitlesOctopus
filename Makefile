@@ -48,10 +48,10 @@ lib/expat/expat/configured:
 	$(foreach file, \
 	$(wildcard $(BASE_DIR)build/patches/expat/*.patch), \
 	patch -d "$(BASE_DIR)lib/expat" -Np1 -i $(file);) \
-	touch configured
+	touch configured && mkdir build
 
 dist/libraries/lib/libexpat.a: lib/expat/expat/configured
-	cd lib/expat/expat && \
+	cd lib/expat/expat/build && \
 	emconfigure cmake \
 		-DCMAKE_C_FLAGS=" \
 		-s USE_PTHREADS=0 \
@@ -70,16 +70,42 @@ dist/libraries/lib/libexpat.a: lib/expat/expat/configured
 		-DEXPAT_BUILD_FUZZERS=off \
 		-DEXPAT_BUILD_TESTS=off \
 		-DEXPAT_BUILD_TOOLS=off \
-		. \
+		.. \
 	&& \
 	emmake make -j8 && \
 	emmake make install
+
+lib/brotli/configured:
+	cd lib/brotli && \
+	$(foreach file, \
+	$(wildcard $(BASE_DIR)build/patches/brotli/*.patch), \
+	patch -d "$(BASE_DIR)lib/brotli" -Np1 -i $(file);) \
+	touch configured && mkdir build
+
+dist/libraries/lib/libbrotlidec.a: lib/brotli/configured
+	cd lib/brotli/build && \
+	emconfigure cmake \
+		-DCMAKE_C_FLAGS=" \
+		-O2 \
+		" \
+		-DCMAKE_INSTALL_PREFIX=$(DIST_DIR) \
+		.. \
+	&& \
+	emmake make -j8 && \
+	mkdir -p ../../../dist/libraries/lib/pkgconfig && \
+	mv libbrotlidec.pc ../../../dist/libraries/lib/pkgconfig && \
+	mv libbrotlicommon.pc ../../../dist/libraries/lib/pkgconfig && \
+	mv libbrotlidec-static.a ../../../dist/libraries/lib/libbrotlidec.a && \
+	mv libbrotlicommon-static.a ../../../dist/libraries/lib/libbrotlicommon.a && \
+	cp -r ../c/include ../../../dist/libraries/
+
 # Freetype without Harfbuzz
-lib/freetype/build_hb/dist_hb/lib/libfreetype.a:
+lib/freetype/build_hb/dist_hb/lib/libfreetype.a: dist/libraries/lib/libbrotlidec.a
 	cd "lib/freetype" && \
 	NOCONFIGURE=1 ./autogen.sh && \
 	mkdir -p build_hb && \
 	cd build_hb && \
+	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
 	emconfigure ../configure \
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
@@ -97,6 +123,7 @@ lib/freetype/build_hb/dist_hb/lib/libfreetype.a:
 		--enable-static \
 		--disable-shared \
 		\
+		--with-brotli=yes \
 		--without-zlib \
 		--without-bzip2 \
 		--without-png \
@@ -145,7 +172,7 @@ dist/libraries/lib/libharfbuzz.a: lib/freetype/build_hb/dist_hb/lib/libfreetype.
 	emmake make install
 
 # Freetype with Harfbuzz
-dist/libraries/lib/libfreetype.a: dist/libraries/lib/libharfbuzz.a
+dist/libraries/lib/libfreetype.a: dist/libraries/lib/libharfbuzz.a dist/libraries/lib/libbrotlidec.a
 	cd "lib/freetype" && \
 	git reset --hard && \
 	$(foreach file, \
@@ -170,6 +197,7 @@ dist/libraries/lib/libfreetype.a: dist/libraries/lib/libharfbuzz.a
 		--enable-static \
 		--disable-shared \
 		\
+		--with-brotli=yes \
 		--without-zlib \
 		--without-bzip2 \
 		--without-png \
@@ -222,7 +250,7 @@ lib/libass/configure:
 	patch -d "$(BASE_DIR)lib/libass" -Np1 -i $(file);) \
 	NOCONFIGURE=1 ./autogen.sh
 
-dist/libraries/lib/libass.a: dist/libraries/lib/libfontconfig.a dist/libraries/lib/libharfbuzz.a dist/libraries/lib/libexpat.a dist/libraries/lib/libfribidi.a dist/libraries/lib/libfreetype.a lib/libass/configure
+dist/libraries/lib/libass.a: dist/libraries/lib/libfontconfig.a dist/libraries/lib/libharfbuzz.a dist/libraries/lib/libexpat.a dist/libraries/lib/libfribidi.a dist/libraries/lib/libfreetype.a dist/libraries/lib/libbrotlidec.a lib/libass/configure
 	cd lib/libass && \
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
 	emconfigure ./configure \
@@ -251,6 +279,8 @@ dist/libraries/lib/libass.a: dist/libraries/lib/libfontconfig.a dist/libraries/l
 # SubtitleOctopus.js
 OCTP_DEPS = \
 	$(DIST_DIR)/lib/libfribidi.a \
+	$(DIST_DIR)/lib/libbrotlicommon.a \
+	$(DIST_DIR)/lib/libbrotlidec.a \
 	$(DIST_DIR)/lib/libfreetype.a \
 	$(DIST_DIR)/lib/libexpat.a \
 	$(DIST_DIR)/lib/libharfbuzz.a \
@@ -276,7 +306,7 @@ EMCC_COMMON_ARGS = \
 	-s EXTRA_EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'getValue', 'FS_createPreloadedFile', 'FS_createFolder']" \
 	-s NO_EXIT_RUNTIME=1 \
 	--use-preload-plugins \
-	--preload-file default.ttf \
+	--preload-file default.woff2 \
 	--preload-file fonts.conf \
 	-s ALLOW_MEMORY_GROWTH=1 \
 	-s STRICT=1 \
@@ -294,6 +324,7 @@ dist: src/subtitles-octopus-worker.bc dist/subtitles-octopus-worker.js dist/subt
 dist/subtitles-octopus-worker.js: src/subtitles-octopus-worker.bc
 	emcc src/subtitles-octopus-worker.bc $(OCTP_DEPS) \
 		--pre-js src/pre-worker.js \
+		--pre-js src/unbrotli.js \
 		--post-js src/post-worker.js \
 		-s WASM=1 \
 		$(EMCC_COMMON_ARGS)
@@ -303,7 +334,7 @@ dist/subtitles-octopus.js:
 
 # Clean Tasks
 
-clean: clean-dist clean-freetype clean-fribidi clean-harfbuzz clean-fontconfig clean-expat clean-libass clean-octopus
+clean: clean-dist clean-freetype clean-fribidi clean-harfbuzz clean-fontconfig clean-expat clean-libass clean-octopus clean-brotli
 
 clean-dist:
 	cd dist && rm -frv ./*
@@ -319,6 +350,8 @@ clean-harfbuzz:
 	cd lib/harfbuzz && git clean -fdx
 clean-libass:
 	cd lib/libass && git clean -fdx
+clean-brotli:
+	cd lib/brotli && git clean -fdx
 clean-octopus:
 	cd src && git clean -fdx
 
@@ -329,7 +362,13 @@ git-checkout:
 server: # Node http server npm i -g http-server
 	http-server
 
-git-update: git-freetype git-fribidi git-fontconfig git-expat git-harfbuzz git-libass
+git-update: git-freetype git-fribidi git-fontconfig git-expat git-harfbuzz git-libass git-brotli
+
+git-brotli:
+	cd lib/brotli && \
+	git reset --hard && \
+	git clean -dfx && \
+	git pull origin master
 
 git-freetype:
 	cd lib/freetype && \

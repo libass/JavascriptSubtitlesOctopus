@@ -22,3 +22,6 @@
 	path = lib/harfbuzz
 	url = https://github.com/harfbuzz/harfbuzz.git
 	ignore = dirty
+[submodule "lib/brotli"]
+	path = lib/brotli
+	url = https://github.com/google/brotli
