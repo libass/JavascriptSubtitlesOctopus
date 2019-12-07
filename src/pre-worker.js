@@ -5,39 +5,41 @@ Module["preRun"] = Module["preRun"] || [];
 
 Module["preRun"].push(function () {
     var i;
+    
+    Module["FS_createFolder"]("/", "fonts", true, true);
 
-    if (self.availableFonts && self.availableFonts.length !== 0) {
-        if (!self.subContent) {
-            // We can use sync xhr cause we're inside Web Worker
+    if (!self.subContent) {
+        // We can use sync xhr cause we're inside Web Worker
+        if (self.subUrl.endsWith(".br")) {
+            self.subContent = Module["BrotliDecode"](readBinary(self.subUrl))
+        } else {
             self.subContent = read_(self.subUrl);
         }
-        // TODO: It's better to check "Format:" before parsing styles because "Fontname" can be at different place
-        self.fontFiles = [];
-        var regex1 = /\nStyle: [^,]*?,([^,]*?),/ig;
-        var regex2 = /\\fn([^\\}]*?)[\\}]/g;
-        var fontsInSub = {};
-        var font;
-        var matches;
-        while ((matches = regex1.exec(self.subContent)) || (matches = regex2.exec(self.subContent))) {
-            font = matches[1].trim().toLowerCase();
-            if (!(font in fontsInSub)) {
-                fontsInSub[font] = true;
-                if (font in self.availableFonts) {
-                    self.fontFiles.push(self.availableFonts[font]);
+    }
+    
+    if (self.availableFonts && self.availableFonts.length !== 0) {
+        var sections = parseAss(self.subContent);
+            for (var i = 0; i < sections.length; i++) {
+                for (var j = 0; j < sections[i].body.length; j++) {
+                    if (sections[i].body[j].key === 'Style') {
+                        self.writeFontToFS(sections[i].body[j].value['Fontname']);
+                    }
                 }
             }
+            
+            var regex = /\\fn([^\\}]*?)[\\}]/g;
+            var matches;
+            while (matches = regex.exec(self.subContent)) {
+                self.writeFontToFS(matches[1]);
+            }
         }
-    }
 
     if (self.subContent) {
         Module["FS"].writeFile("/sub.ass", self.subContent);
-    } else {
-        Module["FS"].writeFile("/sub.ass", read_(self.subUrl));
     }
 
     self.subContent = null;
 
-    Module["FS_createFolder"]("/", "fonts", true, true);
     //Module["FS"].mount(Module["FS"].filesystems.IDBFS, {}, '/fonts');
     var fontFiles = self.fontFiles || [];
     for (i = 0; i < fontFiles.length; i++) {

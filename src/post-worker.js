@@ -27,7 +27,9 @@ self.writeFontToFS = function(font) {
     if (!self.availableFonts.hasOwnProperty(font)) return;
     var content = readBinary(self.availableFonts[font]);
 
-    Module["FS"].writeFile('/fonts/font' + (self.fontId++) + '-' + self.availableFonts[font].split('/').pop(), content, { encoding: 'binary' });
+    Module["FS"].writeFile('/fonts/font' + (self.fontId++) + '-' + self.availableFonts[font].split('/').pop(), content, { 
+        encoding: 'binary'
+    });
 };
 
 /**
@@ -67,7 +69,11 @@ self.setTrack = function (content) {
 
     // Tell libass to render the new track
     self._create_track("/sub.ass");
-    self.render(true);
+    if (self.fastRenderMode) {
+        self.fastRender();
+    } else {
+        self.render();
+    }
 };
 
 /**
@@ -75,7 +81,11 @@ self.setTrack = function (content) {
  */
 self.freeTrack = function () {
     self._free_track();
-    self.render(true);
+    if (self.fastRenderMode) {
+        self.fastRender();
+    } else {
+        self.render();
+    }
 };
 
 /**
@@ -83,7 +93,13 @@ self.freeTrack = function () {
  * @param {!string} url the URL of the subtitle file.
  */
 self.setTrackByUrl = function (url) {
-    self.setTrack(read_(url));
+    var content = "";
+    if (url.endsWith(".br")) {
+        content = Module["BrotliDecode"](readBinary(url))
+    } else {
+        content = read_(url);
+    }
+    self.setTrack(content);
 };
 
 self.resize = function (width, height) {
@@ -110,10 +126,19 @@ self.setCurrentTime = function (currentTime) {
     self.lastCurrentTimeReceivedAt = Date.now();
     if (!self.rafId) {
         if (self.nextIsRaf) {
-            self.rafId = self.requestAnimationFrame(self.render);
+            if (self.fastRenderMode) {
+                self.rafId = self.requestAnimationFrame(self.fastRender);
+            } else {
+                self.rafId = self.requestAnimationFrame(self.render);
+            }
         }
         else {
-            self.render();
+            if (self.fastRenderMode) {
+                self.fastRender();
+            } else {
+                self.render();
+            }
+            
             // Give onmessage chance to receive all queued messages
             setTimeout(function () {
                 self.nextIsRaf = false;
@@ -137,7 +162,12 @@ self.setIsPaused = function (isPaused) {
         }
         else {
             self.lastCurrentTimeReceivedAt = Date.now();
-            self.rafId = self.requestAnimationFrame(self.render);
+            if (self.fastRenderMode) {
+                self.rafId = self.requestAnimationFrame(self.fastRender);
+            } else {
+                self.rafId = self.requestAnimationFrame(self.render);
+            }
+            
         }
     }
 };
@@ -153,7 +183,7 @@ self.render = function (force) {
         var spentTime = performance.now() - startTime;
         postMessage({
             target: 'canvas',
-            op: 'renderMultiple',
+            op: 'renderCanvas',
             time: Date.now(),
             spentTime: spentTime,
             canvases: result[0]
@@ -162,6 +192,45 @@ self.render = function (force) {
 
     if (!self._isPaused) {
         self.rafId = self.requestAnimationFrame(self.render);
+    }
+};
+
+self.fastRender = function (force) {
+    self.rafId = 0;
+    self.renderPending = false;
+    var startTime = performance.now();
+    var renderResult = self._render(self.getCurrentTime() + self.delay, self.changed);
+    var changed = Module.getValue(self.changed, "i32");
+    if (changed != 0 || force) {
+        var result = self.buildResult(renderResult);
+        var newTime = performance.now();
+        var libassTime = newTime - startTime;
+        var promises = [];
+        for (var i = 0; i < result[0].length; i++) {
+            var image = result[0][i];
+            var imageBuffer = new Uint8ClampedArray(image.buffer);
+            var imageData = new ImageData(imageBuffer, image.w, image.h);
+            promises[i] = createImageBitmap(imageData, 0, 0, image.w, image.h);
+        }
+        Promise.all(promises).then(function (imgs) {
+            var decodeTime = performance.now() - newTime;
+            var bitmaps = [];
+            for (var i = 0; i < imgs.length; i++) {
+                var image = result[0][i];
+                bitmaps[i] = { x: image.x, y: image.y, bitmap: imgs[i] };
+            }
+            postMessage({
+                target: "canvas",
+                op: "renderFastCanvas",
+                time: Date.now(),
+                libassTime: libassTime,
+                decodeTime: decodeTime,
+                bitmaps: bitmaps
+            }, imgs);
+        });
+    }
+    if (!self._isPaused) {
+        self.rafId = self.requestAnimationFrame(self.fastRender);
     }
 };
 
@@ -306,8 +375,6 @@ function parseAss(content) {
     return sections;
 };
 
-self.scrollX = self.scrollY = 0; // TODO: proxy these
-
 self.requestAnimationFrame = (function () {
     // similar to Browser.requestAnimationFrame
     var nextRAF = 0;
@@ -327,17 +394,9 @@ self.requestAnimationFrame = (function () {
     };
 })();
 
-/*var screen = {
-    width: 0,
-    height: 0
-};*/
-
 var screen = {
     width: 0,
     height: 0
-};
-
-Module.setStatus = function () {
 };
 
 Module.print = function Module_print(x) {
@@ -412,7 +471,11 @@ function onMessageFromMainEmscriptenThread(message) {
                     Module.canvas.boundingClientRect = message.data.boundingClientRect;
                 }
                 self.resize(message.data.width, message.data.height);
-                self.render(true);
+                if (self.fastRenderMode) {
+                    self.fastRender();
+                } else {
+                    self.render();
+                }
             } else throw 'ey?';
             break;
         }
@@ -439,6 +502,7 @@ function onMessageFromMainEmscriptenThread(message) {
             self.subUrl = message.data.subUrl;
             self.subContent = message.data.subContent;
             self.fontFiles = message.data.fonts;
+            self.fastRenderMode = message.data.fastRender;
             self.availableFonts = message.data.availableFonts;
             if (Module.canvas) {
                 Module.canvas.width_ = message.data.width;

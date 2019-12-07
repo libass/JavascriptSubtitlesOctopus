@@ -57,7 +57,7 @@ void libassjs_init(int frame_w, int frame_h, char *subfile)
     }
 
     ass_set_frame_size(ass_renderer, frame_w, frame_h);
-    ass_set_fonts(ass_renderer, "default.ttf", NULL, ASS_FONTPROVIDER_FONTCONFIG, "/fonts.conf", 1);
+    ass_set_fonts(ass_renderer, "default.woff2", NULL, ASS_FONTPROVIDER_FONTCONFIG, "/fonts.conf", 1);
 
     libassjs_create_track(subfile);
 }
