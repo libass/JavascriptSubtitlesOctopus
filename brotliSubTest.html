@@ -39,7 +39,7 @@
         <h1>Brotli Subtitle Test</h1>
         
         <video id="test" class="video-js" controls preload="auto" width="840" height="460" data-setup="{}">
-            <source src="http://distribution.bbb3d.renderfarming.net/video/mp4/bbb_sunflower_1080p_30fps_normal.mp4" type='video/webm'>
+            <source src="http://distribution.bbb3d.renderfarming.net/video/mp4/bbb_sunflower_1080p_30fps_normal.mp4" type='video/mp4'>
             <p class="vjs-no-js">
                 To view this video please enable JavaScript, and consider upgrading to a web browser that
                 <a href="http://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
@@ -57,6 +57,7 @@
                 window.SubtitlesOctopusOnLoad = function () {
                     var options = {
                         video: video,
+                        lossyRender: true,
                         subUrl: '/JavascriptSubtitlesOctopus/subtitles/test.ass.br',
                         fonts: ['/JavascriptSubtitlesOctopus/fonts/Arial.woff2', '/JavascriptSubtitlesOctopus/fonts/TimesNewRoman.woff2'],
                         //onReady: onReadyFunction,
