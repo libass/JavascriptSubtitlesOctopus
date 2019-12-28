@@ -115,8 +115,7 @@ When creating an instance of SubtitleOctopus, you can set the following options:
   `false`)
 
 ### Fast Render Mode (Lossy) (EXPERIMENTAL)
-The Fast Render mode has been created by @no1d as a suggestion for fix browser freezing when rendering heavy subtitles (#46),
-this mode simply drop some bitmaps when the process start to freeze. this mode can cause some bitmap loss or simply not render they at all.
+The Fast Render mode has been created by @no1d as a suggestion for fix browser freezing when rendering heavy subtitles (#46), it use [createImageBitmap](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/createImageBitmap) to render the bitmap in the Worker, using Promises instead of direct render on canvas in the Main Thread. When the browser start to hang, it will not lock main thread, instead will run Async, so if the function createImageBitmap fail, it will not stop the rendering process at all and may cause some bitmap loss or simply will not draw anything in canvas, mostly on low end devices.
 
 **WARNING: Experimental, not stable and not working in Safari**
 
