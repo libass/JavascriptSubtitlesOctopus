@@ -25,7 +25,6 @@ dist/libraries/lib/libfribidi.a: lib/fribidi/configure
 		-s USE_PTHREADS=0 \
 		-O2 \
 		-s NO_FILESYSTEM=1 \
-		-mnontrapping-fptoint \
 		-s NO_EXIT_RUNTIME=1 \
 		-s STRICT=1 \
 		--llvm-lto 1 \
@@ -57,7 +56,6 @@ dist/libraries/lib/libexpat.a: lib/expat/expat/configured
 		-s USE_PTHREADS=0 \
 		-O2 \
 		-s NO_FILESYSTEM=1 \
-		-mnontrapping-fptoint \
 		-s NO_EXIT_RUNTIME=1 \
 		-s STRICT=1 \
 		--llvm-lto 1 \
@@ -111,7 +109,6 @@ lib/freetype/build_hb/dist_hb/lib/libfreetype.a: dist/libraries/lib/libbrotlidec
 		-s USE_PTHREADS=0 \
 		-O2 \
 		-s NO_FILESYSTEM=1 \
-		-mnontrapping-fptoint \
 		-s NO_EXIT_RUNTIME=1 \
 		-s STRICT=1 \
 		--llvm-lto 1 \
@@ -147,7 +144,6 @@ dist/libraries/lib/libharfbuzz.a: lib/freetype/build_hb/dist_hb/lib/libfreetype.
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
 		-O2 \
-		-mnontrapping-fptoint \
 		-s NO_FILESYSTEM=1 \
 		-s NO_EXIT_RUNTIME=1 \
 		-s STRICT=1 \
@@ -184,7 +180,6 @@ dist/libraries/lib/libfreetype.a: dist/libraries/lib/libharfbuzz.a dist/librarie
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
 		-O2 \
-		-mnontrapping-fptoint \
 		-s NO_FILESYSTEM=1 \
 		-s NO_EXIT_RUNTIME=1 \
 		-s STRICT=1 \
@@ -223,7 +218,6 @@ dist/libraries/lib/libfontconfig.a: dist/libraries/lib/libharfbuzz.a dist/librar
 		-s USE_PTHREADS=0 \
 		-DEMSCRIPTEN \
 		-O2 \
-		-mnontrapping-fptoint \
 		-s NO_EXIT_RUNTIME=1 \
 		--llvm-lto 1 \
 		-s STRICT=1 \
@@ -257,7 +251,6 @@ dist/libraries/lib/libass.a: dist/libraries/lib/libfontconfig.a dist/libraries/l
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
 		-O2 \
-		-mnontrapping-fptoint \
 		-s NO_EXIT_RUNTIME=1 \
 		-s STRICT=1 \
 		--llvm-lto 1 \
@@ -301,7 +294,6 @@ src/subtitles-octopus-worker.bc: dist/libraries/lib/libass.a src/Makefile
 # Dist Files
 EMCC_COMMON_ARGS = \
 	-O2 \
-	-mnontrapping-fptoint \
 	-s EXPORTED_FUNCTIONS="['_main', '_malloc', '_libassjs_init', '_libassjs_quit', '_libassjs_resize', '_libassjs_render', '_libassjs_free_track', '_libassjs_create_track']" \
 	-s EXTRA_EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'getValue', 'FS_createPreloadedFile', 'FS_createFolder']" \
 	-s NO_EXIT_RUNTIME=1 \
