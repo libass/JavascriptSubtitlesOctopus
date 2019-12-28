@@ -171,7 +171,7 @@ Module.expectedDataFileDownloads++;
    "audio": 0
   } ],
   "remote_package_size": 146775,
-  "package_uuid": "df329b65-746a-457f-ab29-e7d668479725"
+  "package_uuid": "ab716e50-c158-43fd-92d8-8aeef41588ad"
  });
 })();
 
@@ -2137,7 +2137,7 @@ function updateGlobalBufferAndViews(buf) {
  Module["HEAPF64"] = HEAPF64 = new Float64Array(buf);
 }
 
-var STACK_BASE = 5888064, DYNAMIC_BASE = 5888064, DYNAMICTOP_PTR = 645024;
+var STACK_BASE = 5888160, DYNAMIC_BASE = 5888160, DYNAMICTOP_PTR = 645120;
 
 var INITIAL_TOTAL_MEMORY = Module["TOTAL_MEMORY"] || 16777216;
 
@@ -6104,7 +6104,7 @@ function _emscripten_get_heap_size() {
 }
 
 function _emscripten_get_sbrk_ptr() {
- return 645024;
+ return 645120;
 }
 
 var setjmpId = 0;
@@ -6830,12 +6830,12 @@ var dynCall_diii = Module["dynCall_diii"] = function() {
  return Module["asm"]["dynCall_diii"].apply(null, arguments);
 };
 
-var dynCall_jiji = Module["dynCall_jiji"] = function() {
- return Module["asm"]["dynCall_jiji"].apply(null, arguments);
-};
-
 var dynCall_iidiiii = Module["dynCall_iidiiii"] = function() {
  return Module["asm"]["dynCall_iidiiii"].apply(null, arguments);
+};
+
+var dynCall_jiji = Module["dynCall_jiji"] = function() {
+ return Module["asm"]["dynCall_jiji"].apply(null, arguments);
 };
 
 function invoke_viiii(index, a1, a2, a3, a4) {
