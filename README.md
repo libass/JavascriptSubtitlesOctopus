@@ -7,7 +7,7 @@ SubtitlesOctopus displays subtitles in .ass format and easily integrates with HT
 ## Features
 
 - Supports all SSA/ASS features
-- Supports any fonts
+- Supports any fonts (including woff2 fonts)
 - Works fast (because uses WebAssembly with fallback to asm.js if it's not available)
 - Uses Web Workers thus video and interface doesn't lag even on "heavy" subtitles (working in background)
 - Doesn't use DOM manipulations and render subtitles on single canvas
@@ -113,6 +113,19 @@ When creating an instance of SubtitleOctopus, you can set the following options:
   occurs if browser doesn't support web workers). (Optional)
 - `debug`: Whether performance info is printed in the console. (Default:
   `false`)
+
+### Fast Render Mode (Lossy) (EXPERIMENTAL)
+The Fast Render mode has been created by @no1d as a suggestion for fix browser freezing when rendering heavy subtitles (#46),
+this mode simply drop some bitmaps when the process start to freeze. this mode can cause some bitmap loss or simply not render they at all.
+
+**WARNING: Experimental, not stable and not working in Safari**
+
+To enable this mode set the option `lossyRender` to `true` when creating an instance of SubtitleOctopus.
+
+### Brotli Compressed Subtitles
+The SubtitleOctopus allow the use of compressed subtitles in brotli format, saving bandwidth and reducing library startup time
+
+To use, just run: `brotli subFile.ass` and use the .br result file with the subUrl option
 
 ## How to build?
 
