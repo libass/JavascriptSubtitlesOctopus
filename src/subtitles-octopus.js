@@ -252,6 +252,26 @@ var SubtitlesOctopus = function (options) {
                 console.log(data.content);
                 break;
             }
+            case 'console-log': {
+                console.log.apply(console, JSON.parse(data.content));
+                break;
+            }
+            case 'console-debug': {
+                console.debug.apply(console, JSON.parse(data.content));
+                break;
+            }
+            case 'console-info': {
+                console.info.apply(console, JSON.parse(data.content));
+                break;
+            }
+            case 'console-warn': {
+                console.warn.apply(console, JSON.parse(data.content));
+                break;
+            }
+            case 'console-error': {
+                console.error.apply(console, JSON.parse(data.content));
+                break;
+            }
             case 'stderr': {
                 console.error(data.content);
                 break;
