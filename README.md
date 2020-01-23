@@ -32,7 +32,8 @@ var options = {
     video: document.getElementById('video'), // HTML5 video element
     subUrl: '/test/test.ass', // Link to subtitles
     fonts: ['/test/font-1.ttf', '/test/font-2.ttf'], // Links to fonts (not required, default font already included in build)
-    workerUrl: '/libassjs-worker.js' // Link to file "libassjs-worker.js"
+    workerUrl: '/libassjs-worker.js', // Link to WebAssembly-based file "libassjs-worker.js"
+    legacyWorkerUrl: '/libassjs-worker-legacy.js' // Link to non-WebAssembly worker
 };
 var instance = new SubtitlesOctopus(options);
 ```
