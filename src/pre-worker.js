@@ -11,30 +11,32 @@ if (!String.prototype.endsWith) {
 
 // implement console methods if they're missing
 if (typeof console === "undefined") {
-    function postConsoleMessage(prefix, args) {
-        postMessage({
-            target: "console-" + prefix,
-            content: JSON.stringify(Array.prototype.slice.call(args)),
-        })
-    }
-
-    var console = {
-        log: function() {
-            postConsoleMessage("log", arguments);
-        },
-        debug: function() {
-            postConsoleMessage("debug", arguments);
-        },
-        info: function() {
-            postConsoleMessage("info", arguments);
-        },
-        warn: function() {
-            postConsoleMessage("warn", arguments);
-        },
-        error: function() {
-            postConsoleMessage("error", arguments);
+    var console = (function () {
+        function postConsoleMessage(prefix, args) {
+            postMessage({
+                target: "console-" + prefix,
+                content: JSON.stringify(Array.prototype.slice.call(args)),
+            })
         }
-    };
+
+        return {
+            log: function() {
+                postConsoleMessage("log", arguments);
+            },
+            debug: function() {
+                postConsoleMessage("debug", arguments);
+            },
+            info: function() {
+                postConsoleMessage("info", arguments);
+            },
+            warn: function() {
+                postConsoleMessage("warn", arguments);
+            },
+            error: function() {
+                postConsoleMessage("error", arguments);
+            }
+        }
+    })();
 }
 
 Module = Module || {};
