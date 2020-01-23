@@ -18,25 +18,34 @@ var SubtitlesOctopus = function (options) {
 
     self.timeOffset = options.timeOffset || 0; // Time offset would be applied to currentTime from video (option)
 
-    if (typeof ImageData.prototype.constructor !== 'function') {
-        (function () {
-            var canvas = document.createElement('canvas');
-            var ctx = canvas.getContext('2d');
-
-            window.ImageData = function () {
-                var i = 0;
-                if (arguments[0] instanceof Uint8ClampedArray) {
-                    var data = arguments[i++];
-                }
-                var width = arguments[i++];
-                var height = arguments[i];
-
-                var imageData = ctx.createImageData(width, height);
-                if (data) imageData.data.set(data);
-                return imageData;
+    (function() {
+        if (typeof ImageData.prototype.constructor === 'function') {
+            try {
+                // try actually calling ImageData, as on some browsers it's reported
+                // as existing but calling it errors out as "TypeError: Illegal constructor"
+                new window.ImageData(new Uint8ClampedArray([0, 0, 0, 0]), 1, 1);
+                return;
+            } catch (e) {
+                console.log("detected that ImageData is not constructable despite browser saying so");
             }
-        })();
-    }
+        }
+
+        var canvas = document.createElement('canvas');
+        var ctx = canvas.getContext('2d');
+
+        window.ImageData = function () {
+            var i = 0;
+            if (arguments[0] instanceof Uint8ClampedArray) {
+                var data = arguments[i++];
+            }
+            var width = arguments[i++];
+            var height = arguments[i];
+
+            var imageData = ctx.createImageData(width, height);
+            if (data) imageData.data.set(data);
+            return imageData;
+        }
+    })();
 
     self.workerError = function (error) {
         console.error('Worker error: ', error);
