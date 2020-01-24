@@ -103,7 +103,8 @@ var SubtitlesOctopus = function (options) {
             subUrl: self.subUrl,
             subContent: self.subContent,
             fonts: self.fonts,
-            availableFonts: self.availableFonts
+            availableFonts: self.availableFonts,
+            debug: self.debug
         });
     };
 

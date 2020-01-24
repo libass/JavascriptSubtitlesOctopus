@@ -9,8 +9,10 @@ if (!String.prototype.endsWith) {
 	};
 }
 
+var hasNativeConsole = typeof console !== "undefined";
+
 // implement console methods if they're missing
-if (typeof console === "undefined") {
+function makeCustomConsole() {
     var console = (function () {
         function postConsoleMessage(prefix, args) {
             postMessage({
@@ -37,6 +39,8 @@ if (typeof console === "undefined") {
             }
         }
     })();
+
+    return console;
 }
 
 Module = Module || {};
@@ -109,7 +113,7 @@ Module["printErr"] = function (text) {
 };
 
 // Modified from https://github.com/kripken/emscripten/blob/6dc4ac5f9e4d8484e273e4dcc554f809738cedd6/src/proxyWorker.js
-if (typeof console === 'undefined') {
+if (!hasNativeConsole) {
     // we can't call Module.printErr because that might be circular
     var console = {
         log: function (x) {
