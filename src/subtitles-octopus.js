@@ -34,6 +34,8 @@ var SubtitlesOctopus = function (options) {
 
     self.timeOffset = options.timeOffset || 0; // Time offset would be applied to currentTime from video (option)
 
+    self.hasAlphaBug = false;
+
     (function() {
         if (typeof ImageData.prototype.constructor === 'function') {
             try {
@@ -133,6 +135,23 @@ var SubtitlesOctopus = function (options) {
         self.ctx = self.canvas.getContext('2d');
         self.bufferCanvas = document.createElement('canvas');
         self.bufferCanvasCtx = self.bufferCanvas.getContext('2d');
+
+        // test for alpha bug, where e.g. WebKit can render a transparent pixel
+        // (with alpha == 0) as non-black which then leads to visual artifacts
+        self.bufferCanvas.width = 1;
+        self.bufferCanvas.height = 1;
+        var testBuf = new Uint8ClampedArray([0, 255, 0, 0]);
+        var testImage = new ImageData(testBuf, 1, 1);
+        self.bufferCanvasCtx.clearRect(0, 0, 1, 1);
+        self.ctx.clearRect(0, 0, 1, 1);
+        var prePut = self.ctx.getImageData(0, 0, 1, 1).data;
+        self.bufferCanvasCtx.putImageData(testImage, 0, 0);
+        self.ctx.drawImage(self.bufferCanvas, 0, 0);
+        var postPut = self.ctx.getImageData(0, 0, 1, 1).data;
+        self.hasAlphaBug = prePut[1] != postPut[1];
+        if (self.hasAlphaBug) {
+            console.log("Detected a browser having issue with transparent pixels, applying workaround");
+        }
     };
 
     self.setVideo = function (video) {
@@ -222,6 +241,11 @@ var SubtitlesOctopus = function (options) {
             self.bufferCanvas.width = image.w;
             self.bufferCanvas.height = image.h;
             var imageBuffer = new Uint8ClampedArray(image.buffer);
+            if (self.hasAlphaBug) {
+                for (var j = 3; j < imageBuffer.length; j = j + 4) {
+                    imageBuffer[j] = (imageBuffer[j] >= 1) ? imageBuffer[j] : 1;
+                }
+            }
             var imageData = new ImageData(imageBuffer, image.w, image.h);
             self.bufferCanvasCtx.putImageData(imageData, 0, 0);
             self.ctx.drawImage(self.bufferCanvas, image.x, image.y);
@@ -232,10 +256,10 @@ var SubtitlesOctopus = function (options) {
             self.renderStart = performance.now();
         }
     }
-    
+
     /**
      * Lossy Render Mode
-     * 
+     *
      */
     function renderFastFrames() {
         var data = self.renderFramesData;
