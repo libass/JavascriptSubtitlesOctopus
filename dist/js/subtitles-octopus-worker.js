@@ -19,15 +19,15 @@ Module.expectedDataFileDownloads++;
   } else {
    throw "using preloaded data can only be done on a web page or in a web worker";
   }
-  var PACKAGE_NAME = "dist/subtitles-octopus-worker.data";
+  var PACKAGE_NAME = "dist/js/subtitles-octopus-worker.data";
   var REMOTE_PACKAGE_BASE = "subtitles-octopus-worker.data";
   if (typeof Module["locateFilePackage"] === "function" && !Module["locateFile"]) {
    Module["locateFile"] = Module["locateFilePackage"];
    err("warning: you defined Module.locateFilePackage, that has been renamed to Module.locateFile (using your locateFilePackage for now)");
   }
   var REMOTE_PACKAGE_NAME = Module["locateFile"] ? Module["locateFile"](REMOTE_PACKAGE_BASE, "") : REMOTE_PACKAGE_BASE;
-  var REMOTE_PACKAGE_SIZE = metadata.remote_package_size;
-  var PACKAGE_UUID = metadata.package_uuid;
+  var REMOTE_PACKAGE_SIZE = metadata["remote_package_size"];
+  var PACKAGE_UUID = metadata["package_uuid"];
   function fetchRemotePackage(packageName, packageSize, callback, errback) {
    var xhr = new XMLHttpRequest();
    xhr.open("GET", packageName, true);
@@ -92,6 +92,7 @@ Module.expectedDataFileDownloads++;
    function assert(check, msg) {
     if (!check) throw msg + new Error().stack;
    }
+   Module["FS_createPath"]("/", "assets", true, true);
    function DataRequest(start, end, audio) {
     this.start = start;
     this.end = end;
@@ -123,9 +124,9 @@ Module.expectedDataFileDownloads++;
      this.requests[this.name] = null;
     }
    };
-   var files = metadata.files;
+   var files = metadata["files"];
    for (var i = 0; i < files.length; ++i) {
-    new DataRequest(files[i].start, files[i].end, files[i].audio).open("GET", files[i].filename);
+    new DataRequest(files[i]["start"], files[i]["end"], files[i]["audio"]).open("GET", files[i]["filename"]);
    }
    function processPackageData(arrayBuffer) {
     Module.finishedDataFileDownloads++;
@@ -133,13 +134,13 @@ Module.expectedDataFileDownloads++;
     assert(arrayBuffer instanceof ArrayBuffer, "bad input to processPackageData");
     var byteArray = new Uint8Array(arrayBuffer);
     DataRequest.prototype.byteArray = byteArray;
-    var files = metadata.files;
+    var files = metadata["files"];
     for (var i = 0; i < files.length; ++i) {
      DataRequest.prototype.requests[files[i].filename].onload();
     }
-    Module["removeRunDependency"]("datafile_dist/subtitles-octopus-worker.data");
+    Module["removeRunDependency"]("datafile_dist/js/subtitles-octopus-worker.data");
    }
-   Module["addRunDependency"]("datafile_dist/subtitles-octopus-worker.data");
+   Module["addRunDependency"]("datafile_dist/js/subtitles-octopus-worker.data");
    if (!Module.preloadResults) Module.preloadResults = {};
    Module.preloadResults[PACKAGE_NAME] = {
     fromCache: false
@@ -160,18 +161,18 @@ Module.expectedDataFileDownloads++;
  };
  loadPackage({
   "files": [ {
-   "filename": "/default.woff2",
    "start": 0,
+   "audio": 0,
    "end": 145972,
-   "audio": 0
+   "filename": "/assets/default.woff2"
   }, {
-   "filename": "/fonts.conf",
    "start": 145972,
+   "audio": 0,
    "end": 146775,
-   "audio": 0
+   "filename": "/assets/fonts.conf"
   } ],
   "remote_package_size": 146775,
-  "package_uuid": "ab716e50-c158-43fd-92d8-8aeef41588ad"
+  "package_uuid": "71e58824-dc8c-4703-83ea-10beae87553f"
  });
 })();
 
@@ -215,14 +216,13 @@ Module["preRun"].push(function() {
 });
 
 Module["onRuntimeInitialized"] = function() {
- self.init = Module["cwrap"]("libassjs_init", "number", [ "number", "number", "string" ]);
- self._resize = Module["cwrap"]("libassjs_resize", null, [ "number", "number" ]);
- self._render = Module["cwrap"]("libassjs_render", null, [ "number", "number" ]);
- self._free_track = Module["cwrap"]("libassjs_free_track", null, null);
- self._create_track = Module["cwrap"]("libassjs_create_track", null, [ "string" ]);
- self.quit = Module["cwrap"]("libassjs_quit", null, []);
+ self.octObj = new Module.SubtitleOctopus();
  self.changed = Module._malloc(4);
- self.init(screen.width, screen.height, "/sub.ass");
+ self.octObj.initLibrary(screen.width, screen.height);
+ self.octObj.createTrack("/sub.ass");
+ self.ass_track = self.octObj.track;
+ self.ass_library = self.octObj.ass_library;
+ self.ass_renderer = self.octObj.ass_renderer;
 };
 
 Module["print"] = function(text) {
@@ -1512,17 +1512,17 @@ function locateFile(path) {
 
 var read_, readAsync, readBinary, setWindowTitle;
 
+var nodeFS;
+
+var nodePath;
+
 if (ENVIRONMENT_IS_NODE) {
  scriptDirectory = __dirname + "/";
- var nodeFS;
- var nodePath;
  read_ = function shell_read(filename, binary) {
-  var ret;
   if (!nodeFS) nodeFS = require("fs");
   if (!nodePath) nodePath = require("path");
   filename = nodePath["normalize"](filename);
-  ret = nodeFS["readFileSync"](filename);
-  return binary ? ret : ret.toString();
+  return nodeFS["readFileSync"](filename, binary ? null : "utf8");
  };
  readBinary = function readBinary(filename) {
   var ret = read_(filename, true);
@@ -1592,35 +1592,37 @@ if (ENVIRONMENT_IS_NODE) {
  } else {
   scriptDirectory = "";
  }
- read_ = function shell_read(url) {
-  var xhr = new XMLHttpRequest();
-  xhr.open("GET", url, false);
-  xhr.send(null);
-  return xhr.responseText;
- };
- if (ENVIRONMENT_IS_WORKER) {
-  readBinary = function readBinary(url) {
+ {
+  read_ = function shell_read(url) {
    var xhr = new XMLHttpRequest();
    xhr.open("GET", url, false);
-   xhr.responseType = "arraybuffer";
    xhr.send(null);
-   return new Uint8Array(xhr.response);
+   return xhr.responseText;
+  };
+  if (ENVIRONMENT_IS_WORKER) {
+   readBinary = function readBinary(url) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", url, false);
+    xhr.responseType = "arraybuffer";
+    xhr.send(null);
+    return new Uint8Array(xhr.response);
+   };
+  }
+  readAsync = function readAsync(url, onload, onerror) {
+   var xhr = new XMLHttpRequest();
+   xhr.open("GET", url, true);
+   xhr.responseType = "arraybuffer";
+   xhr.onload = function xhr_onload() {
+    if (xhr.status == 200 || xhr.status == 0 && xhr.response) {
+     onload(xhr.response);
+     return;
+    }
+    onerror();
+   };
+   xhr.onerror = onerror;
+   xhr.send(null);
   };
  }
- readAsync = function readAsync(url, onload, onerror) {
-  var xhr = new XMLHttpRequest();
-  xhr.open("GET", url, true);
-  xhr.responseType = "arraybuffer";
-  xhr.onload = function xhr_onload() {
-   if (xhr.status == 200 || xhr.status == 0 && xhr.response) {
-    onload(xhr.response);
-    return;
-   }
-   onerror();
-  };
-  xhr.onerror = onerror;
-  xhr.send(null);
- };
  setWindowTitle = function(title) {
   document.title = title;
  };
@@ -1701,6 +1703,22 @@ function warnOnce(text) {
 }
 
 function convertJsFunctionToWasm(func, sig) {
+ if (typeof WebAssembly.Function === "function") {
+  var typeNames = {
+   "i": "i32",
+   "j": "i64",
+   "f": "f32",
+   "d": "f64"
+  };
+  var type = {
+   parameters: [],
+   results: sig[0] == "v" ? [] : [ typeNames[sig[0]] ]
+  };
+  for (var i = 1; i < sig.length; ++i) {
+   type.parameters.push(typeNames[sig[i]]);
+  }
+  return new WebAssembly.Function(type, func);
+ }
  var typeSection = [ 1, 0, 1, 96 ];
  var sigRet = sig.slice(0, 1);
  var sigParam = sig.slice(1);
@@ -1723,11 +1741,11 @@ function convertJsFunctionToWasm(func, sig) {
  var bytes = new Uint8Array([ 0, 97, 115, 109, 1, 0, 0, 0 ].concat(typeSection, [ 2, 7, 1, 1, 101, 1, 102, 0, 0, 7, 5, 1, 1, 102, 0, 0 ]));
  var module = new WebAssembly.Module(bytes);
  var instance = new WebAssembly.Instance(module, {
-  e: {
-   f: func
+  "e": {
+   "f": func
   }
  });
- var wrappedFunc = instance.exports.f;
+ var wrappedFunc = instance.exports["f"];
  return wrappedFunc;
 }
 
@@ -1737,7 +1755,7 @@ function addFunctionWasm(func, sig) {
  try {
   table.grow(1);
  } catch (err) {
-  if (!err instanceof RangeError) {
+  if (!(err instanceof RangeError)) {
    throw err;
   }
   throw "Unable to grow wasm table. Use a higher value for RESERVED_FUNCTION_POINTERS or set ALLOW_TABLE_GROWTH.";
@@ -1745,7 +1763,7 @@ function addFunctionWasm(func, sig) {
  try {
   table.set(ret, func);
  } catch (err) {
-  if (!err instanceof TypeError) {
+  if (!(err instanceof TypeError)) {
    throw err;
   }
   assert(typeof sig !== "undefined", "Missing signature argument to addFunction");
@@ -2137,7 +2155,7 @@ function updateGlobalBufferAndViews(buf) {
  Module["HEAPF64"] = HEAPF64 = new Float64Array(buf);
 }
 
-var STACK_BASE = 5888160, DYNAMIC_BASE = 5888160, DYNAMICTOP_PTR = 645120;
+var STACK_BASE = 5888032, DYNAMIC_BASE = 5888032, DYNAMICTOP_PTR = 644992;
 
 var INITIAL_TOTAL_MEMORY = Module["TOTAL_MEMORY"] || 16777216;
 
@@ -2229,6 +2247,10 @@ function postRun() {
 
 function addOnPreRun(cb) {
  __ATPRERUN__.unshift(cb);
+}
+
+function addOnPreMain(cb) {
+ __ATMAIN__.unshift(cb);
 }
 
 function addOnPostRun(cb) {
@@ -2343,7 +2365,7 @@ function getBinaryPromise() {
 function createWasm() {
  var info = {
   "env": asmLibraryArg,
-  "wasi_unstable": asmLibraryArg
+  "wasi_snapshot_preview1": asmLibraryArg
  };
  function receiveInstance(instance, module) {
   var exports = instance.exports;
@@ -2498,10 +2520,6 @@ function _emscripten_set_main_loop(func, fps, simulateInfiniteLoop, arg, noSetTi
   } else if (Browser.mainLoop.timingMode == 0) {
    Browser.mainLoop.tickStartTime = _emscripten_get_now();
   }
-  if (Browser.mainLoop.method === "timeout" && Module.ctx) {
-   err("Looks like you are rendering without using requestAnimationFrame for the main loop. You should use 0 for the frame rate in emscripten_set_main_loop in order to use requestAnimationFrame, as that can greatly improve your frame rates!");
-   Browser.mainLoop.method = "";
-  }
   Browser.mainLoop.runIter(browserIterationFunc);
   if (thisMainLoopId < Browser.mainLoop.currentlyRunningMainloop) return;
   if (typeof SDL === "object" && SDL.audio && SDL.audio.queueNewAudioData) SDL.audio.queueNewAudioData();
@@ -2512,7 +2530,7 @@ function _emscripten_set_main_loop(func, fps, simulateInfiniteLoop, arg, noSetTi
   Browser.mainLoop.scheduler();
  }
  if (simulateInfiniteLoop) {
-  throw "SimulateInfiniteLoop";
+  throw "unwind";
  }
 }
 
@@ -2835,13 +2853,6 @@ var Browser = {
   } else {
    canvasContainer.requestFullscreen();
   }
- },
- requestFullScreen: function(lockPointer, resizeCanvas, vrDevice) {
-  err("Browser.requestFullScreen() is deprecated. Please call Browser.requestFullscreen instead.");
-  Browser.requestFullScreen = function(lockPointer, resizeCanvas, vrDevice) {
-   return Browser.requestFullscreen(lockPointer, resizeCanvas, vrDevice);
-  };
-  return Browser.requestFullscreen(lockPointer, resizeCanvas, vrDevice);
  },
  exitFullscreen: function() {
   if (!Browser.isFullscreen) {
@@ -3179,7 +3190,7 @@ function ___assert_fail(condition, filename, line, func) {
 }
 
 function _emscripten_get_now_is_monotonic() {
- return 0 || ENVIRONMENT_IS_NODE || typeof dateNow !== "undefined" || typeof performance === "object" && performance && typeof performance["now"] === "function";
+ return 0 || ENVIRONMENT_IS_NODE || typeof dateNow !== "undefined" || 1;
 }
 
 function ___setErrNo(value) {
@@ -3699,7 +3710,9 @@ var MEMFS = {
    return size;
   },
   write: function(stream, buffer, offset, length, position, canOwn) {
-   canOwn = false;
+   if (buffer.buffer === HEAP8.buffer) {
+    canOwn = false;
+   }
    if (!length) return 0;
    var node = stream.node;
    node.timestamp = Date.now();
@@ -3751,7 +3764,7 @@ var MEMFS = {
    var ptr;
    var allocated;
    var contents = stream.node.contents;
-   if (!(flags & 2) && (contents.buffer === buffer || contents.buffer === buffer.buffer)) {
+   if (!(flags & 2) && contents.buffer === buffer.buffer) {
     allocated = false;
     ptr = contents.byteOffset;
    } else {
@@ -4202,7 +4215,7 @@ var FS = {
   }
   FS.syncFSRequests++;
   if (FS.syncFSRequests > 1) {
-   console.log("warning: " + FS.syncFSRequests + " FS.syncfs operations in flight at once, probably just doing extra work");
+   err("warning: " + FS.syncFSRequests + " FS.syncfs operations in flight at once, probably just doing extra work");
   }
   var mounts = FS.getMounts(FS.root.mount);
   var completed = 0;
@@ -4430,7 +4443,7 @@ var FS = {
     FS.trackingDelegate["willMovePath"](old_path, new_path);
    }
   } catch (e) {
-   console.log("FS.trackingDelegate['willMovePath']('" + old_path + "', '" + new_path + "') threw an exception: " + e.message);
+   err("FS.trackingDelegate['willMovePath']('" + old_path + "', '" + new_path + "') threw an exception: " + e.message);
   }
   FS.hashRemoveNode(old_node);
   try {
@@ -4443,7 +4456,7 @@ var FS = {
   try {
    if (FS.trackingDelegate["onMovePath"]) FS.trackingDelegate["onMovePath"](old_path, new_path);
   } catch (e) {
-   console.log("FS.trackingDelegate['onMovePath']('" + old_path + "', '" + new_path + "') threw an exception: " + e.message);
+   err("FS.trackingDelegate['onMovePath']('" + old_path + "', '" + new_path + "') threw an exception: " + e.message);
   }
  },
  rmdir: function(path) {
@@ -4468,14 +4481,14 @@ var FS = {
     FS.trackingDelegate["willDeletePath"](path);
    }
   } catch (e) {
-   console.log("FS.trackingDelegate['willDeletePath']('" + path + "') threw an exception: " + e.message);
+   err("FS.trackingDelegate['willDeletePath']('" + path + "') threw an exception: " + e.message);
   }
   parent.node_ops.rmdir(parent, name);
   FS.destroyNode(node);
   try {
    if (FS.trackingDelegate["onDeletePath"]) FS.trackingDelegate["onDeletePath"](path);
   } catch (e) {
-   console.log("FS.trackingDelegate['onDeletePath']('" + path + "') threw an exception: " + e.message);
+   err("FS.trackingDelegate['onDeletePath']('" + path + "') threw an exception: " + e.message);
   }
  },
  readdir: function(path) {
@@ -4510,14 +4523,14 @@ var FS = {
     FS.trackingDelegate["willDeletePath"](path);
    }
   } catch (e) {
-   console.log("FS.trackingDelegate['willDeletePath']('" + path + "') threw an exception: " + e.message);
+   err("FS.trackingDelegate['willDeletePath']('" + path + "') threw an exception: " + e.message);
   }
   parent.node_ops.unlink(parent, name);
   FS.destroyNode(node);
   try {
    if (FS.trackingDelegate["onDeletePath"]) FS.trackingDelegate["onDeletePath"](path);
   } catch (e) {
-   console.log("FS.trackingDelegate['onDeletePath']('" + path + "') threw an exception: " + e.message);
+   err("FS.trackingDelegate['onDeletePath']('" + path + "') threw an exception: " + e.message);
   }
  },
  readlink: function(path) {
@@ -4722,7 +4735,7 @@ var FS = {
    if (!FS.readFiles) FS.readFiles = {};
    if (!(path in FS.readFiles)) {
     FS.readFiles[path] = 1;
-    console.log("FS.trackingDelegate error on read file: " + path);
+    err("FS.trackingDelegate error on read file: " + path);
    }
   }
   try {
@@ -4737,7 +4750,7 @@ var FS = {
     FS.trackingDelegate["onOpenFile"](path, trackingFlags);
    }
   } catch (e) {
-   console.log("FS.trackingDelegate['onOpenFile']('" + path + "', flags) threw an exception: " + e.message);
+   err("FS.trackingDelegate['onOpenFile']('" + path + "', flags) threw an exception: " + e.message);
   }
   return stream;
  },
@@ -4830,7 +4843,7 @@ var FS = {
   try {
    if (stream.path && FS.trackingDelegate["onWriteToFile"]) FS.trackingDelegate["onWriteToFile"](stream.path);
   } catch (e) {
-   console.log("FS.trackingDelegate['onWriteToFile']('" + stream.path + "') threw an exception: " + e.message);
+   err("FS.trackingDelegate['onWriteToFile']('" + stream.path + "') threw an exception: " + e.message);
   }
   return bytesWritten;
  },
@@ -5318,7 +5331,7 @@ var FS = {
     chunkSize = datalength = 1;
     datalength = this.getter(0).length;
     chunkSize = datalength;
-    console.log("LazyFiles on gzip forces download of the whole file when length is accessed");
+    out("LazyFiles on gzip forces download of the whole file when length is accessed");
    }
    this._length = datalength;
    this._chunkSize = chunkSize;
@@ -5454,7 +5467,7 @@ var FS = {
    return onerror(e);
   }
   openRequest.onupgradeneeded = function openRequest_onupgradeneeded() {
-   console.log("creating db");
+   out("creating db");
    var db = openRequest.result;
    db.createObjectStore(FS.DB_STORE_NAME);
   };
@@ -5575,9 +5588,9 @@ var SYSCALLS = {
   HEAP32[buf + 80 >> 2] = tempI64[0], HEAP32[buf + 84 >> 2] = tempI64[1];
   return 0;
  },
- doMsync: function(addr, stream, len, flags) {
+ doMsync: function(addr, stream, len, flags, offset) {
   var buffer = new Uint8Array(HEAPU8.subarray(addr, addr + len));
-  FS.msync(stream, buffer, 0, len, flags);
+  FS.msync(stream, buffer, offset, len, flags);
  },
  doMkdir: function(path, mode) {
   path = PATH.normalize(path);
@@ -6072,7 +6085,7 @@ function __emscripten_syscall_munmap(addr, len) {
  if (!info) return 0;
  if (len === info.len) {
   var stream = FS.getStream(info.fd);
-  SYSCALLS.doMsync(addr, stream, len, info.flags);
+  SYSCALLS.doMsync(addr, stream, len, info.flags, info.offset);
   FS.munmap(stream);
   SYSCALLS.mappings[addr] = null;
   if (info.allocated) {
@@ -6104,7 +6117,7 @@ function _emscripten_get_heap_size() {
 }
 
 function _emscripten_get_sbrk_ptr() {
- return 645120;
+ return 644992;
 }
 
 var setjmpId = 0;
@@ -6174,24 +6187,21 @@ function emscripten_realloc_buffer(size) {
 function _emscripten_resize_heap(requestedSize) {
  var oldSize = _emscripten_get_heap_size();
  var PAGE_MULTIPLE = 65536;
- var LIMIT = 2147483648 - PAGE_MULTIPLE;
- if (requestedSize > LIMIT) {
+ var maxHeapSize = 2147483648 - PAGE_MULTIPLE;
+ if (requestedSize > maxHeapSize) {
   return false;
  }
- var MIN_TOTAL_MEMORY = 16777216;
- var newSize = Math.max(oldSize, MIN_TOTAL_MEMORY);
- while (newSize < requestedSize) {
-  if (newSize <= 536870912) {
-   newSize = alignUp(2 * newSize, PAGE_MULTIPLE);
-  } else {
-   newSize = Math.min(alignUp((3 * newSize + 2147483648) / 4, PAGE_MULTIPLE), LIMIT);
+ var minHeapSize = 16777216;
+ for (var cutDown = 1; cutDown <= 4; cutDown *= 2) {
+  var overGrownHeapSize = oldSize * (1 + .2 / cutDown);
+  overGrownHeapSize = Math.min(overGrownHeapSize, requestedSize + 100663296);
+  var newSize = Math.min(maxHeapSize, alignUp(Math.max(minHeapSize, requestedSize, overGrownHeapSize), PAGE_MULTIPLE));
+  var replacement = emscripten_realloc_buffer(newSize);
+  if (replacement) {
+   return true;
   }
  }
- var replacement = emscripten_realloc_buffer(newSize);
- if (!replacement) {
-  return false;
- }
- return true;
+ return false;
 }
 
 var ENV = {};
@@ -6530,12 +6540,6 @@ function _time(ptr) {
  return ret;
 }
 
-Module["requestFullScreen"] = function Module_requestFullScreen(lockPointer, resizeCanvas, vrDevice) {
- err("Module.requestFullScreen is deprecated. Please call Module.requestFullscreen instead.");
- Module["requestFullScreen"] = Module["requestFullscreen"];
- Browser.requestFullScreen(lockPointer, resizeCanvas, vrDevice);
-};
-
 Module["requestFullscreen"] = function Module_requestFullscreen(lockPointer, resizeCanvas, vrDevice) {
  Browser.requestFullscreen(lockPointer, resizeCanvas, vrDevice);
 };
@@ -6571,13 +6575,9 @@ if (ENVIRONMENT_IS_NODE) {
  };
 } else if (typeof dateNow !== "undefined") {
  _emscripten_get_now = dateNow;
-} else if (typeof performance === "object" && performance && typeof performance["now"] === "function") {
- _emscripten_get_now = function() {
-  return performance["now"]();
- };
-} else {
- _emscripten_get_now = Date.now;
-}
+} else _emscripten_get_now = function() {
+ return performance["now"]();
+};
 
 FS.staticInit();
 
@@ -6671,171 +6671,979 @@ var asm = createWasm();
 Module["asm"] = asm;
 
 var ___wasm_call_ctors = Module["___wasm_call_ctors"] = function() {
- return Module["asm"]["__wasm_call_ctors"].apply(null, arguments);
-};
-
-var _libassjs_free_track = Module["_libassjs_free_track"] = function() {
- return Module["asm"]["libassjs_free_track"].apply(null, arguments);
-};
-
-var _libassjs_create_track = Module["_libassjs_create_track"] = function() {
- return Module["asm"]["libassjs_create_track"].apply(null, arguments);
-};
-
-var _libassjs_init = Module["_libassjs_init"] = function() {
- return Module["asm"]["libassjs_init"].apply(null, arguments);
-};
-
-var _libassjs_resize = Module["_libassjs_resize"] = function() {
- return Module["asm"]["libassjs_resize"].apply(null, arguments);
-};
-
-var _libassjs_quit = Module["_libassjs_quit"] = function() {
- return Module["asm"]["libassjs_quit"].apply(null, arguments);
-};
-
-var _libassjs_render = Module["_libassjs_render"] = function() {
- return Module["asm"]["libassjs_render"].apply(null, arguments);
+ return (___wasm_call_ctors = Module["___wasm_call_ctors"] = Module["asm"]["__wasm_call_ctors"]).apply(null, arguments);
 };
 
 var _main = Module["_main"] = function() {
- return Module["asm"]["main"].apply(null, arguments);
+ return (_main = Module["_main"] = Module["asm"]["main"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Event_get_Start_0 = Module["_emscripten_bind_ASS_Event_get_Start_0"] = function() {
+ return (_emscripten_bind_ASS_Event_get_Start_0 = Module["_emscripten_bind_ASS_Event_get_Start_0"] = Module["asm"]["emscripten_bind_ASS_Event_get_Start_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Event_set_Start_1 = Module["_emscripten_bind_ASS_Event_set_Start_1"] = function() {
+ return (_emscripten_bind_ASS_Event_set_Start_1 = Module["_emscripten_bind_ASS_Event_set_Start_1"] = Module["asm"]["emscripten_bind_ASS_Event_set_Start_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Event_get_Duration_0 = Module["_emscripten_bind_ASS_Event_get_Duration_0"] = function() {
+ return (_emscripten_bind_ASS_Event_get_Duration_0 = Module["_emscripten_bind_ASS_Event_get_Duration_0"] = Module["asm"]["emscripten_bind_ASS_Event_get_Duration_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Event_set_Duration_1 = Module["_emscripten_bind_ASS_Event_set_Duration_1"] = function() {
+ return (_emscripten_bind_ASS_Event_set_Duration_1 = Module["_emscripten_bind_ASS_Event_set_Duration_1"] = Module["asm"]["emscripten_bind_ASS_Event_set_Duration_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Event_get_ReadOrder_0 = Module["_emscripten_bind_ASS_Event_get_ReadOrder_0"] = function() {
+ return (_emscripten_bind_ASS_Event_get_ReadOrder_0 = Module["_emscripten_bind_ASS_Event_get_ReadOrder_0"] = Module["asm"]["emscripten_bind_ASS_Event_get_ReadOrder_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Event_set_ReadOrder_1 = Module["_emscripten_bind_ASS_Event_set_ReadOrder_1"] = function() {
+ return (_emscripten_bind_ASS_Event_set_ReadOrder_1 = Module["_emscripten_bind_ASS_Event_set_ReadOrder_1"] = Module["asm"]["emscripten_bind_ASS_Event_set_ReadOrder_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Event_get_Layer_0 = Module["_emscripten_bind_ASS_Event_get_Layer_0"] = function() {
+ return (_emscripten_bind_ASS_Event_get_Layer_0 = Module["_emscripten_bind_ASS_Event_get_Layer_0"] = Module["asm"]["emscripten_bind_ASS_Event_get_Layer_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Event_set_Layer_1 = Module["_emscripten_bind_ASS_Event_set_Layer_1"] = function() {
+ return (_emscripten_bind_ASS_Event_set_Layer_1 = Module["_emscripten_bind_ASS_Event_set_Layer_1"] = Module["asm"]["emscripten_bind_ASS_Event_set_Layer_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Event_get_Style_0 = Module["_emscripten_bind_ASS_Event_get_Style_0"] = function() {
+ return (_emscripten_bind_ASS_Event_get_Style_0 = Module["_emscripten_bind_ASS_Event_get_Style_0"] = Module["asm"]["emscripten_bind_ASS_Event_get_Style_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Event_set_Style_1 = Module["_emscripten_bind_ASS_Event_set_Style_1"] = function() {
+ return (_emscripten_bind_ASS_Event_set_Style_1 = Module["_emscripten_bind_ASS_Event_set_Style_1"] = Module["asm"]["emscripten_bind_ASS_Event_set_Style_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Event_get_Name_0 = Module["_emscripten_bind_ASS_Event_get_Name_0"] = function() {
+ return (_emscripten_bind_ASS_Event_get_Name_0 = Module["_emscripten_bind_ASS_Event_get_Name_0"] = Module["asm"]["emscripten_bind_ASS_Event_get_Name_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Event_set_Name_1 = Module["_emscripten_bind_ASS_Event_set_Name_1"] = function() {
+ return (_emscripten_bind_ASS_Event_set_Name_1 = Module["_emscripten_bind_ASS_Event_set_Name_1"] = Module["asm"]["emscripten_bind_ASS_Event_set_Name_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Event_get_MarginL_0 = Module["_emscripten_bind_ASS_Event_get_MarginL_0"] = function() {
+ return (_emscripten_bind_ASS_Event_get_MarginL_0 = Module["_emscripten_bind_ASS_Event_get_MarginL_0"] = Module["asm"]["emscripten_bind_ASS_Event_get_MarginL_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Event_set_MarginL_1 = Module["_emscripten_bind_ASS_Event_set_MarginL_1"] = function() {
+ return (_emscripten_bind_ASS_Event_set_MarginL_1 = Module["_emscripten_bind_ASS_Event_set_MarginL_1"] = Module["asm"]["emscripten_bind_ASS_Event_set_MarginL_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Event_get_MarginR_0 = Module["_emscripten_bind_ASS_Event_get_MarginR_0"] = function() {
+ return (_emscripten_bind_ASS_Event_get_MarginR_0 = Module["_emscripten_bind_ASS_Event_get_MarginR_0"] = Module["asm"]["emscripten_bind_ASS_Event_get_MarginR_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Event_set_MarginR_1 = Module["_emscripten_bind_ASS_Event_set_MarginR_1"] = function() {
+ return (_emscripten_bind_ASS_Event_set_MarginR_1 = Module["_emscripten_bind_ASS_Event_set_MarginR_1"] = Module["asm"]["emscripten_bind_ASS_Event_set_MarginR_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Event_get_MarginV_0 = Module["_emscripten_bind_ASS_Event_get_MarginV_0"] = function() {
+ return (_emscripten_bind_ASS_Event_get_MarginV_0 = Module["_emscripten_bind_ASS_Event_get_MarginV_0"] = Module["asm"]["emscripten_bind_ASS_Event_get_MarginV_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Event_set_MarginV_1 = Module["_emscripten_bind_ASS_Event_set_MarginV_1"] = function() {
+ return (_emscripten_bind_ASS_Event_set_MarginV_1 = Module["_emscripten_bind_ASS_Event_set_MarginV_1"] = Module["asm"]["emscripten_bind_ASS_Event_set_MarginV_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Event_get_Effect_0 = Module["_emscripten_bind_ASS_Event_get_Effect_0"] = function() {
+ return (_emscripten_bind_ASS_Event_get_Effect_0 = Module["_emscripten_bind_ASS_Event_get_Effect_0"] = Module["asm"]["emscripten_bind_ASS_Event_get_Effect_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Event_set_Effect_1 = Module["_emscripten_bind_ASS_Event_set_Effect_1"] = function() {
+ return (_emscripten_bind_ASS_Event_set_Effect_1 = Module["_emscripten_bind_ASS_Event_set_Effect_1"] = Module["asm"]["emscripten_bind_ASS_Event_set_Effect_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Event_get_Text_0 = Module["_emscripten_bind_ASS_Event_get_Text_0"] = function() {
+ return (_emscripten_bind_ASS_Event_get_Text_0 = Module["_emscripten_bind_ASS_Event_get_Text_0"] = Module["asm"]["emscripten_bind_ASS_Event_get_Text_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Event_set_Text_1 = Module["_emscripten_bind_ASS_Event_set_Text_1"] = function() {
+ return (_emscripten_bind_ASS_Event_set_Text_1 = Module["_emscripten_bind_ASS_Event_set_Text_1"] = Module["asm"]["emscripten_bind_ASS_Event_set_Text_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_SubtitleOctopus_SubtitleOctopus_0 = Module["_emscripten_bind_SubtitleOctopus_SubtitleOctopus_0"] = function() {
+ return (_emscripten_bind_SubtitleOctopus_SubtitleOctopus_0 = Module["_emscripten_bind_SubtitleOctopus_SubtitleOctopus_0"] = Module["asm"]["emscripten_bind_SubtitleOctopus_SubtitleOctopus_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_SubtitleOctopus_setLogLevel_1 = Module["_emscripten_bind_SubtitleOctopus_setLogLevel_1"] = function() {
+ return (_emscripten_bind_SubtitleOctopus_setLogLevel_1 = Module["_emscripten_bind_SubtitleOctopus_setLogLevel_1"] = Module["asm"]["emscripten_bind_SubtitleOctopus_setLogLevel_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_SubtitleOctopus_initLibrary_2 = Module["_emscripten_bind_SubtitleOctopus_initLibrary_2"] = function() {
+ return (_emscripten_bind_SubtitleOctopus_initLibrary_2 = Module["_emscripten_bind_SubtitleOctopus_initLibrary_2"] = Module["asm"]["emscripten_bind_SubtitleOctopus_initLibrary_2"]).apply(null, arguments);
+};
+
+var _emscripten_bind_SubtitleOctopus_createTrack_1 = Module["_emscripten_bind_SubtitleOctopus_createTrack_1"] = function() {
+ return (_emscripten_bind_SubtitleOctopus_createTrack_1 = Module["_emscripten_bind_SubtitleOctopus_createTrack_1"] = Module["asm"]["emscripten_bind_SubtitleOctopus_createTrack_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_SubtitleOctopus_createTrackMem_2 = Module["_emscripten_bind_SubtitleOctopus_createTrackMem_2"] = function() {
+ return (_emscripten_bind_SubtitleOctopus_createTrackMem_2 = Module["_emscripten_bind_SubtitleOctopus_createTrackMem_2"] = Module["asm"]["emscripten_bind_SubtitleOctopus_createTrackMem_2"]).apply(null, arguments);
+};
+
+var _emscripten_bind_SubtitleOctopus_removeTrack_0 = Module["_emscripten_bind_SubtitleOctopus_removeTrack_0"] = function() {
+ return (_emscripten_bind_SubtitleOctopus_removeTrack_0 = Module["_emscripten_bind_SubtitleOctopus_removeTrack_0"] = Module["asm"]["emscripten_bind_SubtitleOctopus_removeTrack_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_SubtitleOctopus_resizeCanvas_2 = Module["_emscripten_bind_SubtitleOctopus_resizeCanvas_2"] = function() {
+ return (_emscripten_bind_SubtitleOctopus_resizeCanvas_2 = Module["_emscripten_bind_SubtitleOctopus_resizeCanvas_2"] = Module["asm"]["emscripten_bind_SubtitleOctopus_resizeCanvas_2"]).apply(null, arguments);
+};
+
+var _emscripten_bind_SubtitleOctopus_renderImage_2 = Module["_emscripten_bind_SubtitleOctopus_renderImage_2"] = function() {
+ return (_emscripten_bind_SubtitleOctopus_renderImage_2 = Module["_emscripten_bind_SubtitleOctopus_renderImage_2"] = Module["asm"]["emscripten_bind_SubtitleOctopus_renderImage_2"]).apply(null, arguments);
+};
+
+var _emscripten_bind_SubtitleOctopus_quitLibrary_0 = Module["_emscripten_bind_SubtitleOctopus_quitLibrary_0"] = function() {
+ return (_emscripten_bind_SubtitleOctopus_quitLibrary_0 = Module["_emscripten_bind_SubtitleOctopus_quitLibrary_0"] = Module["asm"]["emscripten_bind_SubtitleOctopus_quitLibrary_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_SubtitleOctopus_reloadLibrary_0 = Module["_emscripten_bind_SubtitleOctopus_reloadLibrary_0"] = function() {
+ return (_emscripten_bind_SubtitleOctopus_reloadLibrary_0 = Module["_emscripten_bind_SubtitleOctopus_reloadLibrary_0"] = Module["asm"]["emscripten_bind_SubtitleOctopus_reloadLibrary_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_SubtitleOctopus_reloadFonts_0 = Module["_emscripten_bind_SubtitleOctopus_reloadFonts_0"] = function() {
+ return (_emscripten_bind_SubtitleOctopus_reloadFonts_0 = Module["_emscripten_bind_SubtitleOctopus_reloadFonts_0"] = Module["asm"]["emscripten_bind_SubtitleOctopus_reloadFonts_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_SubtitleOctopus_setMargin_4 = Module["_emscripten_bind_SubtitleOctopus_setMargin_4"] = function() {
+ return (_emscripten_bind_SubtitleOctopus_setMargin_4 = Module["_emscripten_bind_SubtitleOctopus_setMargin_4"] = Module["asm"]["emscripten_bind_SubtitleOctopus_setMargin_4"]).apply(null, arguments);
+};
+
+var _emscripten_bind_SubtitleOctopus_getEventCount_0 = Module["_emscripten_bind_SubtitleOctopus_getEventCount_0"] = function() {
+ return (_emscripten_bind_SubtitleOctopus_getEventCount_0 = Module["_emscripten_bind_SubtitleOctopus_getEventCount_0"] = Module["asm"]["emscripten_bind_SubtitleOctopus_getEventCount_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_SubtitleOctopus_allocEvent_0 = Module["_emscripten_bind_SubtitleOctopus_allocEvent_0"] = function() {
+ return (_emscripten_bind_SubtitleOctopus_allocEvent_0 = Module["_emscripten_bind_SubtitleOctopus_allocEvent_0"] = Module["asm"]["emscripten_bind_SubtitleOctopus_allocEvent_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_SubtitleOctopus_allocStyle_0 = Module["_emscripten_bind_SubtitleOctopus_allocStyle_0"] = function() {
+ return (_emscripten_bind_SubtitleOctopus_allocStyle_0 = Module["_emscripten_bind_SubtitleOctopus_allocStyle_0"] = Module["asm"]["emscripten_bind_SubtitleOctopus_allocStyle_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_SubtitleOctopus_removeEvent_1 = Module["_emscripten_bind_SubtitleOctopus_removeEvent_1"] = function() {
+ return (_emscripten_bind_SubtitleOctopus_removeEvent_1 = Module["_emscripten_bind_SubtitleOctopus_removeEvent_1"] = Module["asm"]["emscripten_bind_SubtitleOctopus_removeEvent_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_SubtitleOctopus_getStyleCount_0 = Module["_emscripten_bind_SubtitleOctopus_getStyleCount_0"] = function() {
+ return (_emscripten_bind_SubtitleOctopus_getStyleCount_0 = Module["_emscripten_bind_SubtitleOctopus_getStyleCount_0"] = Module["asm"]["emscripten_bind_SubtitleOctopus_getStyleCount_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_SubtitleOctopus_getStyleByName_1 = Module["_emscripten_bind_SubtitleOctopus_getStyleByName_1"] = function() {
+ return (_emscripten_bind_SubtitleOctopus_getStyleByName_1 = Module["_emscripten_bind_SubtitleOctopus_getStyleByName_1"] = Module["asm"]["emscripten_bind_SubtitleOctopus_getStyleByName_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_SubtitleOctopus_removeStyle_1 = Module["_emscripten_bind_SubtitleOctopus_removeStyle_1"] = function() {
+ return (_emscripten_bind_SubtitleOctopus_removeStyle_1 = Module["_emscripten_bind_SubtitleOctopus_removeStyle_1"] = Module["asm"]["emscripten_bind_SubtitleOctopus_removeStyle_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_SubtitleOctopus_removeAllEvents_0 = Module["_emscripten_bind_SubtitleOctopus_removeAllEvents_0"] = function() {
+ return (_emscripten_bind_SubtitleOctopus_removeAllEvents_0 = Module["_emscripten_bind_SubtitleOctopus_removeAllEvents_0"] = Module["asm"]["emscripten_bind_SubtitleOctopus_removeAllEvents_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_SubtitleOctopus_get_track_0 = Module["_emscripten_bind_SubtitleOctopus_get_track_0"] = function() {
+ return (_emscripten_bind_SubtitleOctopus_get_track_0 = Module["_emscripten_bind_SubtitleOctopus_get_track_0"] = Module["asm"]["emscripten_bind_SubtitleOctopus_get_track_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_SubtitleOctopus_set_track_1 = Module["_emscripten_bind_SubtitleOctopus_set_track_1"] = function() {
+ return (_emscripten_bind_SubtitleOctopus_set_track_1 = Module["_emscripten_bind_SubtitleOctopus_set_track_1"] = Module["asm"]["emscripten_bind_SubtitleOctopus_set_track_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_SubtitleOctopus_get_ass_renderer_0 = Module["_emscripten_bind_SubtitleOctopus_get_ass_renderer_0"] = function() {
+ return (_emscripten_bind_SubtitleOctopus_get_ass_renderer_0 = Module["_emscripten_bind_SubtitleOctopus_get_ass_renderer_0"] = Module["asm"]["emscripten_bind_SubtitleOctopus_get_ass_renderer_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_SubtitleOctopus_set_ass_renderer_1 = Module["_emscripten_bind_SubtitleOctopus_set_ass_renderer_1"] = function() {
+ return (_emscripten_bind_SubtitleOctopus_set_ass_renderer_1 = Module["_emscripten_bind_SubtitleOctopus_set_ass_renderer_1"] = Module["asm"]["emscripten_bind_SubtitleOctopus_set_ass_renderer_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_SubtitleOctopus_get_ass_library_0 = Module["_emscripten_bind_SubtitleOctopus_get_ass_library_0"] = function() {
+ return (_emscripten_bind_SubtitleOctopus_get_ass_library_0 = Module["_emscripten_bind_SubtitleOctopus_get_ass_library_0"] = Module["asm"]["emscripten_bind_SubtitleOctopus_get_ass_library_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_SubtitleOctopus_set_ass_library_1 = Module["_emscripten_bind_SubtitleOctopus_set_ass_library_1"] = function() {
+ return (_emscripten_bind_SubtitleOctopus_set_ass_library_1 = Module["_emscripten_bind_SubtitleOctopus_set_ass_library_1"] = Module["asm"]["emscripten_bind_SubtitleOctopus_set_ass_library_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_SubtitleOctopus___destroy___0 = Module["_emscripten_bind_SubtitleOctopus___destroy___0"] = function() {
+ return (_emscripten_bind_SubtitleOctopus___destroy___0 = Module["_emscripten_bind_SubtitleOctopus___destroy___0"] = Module["asm"]["emscripten_bind_SubtitleOctopus___destroy___0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_get_n_styles_0 = Module["_emscripten_bind_ASS_Track_get_n_styles_0"] = function() {
+ return (_emscripten_bind_ASS_Track_get_n_styles_0 = Module["_emscripten_bind_ASS_Track_get_n_styles_0"] = Module["asm"]["emscripten_bind_ASS_Track_get_n_styles_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_set_n_styles_1 = Module["_emscripten_bind_ASS_Track_set_n_styles_1"] = function() {
+ return (_emscripten_bind_ASS_Track_set_n_styles_1 = Module["_emscripten_bind_ASS_Track_set_n_styles_1"] = Module["asm"]["emscripten_bind_ASS_Track_set_n_styles_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_get_max_styles_0 = Module["_emscripten_bind_ASS_Track_get_max_styles_0"] = function() {
+ return (_emscripten_bind_ASS_Track_get_max_styles_0 = Module["_emscripten_bind_ASS_Track_get_max_styles_0"] = Module["asm"]["emscripten_bind_ASS_Track_get_max_styles_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_set_max_styles_1 = Module["_emscripten_bind_ASS_Track_set_max_styles_1"] = function() {
+ return (_emscripten_bind_ASS_Track_set_max_styles_1 = Module["_emscripten_bind_ASS_Track_set_max_styles_1"] = Module["asm"]["emscripten_bind_ASS_Track_set_max_styles_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_get_n_events_0 = Module["_emscripten_bind_ASS_Track_get_n_events_0"] = function() {
+ return (_emscripten_bind_ASS_Track_get_n_events_0 = Module["_emscripten_bind_ASS_Track_get_n_events_0"] = Module["asm"]["emscripten_bind_ASS_Track_get_n_events_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_set_n_events_1 = Module["_emscripten_bind_ASS_Track_set_n_events_1"] = function() {
+ return (_emscripten_bind_ASS_Track_set_n_events_1 = Module["_emscripten_bind_ASS_Track_set_n_events_1"] = Module["asm"]["emscripten_bind_ASS_Track_set_n_events_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_get_max_events_0 = Module["_emscripten_bind_ASS_Track_get_max_events_0"] = function() {
+ return (_emscripten_bind_ASS_Track_get_max_events_0 = Module["_emscripten_bind_ASS_Track_get_max_events_0"] = Module["asm"]["emscripten_bind_ASS_Track_get_max_events_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_set_max_events_1 = Module["_emscripten_bind_ASS_Track_set_max_events_1"] = function() {
+ return (_emscripten_bind_ASS_Track_set_max_events_1 = Module["_emscripten_bind_ASS_Track_set_max_events_1"] = Module["asm"]["emscripten_bind_ASS_Track_set_max_events_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_get_styles_1 = Module["_emscripten_bind_ASS_Track_get_styles_1"] = function() {
+ return (_emscripten_bind_ASS_Track_get_styles_1 = Module["_emscripten_bind_ASS_Track_get_styles_1"] = Module["asm"]["emscripten_bind_ASS_Track_get_styles_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_set_styles_2 = Module["_emscripten_bind_ASS_Track_set_styles_2"] = function() {
+ return (_emscripten_bind_ASS_Track_set_styles_2 = Module["_emscripten_bind_ASS_Track_set_styles_2"] = Module["asm"]["emscripten_bind_ASS_Track_set_styles_2"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_get_events_1 = Module["_emscripten_bind_ASS_Track_get_events_1"] = function() {
+ return (_emscripten_bind_ASS_Track_get_events_1 = Module["_emscripten_bind_ASS_Track_get_events_1"] = Module["asm"]["emscripten_bind_ASS_Track_get_events_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_set_events_2 = Module["_emscripten_bind_ASS_Track_set_events_2"] = function() {
+ return (_emscripten_bind_ASS_Track_set_events_2 = Module["_emscripten_bind_ASS_Track_set_events_2"] = Module["asm"]["emscripten_bind_ASS_Track_set_events_2"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_get_style_format_0 = Module["_emscripten_bind_ASS_Track_get_style_format_0"] = function() {
+ return (_emscripten_bind_ASS_Track_get_style_format_0 = Module["_emscripten_bind_ASS_Track_get_style_format_0"] = Module["asm"]["emscripten_bind_ASS_Track_get_style_format_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_set_style_format_1 = Module["_emscripten_bind_ASS_Track_set_style_format_1"] = function() {
+ return (_emscripten_bind_ASS_Track_set_style_format_1 = Module["_emscripten_bind_ASS_Track_set_style_format_1"] = Module["asm"]["emscripten_bind_ASS_Track_set_style_format_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_get_event_format_0 = Module["_emscripten_bind_ASS_Track_get_event_format_0"] = function() {
+ return (_emscripten_bind_ASS_Track_get_event_format_0 = Module["_emscripten_bind_ASS_Track_get_event_format_0"] = Module["asm"]["emscripten_bind_ASS_Track_get_event_format_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_set_event_format_1 = Module["_emscripten_bind_ASS_Track_set_event_format_1"] = function() {
+ return (_emscripten_bind_ASS_Track_set_event_format_1 = Module["_emscripten_bind_ASS_Track_set_event_format_1"] = Module["asm"]["emscripten_bind_ASS_Track_set_event_format_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_get_PlayResX_0 = Module["_emscripten_bind_ASS_Track_get_PlayResX_0"] = function() {
+ return (_emscripten_bind_ASS_Track_get_PlayResX_0 = Module["_emscripten_bind_ASS_Track_get_PlayResX_0"] = Module["asm"]["emscripten_bind_ASS_Track_get_PlayResX_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_set_PlayResX_1 = Module["_emscripten_bind_ASS_Track_set_PlayResX_1"] = function() {
+ return (_emscripten_bind_ASS_Track_set_PlayResX_1 = Module["_emscripten_bind_ASS_Track_set_PlayResX_1"] = Module["asm"]["emscripten_bind_ASS_Track_set_PlayResX_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_get_PlayResY_0 = Module["_emscripten_bind_ASS_Track_get_PlayResY_0"] = function() {
+ return (_emscripten_bind_ASS_Track_get_PlayResY_0 = Module["_emscripten_bind_ASS_Track_get_PlayResY_0"] = Module["asm"]["emscripten_bind_ASS_Track_get_PlayResY_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_set_PlayResY_1 = Module["_emscripten_bind_ASS_Track_set_PlayResY_1"] = function() {
+ return (_emscripten_bind_ASS_Track_set_PlayResY_1 = Module["_emscripten_bind_ASS_Track_set_PlayResY_1"] = Module["asm"]["emscripten_bind_ASS_Track_set_PlayResY_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_get_Timer_0 = Module["_emscripten_bind_ASS_Track_get_Timer_0"] = function() {
+ return (_emscripten_bind_ASS_Track_get_Timer_0 = Module["_emscripten_bind_ASS_Track_get_Timer_0"] = Module["asm"]["emscripten_bind_ASS_Track_get_Timer_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_set_Timer_1 = Module["_emscripten_bind_ASS_Track_set_Timer_1"] = function() {
+ return (_emscripten_bind_ASS_Track_set_Timer_1 = Module["_emscripten_bind_ASS_Track_set_Timer_1"] = Module["asm"]["emscripten_bind_ASS_Track_set_Timer_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_get_WrapStyle_0 = Module["_emscripten_bind_ASS_Track_get_WrapStyle_0"] = function() {
+ return (_emscripten_bind_ASS_Track_get_WrapStyle_0 = Module["_emscripten_bind_ASS_Track_get_WrapStyle_0"] = Module["asm"]["emscripten_bind_ASS_Track_get_WrapStyle_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_set_WrapStyle_1 = Module["_emscripten_bind_ASS_Track_set_WrapStyle_1"] = function() {
+ return (_emscripten_bind_ASS_Track_set_WrapStyle_1 = Module["_emscripten_bind_ASS_Track_set_WrapStyle_1"] = Module["asm"]["emscripten_bind_ASS_Track_set_WrapStyle_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_get_ScaledBorderAndShadow_0 = Module["_emscripten_bind_ASS_Track_get_ScaledBorderAndShadow_0"] = function() {
+ return (_emscripten_bind_ASS_Track_get_ScaledBorderAndShadow_0 = Module["_emscripten_bind_ASS_Track_get_ScaledBorderAndShadow_0"] = Module["asm"]["emscripten_bind_ASS_Track_get_ScaledBorderAndShadow_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_set_ScaledBorderAndShadow_1 = Module["_emscripten_bind_ASS_Track_set_ScaledBorderAndShadow_1"] = function() {
+ return (_emscripten_bind_ASS_Track_set_ScaledBorderAndShadow_1 = Module["_emscripten_bind_ASS_Track_set_ScaledBorderAndShadow_1"] = Module["asm"]["emscripten_bind_ASS_Track_set_ScaledBorderAndShadow_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_get_Kerning_0 = Module["_emscripten_bind_ASS_Track_get_Kerning_0"] = function() {
+ return (_emscripten_bind_ASS_Track_get_Kerning_0 = Module["_emscripten_bind_ASS_Track_get_Kerning_0"] = Module["asm"]["emscripten_bind_ASS_Track_get_Kerning_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_set_Kerning_1 = Module["_emscripten_bind_ASS_Track_set_Kerning_1"] = function() {
+ return (_emscripten_bind_ASS_Track_set_Kerning_1 = Module["_emscripten_bind_ASS_Track_set_Kerning_1"] = Module["asm"]["emscripten_bind_ASS_Track_set_Kerning_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_get_Language_0 = Module["_emscripten_bind_ASS_Track_get_Language_0"] = function() {
+ return (_emscripten_bind_ASS_Track_get_Language_0 = Module["_emscripten_bind_ASS_Track_get_Language_0"] = Module["asm"]["emscripten_bind_ASS_Track_get_Language_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_set_Language_1 = Module["_emscripten_bind_ASS_Track_set_Language_1"] = function() {
+ return (_emscripten_bind_ASS_Track_set_Language_1 = Module["_emscripten_bind_ASS_Track_set_Language_1"] = Module["asm"]["emscripten_bind_ASS_Track_set_Language_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_get_default_style_0 = Module["_emscripten_bind_ASS_Track_get_default_style_0"] = function() {
+ return (_emscripten_bind_ASS_Track_get_default_style_0 = Module["_emscripten_bind_ASS_Track_get_default_style_0"] = Module["asm"]["emscripten_bind_ASS_Track_get_default_style_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_set_default_style_1 = Module["_emscripten_bind_ASS_Track_set_default_style_1"] = function() {
+ return (_emscripten_bind_ASS_Track_set_default_style_1 = Module["_emscripten_bind_ASS_Track_set_default_style_1"] = Module["asm"]["emscripten_bind_ASS_Track_set_default_style_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_get_name_0 = Module["_emscripten_bind_ASS_Track_get_name_0"] = function() {
+ return (_emscripten_bind_ASS_Track_get_name_0 = Module["_emscripten_bind_ASS_Track_get_name_0"] = Module["asm"]["emscripten_bind_ASS_Track_get_name_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Track_set_name_1 = Module["_emscripten_bind_ASS_Track_set_name_1"] = function() {
+ return (_emscripten_bind_ASS_Track_set_name_1 = Module["_emscripten_bind_ASS_Track_set_name_1"] = Module["asm"]["emscripten_bind_ASS_Track_set_name_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_get_Name_0 = Module["_emscripten_bind_ASS_Style_get_Name_0"] = function() {
+ return (_emscripten_bind_ASS_Style_get_Name_0 = Module["_emscripten_bind_ASS_Style_get_Name_0"] = Module["asm"]["emscripten_bind_ASS_Style_get_Name_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_set_Name_1 = Module["_emscripten_bind_ASS_Style_set_Name_1"] = function() {
+ return (_emscripten_bind_ASS_Style_set_Name_1 = Module["_emscripten_bind_ASS_Style_set_Name_1"] = Module["asm"]["emscripten_bind_ASS_Style_set_Name_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_get_FontName_0 = Module["_emscripten_bind_ASS_Style_get_FontName_0"] = function() {
+ return (_emscripten_bind_ASS_Style_get_FontName_0 = Module["_emscripten_bind_ASS_Style_get_FontName_0"] = Module["asm"]["emscripten_bind_ASS_Style_get_FontName_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_set_FontName_1 = Module["_emscripten_bind_ASS_Style_set_FontName_1"] = function() {
+ return (_emscripten_bind_ASS_Style_set_FontName_1 = Module["_emscripten_bind_ASS_Style_set_FontName_1"] = Module["asm"]["emscripten_bind_ASS_Style_set_FontName_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_get_FontSize_0 = Module["_emscripten_bind_ASS_Style_get_FontSize_0"] = function() {
+ return (_emscripten_bind_ASS_Style_get_FontSize_0 = Module["_emscripten_bind_ASS_Style_get_FontSize_0"] = Module["asm"]["emscripten_bind_ASS_Style_get_FontSize_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_set_FontSize_1 = Module["_emscripten_bind_ASS_Style_set_FontSize_1"] = function() {
+ return (_emscripten_bind_ASS_Style_set_FontSize_1 = Module["_emscripten_bind_ASS_Style_set_FontSize_1"] = Module["asm"]["emscripten_bind_ASS_Style_set_FontSize_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_get_PrimaryColour_0 = Module["_emscripten_bind_ASS_Style_get_PrimaryColour_0"] = function() {
+ return (_emscripten_bind_ASS_Style_get_PrimaryColour_0 = Module["_emscripten_bind_ASS_Style_get_PrimaryColour_0"] = Module["asm"]["emscripten_bind_ASS_Style_get_PrimaryColour_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_set_PrimaryColour_1 = Module["_emscripten_bind_ASS_Style_set_PrimaryColour_1"] = function() {
+ return (_emscripten_bind_ASS_Style_set_PrimaryColour_1 = Module["_emscripten_bind_ASS_Style_set_PrimaryColour_1"] = Module["asm"]["emscripten_bind_ASS_Style_set_PrimaryColour_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_get_SecondaryColour_0 = Module["_emscripten_bind_ASS_Style_get_SecondaryColour_0"] = function() {
+ return (_emscripten_bind_ASS_Style_get_SecondaryColour_0 = Module["_emscripten_bind_ASS_Style_get_SecondaryColour_0"] = Module["asm"]["emscripten_bind_ASS_Style_get_SecondaryColour_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_set_SecondaryColour_1 = Module["_emscripten_bind_ASS_Style_set_SecondaryColour_1"] = function() {
+ return (_emscripten_bind_ASS_Style_set_SecondaryColour_1 = Module["_emscripten_bind_ASS_Style_set_SecondaryColour_1"] = Module["asm"]["emscripten_bind_ASS_Style_set_SecondaryColour_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_get_OutlineColour_0 = Module["_emscripten_bind_ASS_Style_get_OutlineColour_0"] = function() {
+ return (_emscripten_bind_ASS_Style_get_OutlineColour_0 = Module["_emscripten_bind_ASS_Style_get_OutlineColour_0"] = Module["asm"]["emscripten_bind_ASS_Style_get_OutlineColour_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_set_OutlineColour_1 = Module["_emscripten_bind_ASS_Style_set_OutlineColour_1"] = function() {
+ return (_emscripten_bind_ASS_Style_set_OutlineColour_1 = Module["_emscripten_bind_ASS_Style_set_OutlineColour_1"] = Module["asm"]["emscripten_bind_ASS_Style_set_OutlineColour_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_get_BackColour_0 = Module["_emscripten_bind_ASS_Style_get_BackColour_0"] = function() {
+ return (_emscripten_bind_ASS_Style_get_BackColour_0 = Module["_emscripten_bind_ASS_Style_get_BackColour_0"] = Module["asm"]["emscripten_bind_ASS_Style_get_BackColour_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_set_BackColour_1 = Module["_emscripten_bind_ASS_Style_set_BackColour_1"] = function() {
+ return (_emscripten_bind_ASS_Style_set_BackColour_1 = Module["_emscripten_bind_ASS_Style_set_BackColour_1"] = Module["asm"]["emscripten_bind_ASS_Style_set_BackColour_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_get_Bold_0 = Module["_emscripten_bind_ASS_Style_get_Bold_0"] = function() {
+ return (_emscripten_bind_ASS_Style_get_Bold_0 = Module["_emscripten_bind_ASS_Style_get_Bold_0"] = Module["asm"]["emscripten_bind_ASS_Style_get_Bold_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_set_Bold_1 = Module["_emscripten_bind_ASS_Style_set_Bold_1"] = function() {
+ return (_emscripten_bind_ASS_Style_set_Bold_1 = Module["_emscripten_bind_ASS_Style_set_Bold_1"] = Module["asm"]["emscripten_bind_ASS_Style_set_Bold_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_get_Italic_0 = Module["_emscripten_bind_ASS_Style_get_Italic_0"] = function() {
+ return (_emscripten_bind_ASS_Style_get_Italic_0 = Module["_emscripten_bind_ASS_Style_get_Italic_0"] = Module["asm"]["emscripten_bind_ASS_Style_get_Italic_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_set_Italic_1 = Module["_emscripten_bind_ASS_Style_set_Italic_1"] = function() {
+ return (_emscripten_bind_ASS_Style_set_Italic_1 = Module["_emscripten_bind_ASS_Style_set_Italic_1"] = Module["asm"]["emscripten_bind_ASS_Style_set_Italic_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_get_Underline_0 = Module["_emscripten_bind_ASS_Style_get_Underline_0"] = function() {
+ return (_emscripten_bind_ASS_Style_get_Underline_0 = Module["_emscripten_bind_ASS_Style_get_Underline_0"] = Module["asm"]["emscripten_bind_ASS_Style_get_Underline_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_set_Underline_1 = Module["_emscripten_bind_ASS_Style_set_Underline_1"] = function() {
+ return (_emscripten_bind_ASS_Style_set_Underline_1 = Module["_emscripten_bind_ASS_Style_set_Underline_1"] = Module["asm"]["emscripten_bind_ASS_Style_set_Underline_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_get_StrikeOut_0 = Module["_emscripten_bind_ASS_Style_get_StrikeOut_0"] = function() {
+ return (_emscripten_bind_ASS_Style_get_StrikeOut_0 = Module["_emscripten_bind_ASS_Style_get_StrikeOut_0"] = Module["asm"]["emscripten_bind_ASS_Style_get_StrikeOut_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_set_StrikeOut_1 = Module["_emscripten_bind_ASS_Style_set_StrikeOut_1"] = function() {
+ return (_emscripten_bind_ASS_Style_set_StrikeOut_1 = Module["_emscripten_bind_ASS_Style_set_StrikeOut_1"] = Module["asm"]["emscripten_bind_ASS_Style_set_StrikeOut_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_get_ScaleX_0 = Module["_emscripten_bind_ASS_Style_get_ScaleX_0"] = function() {
+ return (_emscripten_bind_ASS_Style_get_ScaleX_0 = Module["_emscripten_bind_ASS_Style_get_ScaleX_0"] = Module["asm"]["emscripten_bind_ASS_Style_get_ScaleX_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_set_ScaleX_1 = Module["_emscripten_bind_ASS_Style_set_ScaleX_1"] = function() {
+ return (_emscripten_bind_ASS_Style_set_ScaleX_1 = Module["_emscripten_bind_ASS_Style_set_ScaleX_1"] = Module["asm"]["emscripten_bind_ASS_Style_set_ScaleX_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_get_ScaleY_0 = Module["_emscripten_bind_ASS_Style_get_ScaleY_0"] = function() {
+ return (_emscripten_bind_ASS_Style_get_ScaleY_0 = Module["_emscripten_bind_ASS_Style_get_ScaleY_0"] = Module["asm"]["emscripten_bind_ASS_Style_get_ScaleY_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_set_ScaleY_1 = Module["_emscripten_bind_ASS_Style_set_ScaleY_1"] = function() {
+ return (_emscripten_bind_ASS_Style_set_ScaleY_1 = Module["_emscripten_bind_ASS_Style_set_ScaleY_1"] = Module["asm"]["emscripten_bind_ASS_Style_set_ScaleY_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_get_Spacing_0 = Module["_emscripten_bind_ASS_Style_get_Spacing_0"] = function() {
+ return (_emscripten_bind_ASS_Style_get_Spacing_0 = Module["_emscripten_bind_ASS_Style_get_Spacing_0"] = Module["asm"]["emscripten_bind_ASS_Style_get_Spacing_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_set_Spacing_1 = Module["_emscripten_bind_ASS_Style_set_Spacing_1"] = function() {
+ return (_emscripten_bind_ASS_Style_set_Spacing_1 = Module["_emscripten_bind_ASS_Style_set_Spacing_1"] = Module["asm"]["emscripten_bind_ASS_Style_set_Spacing_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_get_Angle_0 = Module["_emscripten_bind_ASS_Style_get_Angle_0"] = function() {
+ return (_emscripten_bind_ASS_Style_get_Angle_0 = Module["_emscripten_bind_ASS_Style_get_Angle_0"] = Module["asm"]["emscripten_bind_ASS_Style_get_Angle_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_set_Angle_1 = Module["_emscripten_bind_ASS_Style_set_Angle_1"] = function() {
+ return (_emscripten_bind_ASS_Style_set_Angle_1 = Module["_emscripten_bind_ASS_Style_set_Angle_1"] = Module["asm"]["emscripten_bind_ASS_Style_set_Angle_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_get_BorderStyle_0 = Module["_emscripten_bind_ASS_Style_get_BorderStyle_0"] = function() {
+ return (_emscripten_bind_ASS_Style_get_BorderStyle_0 = Module["_emscripten_bind_ASS_Style_get_BorderStyle_0"] = Module["asm"]["emscripten_bind_ASS_Style_get_BorderStyle_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_set_BorderStyle_1 = Module["_emscripten_bind_ASS_Style_set_BorderStyle_1"] = function() {
+ return (_emscripten_bind_ASS_Style_set_BorderStyle_1 = Module["_emscripten_bind_ASS_Style_set_BorderStyle_1"] = Module["asm"]["emscripten_bind_ASS_Style_set_BorderStyle_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_get_Outline_0 = Module["_emscripten_bind_ASS_Style_get_Outline_0"] = function() {
+ return (_emscripten_bind_ASS_Style_get_Outline_0 = Module["_emscripten_bind_ASS_Style_get_Outline_0"] = Module["asm"]["emscripten_bind_ASS_Style_get_Outline_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_set_Outline_1 = Module["_emscripten_bind_ASS_Style_set_Outline_1"] = function() {
+ return (_emscripten_bind_ASS_Style_set_Outline_1 = Module["_emscripten_bind_ASS_Style_set_Outline_1"] = Module["asm"]["emscripten_bind_ASS_Style_set_Outline_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_get_Shadow_0 = Module["_emscripten_bind_ASS_Style_get_Shadow_0"] = function() {
+ return (_emscripten_bind_ASS_Style_get_Shadow_0 = Module["_emscripten_bind_ASS_Style_get_Shadow_0"] = Module["asm"]["emscripten_bind_ASS_Style_get_Shadow_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_set_Shadow_1 = Module["_emscripten_bind_ASS_Style_set_Shadow_1"] = function() {
+ return (_emscripten_bind_ASS_Style_set_Shadow_1 = Module["_emscripten_bind_ASS_Style_set_Shadow_1"] = Module["asm"]["emscripten_bind_ASS_Style_set_Shadow_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_get_Alignment_0 = Module["_emscripten_bind_ASS_Style_get_Alignment_0"] = function() {
+ return (_emscripten_bind_ASS_Style_get_Alignment_0 = Module["_emscripten_bind_ASS_Style_get_Alignment_0"] = Module["asm"]["emscripten_bind_ASS_Style_get_Alignment_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_set_Alignment_1 = Module["_emscripten_bind_ASS_Style_set_Alignment_1"] = function() {
+ return (_emscripten_bind_ASS_Style_set_Alignment_1 = Module["_emscripten_bind_ASS_Style_set_Alignment_1"] = Module["asm"]["emscripten_bind_ASS_Style_set_Alignment_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_get_MarginL_0 = Module["_emscripten_bind_ASS_Style_get_MarginL_0"] = function() {
+ return (_emscripten_bind_ASS_Style_get_MarginL_0 = Module["_emscripten_bind_ASS_Style_get_MarginL_0"] = Module["asm"]["emscripten_bind_ASS_Style_get_MarginL_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_set_MarginL_1 = Module["_emscripten_bind_ASS_Style_set_MarginL_1"] = function() {
+ return (_emscripten_bind_ASS_Style_set_MarginL_1 = Module["_emscripten_bind_ASS_Style_set_MarginL_1"] = Module["asm"]["emscripten_bind_ASS_Style_set_MarginL_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_get_MarginR_0 = Module["_emscripten_bind_ASS_Style_get_MarginR_0"] = function() {
+ return (_emscripten_bind_ASS_Style_get_MarginR_0 = Module["_emscripten_bind_ASS_Style_get_MarginR_0"] = Module["asm"]["emscripten_bind_ASS_Style_get_MarginR_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_set_MarginR_1 = Module["_emscripten_bind_ASS_Style_set_MarginR_1"] = function() {
+ return (_emscripten_bind_ASS_Style_set_MarginR_1 = Module["_emscripten_bind_ASS_Style_set_MarginR_1"] = Module["asm"]["emscripten_bind_ASS_Style_set_MarginR_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_get_MarginV_0 = Module["_emscripten_bind_ASS_Style_get_MarginV_0"] = function() {
+ return (_emscripten_bind_ASS_Style_get_MarginV_0 = Module["_emscripten_bind_ASS_Style_get_MarginV_0"] = Module["asm"]["emscripten_bind_ASS_Style_get_MarginV_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_set_MarginV_1 = Module["_emscripten_bind_ASS_Style_set_MarginV_1"] = function() {
+ return (_emscripten_bind_ASS_Style_set_MarginV_1 = Module["_emscripten_bind_ASS_Style_set_MarginV_1"] = Module["asm"]["emscripten_bind_ASS_Style_set_MarginV_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_get_Encoding_0 = Module["_emscripten_bind_ASS_Style_get_Encoding_0"] = function() {
+ return (_emscripten_bind_ASS_Style_get_Encoding_0 = Module["_emscripten_bind_ASS_Style_get_Encoding_0"] = Module["asm"]["emscripten_bind_ASS_Style_get_Encoding_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_set_Encoding_1 = Module["_emscripten_bind_ASS_Style_set_Encoding_1"] = function() {
+ return (_emscripten_bind_ASS_Style_set_Encoding_1 = Module["_emscripten_bind_ASS_Style_set_Encoding_1"] = Module["asm"]["emscripten_bind_ASS_Style_set_Encoding_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_get_treat_fontname_as_pattern_0 = Module["_emscripten_bind_ASS_Style_get_treat_fontname_as_pattern_0"] = function() {
+ return (_emscripten_bind_ASS_Style_get_treat_fontname_as_pattern_0 = Module["_emscripten_bind_ASS_Style_get_treat_fontname_as_pattern_0"] = Module["asm"]["emscripten_bind_ASS_Style_get_treat_fontname_as_pattern_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_set_treat_fontname_as_pattern_1 = Module["_emscripten_bind_ASS_Style_set_treat_fontname_as_pattern_1"] = function() {
+ return (_emscripten_bind_ASS_Style_set_treat_fontname_as_pattern_1 = Module["_emscripten_bind_ASS_Style_set_treat_fontname_as_pattern_1"] = Module["asm"]["emscripten_bind_ASS_Style_set_treat_fontname_as_pattern_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_get_Blur_0 = Module["_emscripten_bind_ASS_Style_get_Blur_0"] = function() {
+ return (_emscripten_bind_ASS_Style_get_Blur_0 = Module["_emscripten_bind_ASS_Style_get_Blur_0"] = Module["asm"]["emscripten_bind_ASS_Style_get_Blur_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_set_Blur_1 = Module["_emscripten_bind_ASS_Style_set_Blur_1"] = function() {
+ return (_emscripten_bind_ASS_Style_set_Blur_1 = Module["_emscripten_bind_ASS_Style_set_Blur_1"] = Module["asm"]["emscripten_bind_ASS_Style_set_Blur_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_get_Justify_0 = Module["_emscripten_bind_ASS_Style_get_Justify_0"] = function() {
+ return (_emscripten_bind_ASS_Style_get_Justify_0 = Module["_emscripten_bind_ASS_Style_get_Justify_0"] = Module["asm"]["emscripten_bind_ASS_Style_get_Justify_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Style_set_Justify_1 = Module["_emscripten_bind_ASS_Style_set_Justify_1"] = function() {
+ return (_emscripten_bind_ASS_Style_set_Justify_1 = Module["_emscripten_bind_ASS_Style_set_Justify_1"] = Module["asm"]["emscripten_bind_ASS_Style_set_Justify_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Image_get_w_0 = Module["_emscripten_bind_ASS_Image_get_w_0"] = function() {
+ return (_emscripten_bind_ASS_Image_get_w_0 = Module["_emscripten_bind_ASS_Image_get_w_0"] = Module["asm"]["emscripten_bind_ASS_Image_get_w_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Image_set_w_1 = Module["_emscripten_bind_ASS_Image_set_w_1"] = function() {
+ return (_emscripten_bind_ASS_Image_set_w_1 = Module["_emscripten_bind_ASS_Image_set_w_1"] = Module["asm"]["emscripten_bind_ASS_Image_set_w_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Image_get_h_0 = Module["_emscripten_bind_ASS_Image_get_h_0"] = function() {
+ return (_emscripten_bind_ASS_Image_get_h_0 = Module["_emscripten_bind_ASS_Image_get_h_0"] = Module["asm"]["emscripten_bind_ASS_Image_get_h_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Image_set_h_1 = Module["_emscripten_bind_ASS_Image_set_h_1"] = function() {
+ return (_emscripten_bind_ASS_Image_set_h_1 = Module["_emscripten_bind_ASS_Image_set_h_1"] = Module["asm"]["emscripten_bind_ASS_Image_set_h_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Image_get_stride_0 = Module["_emscripten_bind_ASS_Image_get_stride_0"] = function() {
+ return (_emscripten_bind_ASS_Image_get_stride_0 = Module["_emscripten_bind_ASS_Image_get_stride_0"] = Module["asm"]["emscripten_bind_ASS_Image_get_stride_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Image_set_stride_1 = Module["_emscripten_bind_ASS_Image_set_stride_1"] = function() {
+ return (_emscripten_bind_ASS_Image_set_stride_1 = Module["_emscripten_bind_ASS_Image_set_stride_1"] = Module["asm"]["emscripten_bind_ASS_Image_set_stride_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Image_get_bitmap_0 = Module["_emscripten_bind_ASS_Image_get_bitmap_0"] = function() {
+ return (_emscripten_bind_ASS_Image_get_bitmap_0 = Module["_emscripten_bind_ASS_Image_get_bitmap_0"] = Module["asm"]["emscripten_bind_ASS_Image_get_bitmap_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Image_set_bitmap_1 = Module["_emscripten_bind_ASS_Image_set_bitmap_1"] = function() {
+ return (_emscripten_bind_ASS_Image_set_bitmap_1 = Module["_emscripten_bind_ASS_Image_set_bitmap_1"] = Module["asm"]["emscripten_bind_ASS_Image_set_bitmap_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Image_get_color_0 = Module["_emscripten_bind_ASS_Image_get_color_0"] = function() {
+ return (_emscripten_bind_ASS_Image_get_color_0 = Module["_emscripten_bind_ASS_Image_get_color_0"] = Module["asm"]["emscripten_bind_ASS_Image_get_color_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Image_set_color_1 = Module["_emscripten_bind_ASS_Image_set_color_1"] = function() {
+ return (_emscripten_bind_ASS_Image_set_color_1 = Module["_emscripten_bind_ASS_Image_set_color_1"] = Module["asm"]["emscripten_bind_ASS_Image_set_color_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Image_get_dst_x_0 = Module["_emscripten_bind_ASS_Image_get_dst_x_0"] = function() {
+ return (_emscripten_bind_ASS_Image_get_dst_x_0 = Module["_emscripten_bind_ASS_Image_get_dst_x_0"] = Module["asm"]["emscripten_bind_ASS_Image_get_dst_x_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Image_set_dst_x_1 = Module["_emscripten_bind_ASS_Image_set_dst_x_1"] = function() {
+ return (_emscripten_bind_ASS_Image_set_dst_x_1 = Module["_emscripten_bind_ASS_Image_set_dst_x_1"] = Module["asm"]["emscripten_bind_ASS_Image_set_dst_x_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Image_get_dst_y_0 = Module["_emscripten_bind_ASS_Image_get_dst_y_0"] = function() {
+ return (_emscripten_bind_ASS_Image_get_dst_y_0 = Module["_emscripten_bind_ASS_Image_get_dst_y_0"] = Module["asm"]["emscripten_bind_ASS_Image_get_dst_y_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Image_set_dst_y_1 = Module["_emscripten_bind_ASS_Image_set_dst_y_1"] = function() {
+ return (_emscripten_bind_ASS_Image_set_dst_y_1 = Module["_emscripten_bind_ASS_Image_set_dst_y_1"] = Module["asm"]["emscripten_bind_ASS_Image_set_dst_y_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Image_get_next_0 = Module["_emscripten_bind_ASS_Image_get_next_0"] = function() {
+ return (_emscripten_bind_ASS_Image_get_next_0 = Module["_emscripten_bind_ASS_Image_get_next_0"] = Module["asm"]["emscripten_bind_ASS_Image_get_next_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_ASS_Image_set_next_1 = Module["_emscripten_bind_ASS_Image_set_next_1"] = function() {
+ return (_emscripten_bind_ASS_Image_set_next_1 = Module["_emscripten_bind_ASS_Image_set_next_1"] = Module["asm"]["emscripten_bind_ASS_Image_set_next_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_VoidPtr___destroy___0 = Module["_emscripten_bind_VoidPtr___destroy___0"] = function() {
+ return (_emscripten_bind_VoidPtr___destroy___0 = Module["_emscripten_bind_VoidPtr___destroy___0"] = Module["asm"]["emscripten_bind_VoidPtr___destroy___0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_libass_0 = Module["_emscripten_bind_libass_libass_0"] = function() {
+ return (_emscripten_bind_libass_libass_0 = Module["_emscripten_bind_libass_libass_0"] = Module["asm"]["emscripten_bind_libass_libass_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_library_version_0 = Module["_emscripten_bind_libass_oct_library_version_0"] = function() {
+ return (_emscripten_bind_libass_oct_library_version_0 = Module["_emscripten_bind_libass_oct_library_version_0"] = Module["asm"]["emscripten_bind_libass_oct_library_version_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_library_init_0 = Module["_emscripten_bind_libass_oct_library_init_0"] = function() {
+ return (_emscripten_bind_libass_oct_library_init_0 = Module["_emscripten_bind_libass_oct_library_init_0"] = Module["asm"]["emscripten_bind_libass_oct_library_init_0"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_library_done_1 = Module["_emscripten_bind_libass_oct_library_done_1"] = function() {
+ return (_emscripten_bind_libass_oct_library_done_1 = Module["_emscripten_bind_libass_oct_library_done_1"] = Module["asm"]["emscripten_bind_libass_oct_library_done_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_set_fonts_dir_2 = Module["_emscripten_bind_libass_oct_set_fonts_dir_2"] = function() {
+ return (_emscripten_bind_libass_oct_set_fonts_dir_2 = Module["_emscripten_bind_libass_oct_set_fonts_dir_2"] = Module["asm"]["emscripten_bind_libass_oct_set_fonts_dir_2"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_set_extract_fonts_2 = Module["_emscripten_bind_libass_oct_set_extract_fonts_2"] = function() {
+ return (_emscripten_bind_libass_oct_set_extract_fonts_2 = Module["_emscripten_bind_libass_oct_set_extract_fonts_2"] = Module["asm"]["emscripten_bind_libass_oct_set_extract_fonts_2"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_set_style_overrides_2 = Module["_emscripten_bind_libass_oct_set_style_overrides_2"] = function() {
+ return (_emscripten_bind_libass_oct_set_style_overrides_2 = Module["_emscripten_bind_libass_oct_set_style_overrides_2"] = Module["asm"]["emscripten_bind_libass_oct_set_style_overrides_2"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_process_force_style_1 = Module["_emscripten_bind_libass_oct_process_force_style_1"] = function() {
+ return (_emscripten_bind_libass_oct_process_force_style_1 = Module["_emscripten_bind_libass_oct_process_force_style_1"] = Module["asm"]["emscripten_bind_libass_oct_process_force_style_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_renderer_init_1 = Module["_emscripten_bind_libass_oct_renderer_init_1"] = function() {
+ return (_emscripten_bind_libass_oct_renderer_init_1 = Module["_emscripten_bind_libass_oct_renderer_init_1"] = Module["asm"]["emscripten_bind_libass_oct_renderer_init_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_renderer_done_1 = Module["_emscripten_bind_libass_oct_renderer_done_1"] = function() {
+ return (_emscripten_bind_libass_oct_renderer_done_1 = Module["_emscripten_bind_libass_oct_renderer_done_1"] = Module["asm"]["emscripten_bind_libass_oct_renderer_done_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_set_frame_size_3 = Module["_emscripten_bind_libass_oct_set_frame_size_3"] = function() {
+ return (_emscripten_bind_libass_oct_set_frame_size_3 = Module["_emscripten_bind_libass_oct_set_frame_size_3"] = Module["asm"]["emscripten_bind_libass_oct_set_frame_size_3"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_set_storage_size_3 = Module["_emscripten_bind_libass_oct_set_storage_size_3"] = function() {
+ return (_emscripten_bind_libass_oct_set_storage_size_3 = Module["_emscripten_bind_libass_oct_set_storage_size_3"] = Module["asm"]["emscripten_bind_libass_oct_set_storage_size_3"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_set_shaper_2 = Module["_emscripten_bind_libass_oct_set_shaper_2"] = function() {
+ return (_emscripten_bind_libass_oct_set_shaper_2 = Module["_emscripten_bind_libass_oct_set_shaper_2"] = Module["asm"]["emscripten_bind_libass_oct_set_shaper_2"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_set_margins_5 = Module["_emscripten_bind_libass_oct_set_margins_5"] = function() {
+ return (_emscripten_bind_libass_oct_set_margins_5 = Module["_emscripten_bind_libass_oct_set_margins_5"] = Module["asm"]["emscripten_bind_libass_oct_set_margins_5"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_set_use_margins_2 = Module["_emscripten_bind_libass_oct_set_use_margins_2"] = function() {
+ return (_emscripten_bind_libass_oct_set_use_margins_2 = Module["_emscripten_bind_libass_oct_set_use_margins_2"] = Module["asm"]["emscripten_bind_libass_oct_set_use_margins_2"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_set_pixel_aspect_2 = Module["_emscripten_bind_libass_oct_set_pixel_aspect_2"] = function() {
+ return (_emscripten_bind_libass_oct_set_pixel_aspect_2 = Module["_emscripten_bind_libass_oct_set_pixel_aspect_2"] = Module["asm"]["emscripten_bind_libass_oct_set_pixel_aspect_2"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_set_aspect_ratio_3 = Module["_emscripten_bind_libass_oct_set_aspect_ratio_3"] = function() {
+ return (_emscripten_bind_libass_oct_set_aspect_ratio_3 = Module["_emscripten_bind_libass_oct_set_aspect_ratio_3"] = Module["asm"]["emscripten_bind_libass_oct_set_aspect_ratio_3"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_set_font_scale_2 = Module["_emscripten_bind_libass_oct_set_font_scale_2"] = function() {
+ return (_emscripten_bind_libass_oct_set_font_scale_2 = Module["_emscripten_bind_libass_oct_set_font_scale_2"] = Module["asm"]["emscripten_bind_libass_oct_set_font_scale_2"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_set_hinting_2 = Module["_emscripten_bind_libass_oct_set_hinting_2"] = function() {
+ return (_emscripten_bind_libass_oct_set_hinting_2 = Module["_emscripten_bind_libass_oct_set_hinting_2"] = Module["asm"]["emscripten_bind_libass_oct_set_hinting_2"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_set_line_spacing_2 = Module["_emscripten_bind_libass_oct_set_line_spacing_2"] = function() {
+ return (_emscripten_bind_libass_oct_set_line_spacing_2 = Module["_emscripten_bind_libass_oct_set_line_spacing_2"] = Module["asm"]["emscripten_bind_libass_oct_set_line_spacing_2"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_set_line_position_2 = Module["_emscripten_bind_libass_oct_set_line_position_2"] = function() {
+ return (_emscripten_bind_libass_oct_set_line_position_2 = Module["_emscripten_bind_libass_oct_set_line_position_2"] = Module["asm"]["emscripten_bind_libass_oct_set_line_position_2"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_set_fonts_6 = Module["_emscripten_bind_libass_oct_set_fonts_6"] = function() {
+ return (_emscripten_bind_libass_oct_set_fonts_6 = Module["_emscripten_bind_libass_oct_set_fonts_6"] = Module["asm"]["emscripten_bind_libass_oct_set_fonts_6"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_set_selective_style_override_enabled_2 = Module["_emscripten_bind_libass_oct_set_selective_style_override_enabled_2"] = function() {
+ return (_emscripten_bind_libass_oct_set_selective_style_override_enabled_2 = Module["_emscripten_bind_libass_oct_set_selective_style_override_enabled_2"] = Module["asm"]["emscripten_bind_libass_oct_set_selective_style_override_enabled_2"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_set_selective_style_override_2 = Module["_emscripten_bind_libass_oct_set_selective_style_override_2"] = function() {
+ return (_emscripten_bind_libass_oct_set_selective_style_override_2 = Module["_emscripten_bind_libass_oct_set_selective_style_override_2"] = Module["asm"]["emscripten_bind_libass_oct_set_selective_style_override_2"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_set_cache_limits_3 = Module["_emscripten_bind_libass_oct_set_cache_limits_3"] = function() {
+ return (_emscripten_bind_libass_oct_set_cache_limits_3 = Module["_emscripten_bind_libass_oct_set_cache_limits_3"] = Module["asm"]["emscripten_bind_libass_oct_set_cache_limits_3"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_render_frame_4 = Module["_emscripten_bind_libass_oct_render_frame_4"] = function() {
+ return (_emscripten_bind_libass_oct_render_frame_4 = Module["_emscripten_bind_libass_oct_render_frame_4"] = Module["asm"]["emscripten_bind_libass_oct_render_frame_4"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_new_track_1 = Module["_emscripten_bind_libass_oct_new_track_1"] = function() {
+ return (_emscripten_bind_libass_oct_new_track_1 = Module["_emscripten_bind_libass_oct_new_track_1"] = Module["asm"]["emscripten_bind_libass_oct_new_track_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_free_track_1 = Module["_emscripten_bind_libass_oct_free_track_1"] = function() {
+ return (_emscripten_bind_libass_oct_free_track_1 = Module["_emscripten_bind_libass_oct_free_track_1"] = Module["asm"]["emscripten_bind_libass_oct_free_track_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_alloc_style_1 = Module["_emscripten_bind_libass_oct_alloc_style_1"] = function() {
+ return (_emscripten_bind_libass_oct_alloc_style_1 = Module["_emscripten_bind_libass_oct_alloc_style_1"] = Module["asm"]["emscripten_bind_libass_oct_alloc_style_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_alloc_event_1 = Module["_emscripten_bind_libass_oct_alloc_event_1"] = function() {
+ return (_emscripten_bind_libass_oct_alloc_event_1 = Module["_emscripten_bind_libass_oct_alloc_event_1"] = Module["asm"]["emscripten_bind_libass_oct_alloc_event_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_free_style_2 = Module["_emscripten_bind_libass_oct_free_style_2"] = function() {
+ return (_emscripten_bind_libass_oct_free_style_2 = Module["_emscripten_bind_libass_oct_free_style_2"] = Module["asm"]["emscripten_bind_libass_oct_free_style_2"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_free_event_2 = Module["_emscripten_bind_libass_oct_free_event_2"] = function() {
+ return (_emscripten_bind_libass_oct_free_event_2 = Module["_emscripten_bind_libass_oct_free_event_2"] = Module["asm"]["emscripten_bind_libass_oct_free_event_2"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_flush_events_1 = Module["_emscripten_bind_libass_oct_flush_events_1"] = function() {
+ return (_emscripten_bind_libass_oct_flush_events_1 = Module["_emscripten_bind_libass_oct_flush_events_1"] = Module["asm"]["emscripten_bind_libass_oct_flush_events_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_read_file_3 = Module["_emscripten_bind_libass_oct_read_file_3"] = function() {
+ return (_emscripten_bind_libass_oct_read_file_3 = Module["_emscripten_bind_libass_oct_read_file_3"] = Module["asm"]["emscripten_bind_libass_oct_read_file_3"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_add_font_4 = Module["_emscripten_bind_libass_oct_add_font_4"] = function() {
+ return (_emscripten_bind_libass_oct_add_font_4 = Module["_emscripten_bind_libass_oct_add_font_4"] = Module["asm"]["emscripten_bind_libass_oct_add_font_4"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_clear_fonts_1 = Module["_emscripten_bind_libass_oct_clear_fonts_1"] = function() {
+ return (_emscripten_bind_libass_oct_clear_fonts_1 = Module["_emscripten_bind_libass_oct_clear_fonts_1"] = Module["asm"]["emscripten_bind_libass_oct_clear_fonts_1"]).apply(null, arguments);
+};
+
+var _emscripten_bind_libass_oct_step_sub_3 = Module["_emscripten_bind_libass_oct_step_sub_3"] = function() {
+ return (_emscripten_bind_libass_oct_step_sub_3 = Module["_emscripten_bind_libass_oct_step_sub_3"] = Module["asm"]["emscripten_bind_libass_oct_step_sub_3"]).apply(null, arguments);
+};
+
+var _emscripten_enum_ASS_Hinting_ASS_HINTING_NONE = Module["_emscripten_enum_ASS_Hinting_ASS_HINTING_NONE"] = function() {
+ return (_emscripten_enum_ASS_Hinting_ASS_HINTING_NONE = Module["_emscripten_enum_ASS_Hinting_ASS_HINTING_NONE"] = Module["asm"]["emscripten_enum_ASS_Hinting_ASS_HINTING_NONE"]).apply(null, arguments);
+};
+
+var _emscripten_enum_ASS_Hinting_ASS_HINTING_LIGHT = Module["_emscripten_enum_ASS_Hinting_ASS_HINTING_LIGHT"] = function() {
+ return (_emscripten_enum_ASS_Hinting_ASS_HINTING_LIGHT = Module["_emscripten_enum_ASS_Hinting_ASS_HINTING_LIGHT"] = Module["asm"]["emscripten_enum_ASS_Hinting_ASS_HINTING_LIGHT"]).apply(null, arguments);
+};
+
+var _emscripten_enum_ASS_Hinting_ASS_HINTING_NORMAL = Module["_emscripten_enum_ASS_Hinting_ASS_HINTING_NORMAL"] = function() {
+ return (_emscripten_enum_ASS_Hinting_ASS_HINTING_NORMAL = Module["_emscripten_enum_ASS_Hinting_ASS_HINTING_NORMAL"] = Module["asm"]["emscripten_enum_ASS_Hinting_ASS_HINTING_NORMAL"]).apply(null, arguments);
+};
+
+var _emscripten_enum_ASS_Hinting_ASS_HINTING_NATIVE = Module["_emscripten_enum_ASS_Hinting_ASS_HINTING_NATIVE"] = function() {
+ return (_emscripten_enum_ASS_Hinting_ASS_HINTING_NATIVE = Module["_emscripten_enum_ASS_Hinting_ASS_HINTING_NATIVE"] = Module["asm"]["emscripten_enum_ASS_Hinting_ASS_HINTING_NATIVE"]).apply(null, arguments);
+};
+
+var _emscripten_enum_ASS_ShapingLevel_ASS_SHAPING_SIMPLE = Module["_emscripten_enum_ASS_ShapingLevel_ASS_SHAPING_SIMPLE"] = function() {
+ return (_emscripten_enum_ASS_ShapingLevel_ASS_SHAPING_SIMPLE = Module["_emscripten_enum_ASS_ShapingLevel_ASS_SHAPING_SIMPLE"] = Module["asm"]["emscripten_enum_ASS_ShapingLevel_ASS_SHAPING_SIMPLE"]).apply(null, arguments);
+};
+
+var _emscripten_enum_ASS_ShapingLevel_ASS_SHAPING_COMPLEX = Module["_emscripten_enum_ASS_ShapingLevel_ASS_SHAPING_COMPLEX"] = function() {
+ return (_emscripten_enum_ASS_ShapingLevel_ASS_SHAPING_COMPLEX = Module["_emscripten_enum_ASS_ShapingLevel_ASS_SHAPING_COMPLEX"] = Module["asm"]["emscripten_enum_ASS_ShapingLevel_ASS_SHAPING_COMPLEX"]).apply(null, arguments);
+};
+
+var _emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_DEFAULT = Module["_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_DEFAULT"] = function() {
+ return (_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_DEFAULT = Module["_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_DEFAULT"] = Module["asm"]["emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_DEFAULT"]).apply(null, arguments);
+};
+
+var _emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_STYLE = Module["_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_STYLE"] = function() {
+ return (_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_STYLE = Module["_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_STYLE"] = Module["asm"]["emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_STYLE"]).apply(null, arguments);
+};
+
+var _emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_SELECTIVE_FONT_SCALE = Module["_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_SELECTIVE_FONT_SCALE"] = function() {
+ return (_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_SELECTIVE_FONT_SCALE = Module["_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_SELECTIVE_FONT_SCALE"] = Module["asm"]["emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_SELECTIVE_FONT_SCALE"]).apply(null, arguments);
+};
+
+var _emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_FONT_SIZE = Module["_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_FONT_SIZE"] = function() {
+ return (_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_FONT_SIZE = Module["_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_FONT_SIZE"] = Module["asm"]["emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_FONT_SIZE"]).apply(null, arguments);
+};
+
+var _emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_FONT_SIZE_FIELDS = Module["_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_FONT_SIZE_FIELDS"] = function() {
+ return (_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_FONT_SIZE_FIELDS = Module["_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_FONT_SIZE_FIELDS"] = Module["asm"]["emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_FONT_SIZE_FIELDS"]).apply(null, arguments);
+};
+
+var _emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_FONT_NAME = Module["_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_FONT_NAME"] = function() {
+ return (_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_FONT_NAME = Module["_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_FONT_NAME"] = Module["asm"]["emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_FONT_NAME"]).apply(null, arguments);
+};
+
+var _emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_COLORS = Module["_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_COLORS"] = function() {
+ return (_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_COLORS = Module["_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_COLORS"] = Module["asm"]["emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_COLORS"]).apply(null, arguments);
+};
+
+var _emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_ATTRIBUTES = Module["_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_ATTRIBUTES"] = function() {
+ return (_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_ATTRIBUTES = Module["_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_ATTRIBUTES"] = Module["asm"]["emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_ATTRIBUTES"]).apply(null, arguments);
+};
+
+var _emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_BORDER = Module["_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_BORDER"] = function() {
+ return (_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_BORDER = Module["_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_BORDER"] = Module["asm"]["emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_BORDER"]).apply(null, arguments);
+};
+
+var _emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_ALIGNMENT = Module["_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_ALIGNMENT"] = function() {
+ return (_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_ALIGNMENT = Module["_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_ALIGNMENT"] = Module["asm"]["emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_ALIGNMENT"]).apply(null, arguments);
+};
+
+var _emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_MARGINS = Module["_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_MARGINS"] = function() {
+ return (_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_MARGINS = Module["_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_MARGINS"] = Module["asm"]["emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_MARGINS"]).apply(null, arguments);
+};
+
+var _emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_FULL_STYLE = Module["_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_FULL_STYLE"] = function() {
+ return (_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_FULL_STYLE = Module["_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_FULL_STYLE"] = Module["asm"]["emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_FULL_STYLE"]).apply(null, arguments);
+};
+
+var _emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_JUSTIFY = Module["_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_JUSTIFY"] = function() {
+ return (_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_JUSTIFY = Module["_emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_JUSTIFY"] = Module["asm"]["emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_JUSTIFY"]).apply(null, arguments);
 };
 
 var _free = Module["_free"] = function() {
- return Module["asm"]["free"].apply(null, arguments);
+ return (_free = Module["_free"] = Module["asm"]["free"]).apply(null, arguments);
 };
 
 var _realloc = Module["_realloc"] = function() {
- return Module["asm"]["realloc"].apply(null, arguments);
+ return (_realloc = Module["_realloc"] = Module["asm"]["realloc"]).apply(null, arguments);
 };
 
 var _malloc = Module["_malloc"] = function() {
- return Module["asm"]["malloc"].apply(null, arguments);
+ return (_malloc = Module["_malloc"] = Module["asm"]["malloc"]).apply(null, arguments);
 };
 
 var ___errno_location = Module["___errno_location"] = function() {
- return Module["asm"]["__errno_location"].apply(null, arguments);
+ return (___errno_location = Module["___errno_location"] = Module["asm"]["__errno_location"]).apply(null, arguments);
 };
 
 var _setThrew = Module["_setThrew"] = function() {
- return Module["asm"]["setThrew"].apply(null, arguments);
+ return (_setThrew = Module["_setThrew"] = Module["asm"]["setThrew"]).apply(null, arguments);
 };
 
 var _memalign = Module["_memalign"] = function() {
- return Module["asm"]["memalign"].apply(null, arguments);
+ return (_memalign = Module["_memalign"] = Module["asm"]["memalign"]).apply(null, arguments);
 };
 
 var _emscripten_builtin_free = Module["_emscripten_builtin_free"] = function() {
- return Module["asm"]["emscripten_builtin_free"].apply(null, arguments);
+ return (_emscripten_builtin_free = Module["_emscripten_builtin_free"] = Module["asm"]["emscripten_builtin_free"]).apply(null, arguments);
 };
 
 var _emscripten_builtin_memalign = Module["_emscripten_builtin_memalign"] = function() {
- return Module["asm"]["emscripten_builtin_memalign"].apply(null, arguments);
-};
-
-var dynCall_iii = Module["dynCall_iii"] = function() {
- return Module["asm"]["dynCall_iii"].apply(null, arguments);
-};
-
-var dynCall_iiii = Module["dynCall_iiii"] = function() {
- return Module["asm"]["dynCall_iiii"].apply(null, arguments);
-};
-
-var dynCall_iiiii = Module["dynCall_iiiii"] = function() {
- return Module["asm"]["dynCall_iiiii"].apply(null, arguments);
+ return (_emscripten_builtin_memalign = Module["_emscripten_builtin_memalign"] = Module["asm"]["emscripten_builtin_memalign"]).apply(null, arguments);
 };
 
 var dynCall_v = Module["dynCall_v"] = function() {
- return Module["asm"]["dynCall_v"].apply(null, arguments);
+ return (dynCall_v = Module["dynCall_v"] = Module["asm"]["dynCall_v"]).apply(null, arguments);
 };
 
 var dynCall_vi = Module["dynCall_vi"] = function() {
- return Module["asm"]["dynCall_vi"].apply(null, arguments);
+ return (dynCall_vi = Module["dynCall_vi"] = Module["asm"]["dynCall_vi"]).apply(null, arguments);
 };
 
 var dynCall_viiii = Module["dynCall_viiii"] = function() {
- return Module["asm"]["dynCall_viiii"].apply(null, arguments);
+ return (dynCall_viiii = Module["dynCall_viiii"] = Module["asm"]["dynCall_viiii"]).apply(null, arguments);
+};
+
+var dynCall_iii = Module["dynCall_iii"] = function() {
+ return (dynCall_iii = Module["dynCall_iii"] = Module["asm"]["dynCall_iii"]).apply(null, arguments);
+};
+
+var dynCall_iiii = Module["dynCall_iiii"] = function() {
+ return (dynCall_iiii = Module["dynCall_iiii"] = Module["asm"]["dynCall_iiii"]).apply(null, arguments);
+};
+
+var dynCall_iiiii = Module["dynCall_iiiii"] = function() {
+ return (dynCall_iiiii = Module["dynCall_iiiii"] = Module["asm"]["dynCall_iiiii"]).apply(null, arguments);
 };
 
 var stackSave = Module["stackSave"] = function() {
- return Module["asm"]["stackSave"].apply(null, arguments);
+ return (stackSave = Module["stackSave"] = Module["asm"]["stackSave"]).apply(null, arguments);
 };
 
 var stackAlloc = Module["stackAlloc"] = function() {
- return Module["asm"]["stackAlloc"].apply(null, arguments);
+ return (stackAlloc = Module["stackAlloc"] = Module["asm"]["stackAlloc"]).apply(null, arguments);
 };
 
 var stackRestore = Module["stackRestore"] = function() {
- return Module["asm"]["stackRestore"].apply(null, arguments);
+ return (stackRestore = Module["stackRestore"] = Module["asm"]["stackRestore"]).apply(null, arguments);
 };
 
 var __growWasmMemory = Module["__growWasmMemory"] = function() {
- return Module["asm"]["__growWasmMemory"].apply(null, arguments);
+ return (__growWasmMemory = Module["__growWasmMemory"] = Module["asm"]["__growWasmMemory"]).apply(null, arguments);
 };
 
 var dynCall_vii = Module["dynCall_vii"] = function() {
- return Module["asm"]["dynCall_vii"].apply(null, arguments);
+ return (dynCall_vii = Module["dynCall_vii"] = Module["asm"]["dynCall_vii"]).apply(null, arguments);
 };
 
 var dynCall_ii = Module["dynCall_ii"] = function() {
- return Module["asm"]["dynCall_ii"].apply(null, arguments);
+ return (dynCall_ii = Module["dynCall_ii"] = Module["asm"]["dynCall_ii"]).apply(null, arguments);
 };
 
 var dynCall_iiiiii = Module["dynCall_iiiiii"] = function() {
- return Module["asm"]["dynCall_iiiiii"].apply(null, arguments);
+ return (dynCall_iiiiii = Module["dynCall_iiiiii"] = Module["asm"]["dynCall_iiiiii"]).apply(null, arguments);
 };
 
 var dynCall_viii = Module["dynCall_viii"] = function() {
- return Module["asm"]["dynCall_viii"].apply(null, arguments);
+ return (dynCall_viii = Module["dynCall_viii"] = Module["asm"]["dynCall_viii"]).apply(null, arguments);
 };
 
 var dynCall_iiiiiii = Module["dynCall_iiiiiii"] = function() {
- return Module["asm"]["dynCall_iiiiiii"].apply(null, arguments);
+ return (dynCall_iiiiiii = Module["dynCall_iiiiiii"] = Module["asm"]["dynCall_iiiiiii"]).apply(null, arguments);
 };
 
 var dynCall_iiiiiiii = Module["dynCall_iiiiiiii"] = function() {
- return Module["asm"]["dynCall_iiiiiiii"].apply(null, arguments);
+ return (dynCall_iiiiiiii = Module["dynCall_iiiiiiii"] = Module["asm"]["dynCall_iiiiiiii"]).apply(null, arguments);
 };
 
 var dynCall_viiiii = Module["dynCall_viiiii"] = function() {
- return Module["asm"]["dynCall_viiiii"].apply(null, arguments);
+ return (dynCall_viiiii = Module["dynCall_viiiii"] = Module["asm"]["dynCall_viiiii"]).apply(null, arguments);
 };
 
 var dynCall_iiiiiiiii = Module["dynCall_iiiiiiiii"] = function() {
- return Module["asm"]["dynCall_iiiiiiiii"].apply(null, arguments);
+ return (dynCall_iiiiiiiii = Module["dynCall_iiiiiiiii"] = Module["asm"]["dynCall_iiiiiiiii"]).apply(null, arguments);
 };
 
 var dynCall_viiiiiiii = Module["dynCall_viiiiiiii"] = function() {
- return Module["asm"]["dynCall_viiiiiiii"].apply(null, arguments);
+ return (dynCall_viiiiiiii = Module["dynCall_viiiiiiii"] = Module["asm"]["dynCall_viiiiiiii"]).apply(null, arguments);
 };
 
 var dynCall_viiiiii = Module["dynCall_viiiiii"] = function() {
- return Module["asm"]["dynCall_viiiiii"].apply(null, arguments);
+ return (dynCall_viiiiii = Module["dynCall_viiiiii"] = Module["asm"]["dynCall_viiiiii"]).apply(null, arguments);
 };
 
 var dynCall_iiiiiiiiii = Module["dynCall_iiiiiiiiii"] = function() {
- return Module["asm"]["dynCall_iiiiiiiiii"].apply(null, arguments);
+ return (dynCall_iiiiiiiiii = Module["dynCall_iiiiiiiiii"] = Module["asm"]["dynCall_iiiiiiiiii"]).apply(null, arguments);
 };
 
 var dynCall_viiiiji = Module["dynCall_viiiiji"] = function() {
- return Module["asm"]["dynCall_viiiiji"].apply(null, arguments);
+ return (dynCall_viiiiji = Module["dynCall_viiiiji"] = Module["asm"]["dynCall_viiiiji"]).apply(null, arguments);
 };
 
 var dynCall_iiiiiiiiiii = Module["dynCall_iiiiiiiiiii"] = function() {
- return Module["asm"]["dynCall_iiiiiiiiiii"].apply(null, arguments);
+ return (dynCall_iiiiiiiiiii = Module["dynCall_iiiiiiiiiii"] = Module["asm"]["dynCall_iiiiiiiiiii"]).apply(null, arguments);
 };
 
 var dynCall_diii = Module["dynCall_diii"] = function() {
- return Module["asm"]["dynCall_diii"].apply(null, arguments);
-};
-
-var dynCall_iidiiii = Module["dynCall_iidiiii"] = function() {
- return Module["asm"]["dynCall_iidiiii"].apply(null, arguments);
+ return (dynCall_diii = Module["dynCall_diii"] = Module["asm"]["dynCall_diii"]).apply(null, arguments);
 };
 
 var dynCall_jiji = Module["dynCall_jiji"] = function() {
- return Module["asm"]["dynCall_jiji"].apply(null, arguments);
+ return (dynCall_jiji = Module["dynCall_jiji"] = Module["asm"]["dynCall_jiji"]).apply(null, arguments);
+};
+
+var dynCall_iidiiii = Module["dynCall_iidiiii"] = function() {
+ return (dynCall_iidiiii = Module["dynCall_iidiiii"] = Module["asm"]["dynCall_iidiiii"]).apply(null, arguments);
 };
 
 function invoke_viiii(index, a1, a2, a3, a4) {
@@ -6967,7 +7775,7 @@ function callMain(args) {
  } catch (e) {
   if (e instanceof ExitStatus) {
    return;
-  } else if (e == "SimulateInfiniteLoop") {
+  } else if (e == "unwind") {
    noExitRuntime = true;
    return;
   } else {
@@ -7044,6 +7852,1763 @@ noExitRuntime = true;
 
 run();
 
+function WrapperObject() {}
+
+WrapperObject.prototype = Object.create(WrapperObject.prototype);
+
+WrapperObject.prototype.constructor = WrapperObject;
+
+WrapperObject.prototype.__class__ = WrapperObject;
+
+WrapperObject.__cache__ = {};
+
+Module["WrapperObject"] = WrapperObject;
+
+function getCache(__class__) {
+ return (__class__ || WrapperObject).__cache__;
+}
+
+Module["getCache"] = getCache;
+
+function wrapPointer(ptr, __class__) {
+ var cache = getCache(__class__);
+ var ret = cache[ptr];
+ if (ret) return ret;
+ ret = Object.create((__class__ || WrapperObject).prototype);
+ ret.ptr = ptr;
+ return cache[ptr] = ret;
+}
+
+Module["wrapPointer"] = wrapPointer;
+
+function castObject(obj, __class__) {
+ return wrapPointer(obj.ptr, __class__);
+}
+
+Module["castObject"] = castObject;
+
+Module["NULL"] = wrapPointer(0);
+
+function destroy(obj) {
+ if (!obj["__destroy__"]) throw "Error: Cannot destroy object. (Did you create it yourself?)";
+ obj["__destroy__"]();
+ delete getCache(obj.__class__)[obj.ptr];
+}
+
+Module["destroy"] = destroy;
+
+function compare(obj1, obj2) {
+ return obj1.ptr === obj2.ptr;
+}
+
+Module["compare"] = compare;
+
+function getPointer(obj) {
+ return obj.ptr;
+}
+
+Module["getPointer"] = getPointer;
+
+function getClass(obj) {
+ return obj.__class__;
+}
+
+Module["getClass"] = getClass;
+
+var ensureCache = {
+ buffer: 0,
+ size: 0,
+ pos: 0,
+ temps: [],
+ needed: 0,
+ prepare: function() {
+  if (ensureCache.needed) {
+   for (var i = 0; i < ensureCache.temps.length; i++) {
+    Module["_free"](ensureCache.temps[i]);
+   }
+   ensureCache.temps.length = 0;
+   Module["_free"](ensureCache.buffer);
+   ensureCache.buffer = 0;
+   ensureCache.size += ensureCache.needed;
+   ensureCache.needed = 0;
+  }
+  if (!ensureCache.buffer) {
+   ensureCache.size += 128;
+   ensureCache.buffer = Module["_malloc"](ensureCache.size);
+   assert(ensureCache.buffer);
+  }
+  ensureCache.pos = 0;
+ },
+ alloc: function(array, view) {
+  assert(ensureCache.buffer);
+  var bytes = view.BYTES_PER_ELEMENT;
+  var len = array.length * bytes;
+  len = len + 7 & -8;
+  var ret;
+  if (ensureCache.pos + len >= ensureCache.size) {
+   assert(len > 0);
+   ensureCache.needed += len;
+   ret = Module["_malloc"](len);
+   ensureCache.temps.push(ret);
+  } else {
+   ret = ensureCache.buffer + ensureCache.pos;
+   ensureCache.pos += len;
+  }
+  return ret;
+ },
+ copy: function(array, view, offset) {
+  var offsetShifted = offset;
+  var bytes = view.BYTES_PER_ELEMENT;
+  switch (bytes) {
+  case 2:
+   offsetShifted >>= 1;
+   break;
+
+  case 4:
+   offsetShifted >>= 2;
+   break;
+
+  case 8:
+   offsetShifted >>= 3;
+   break;
+  }
+  for (var i = 0; i < array.length; i++) {
+   view[offsetShifted + i] = array[i];
+  }
+ }
+};
+
+function ensureString(value) {
+ if (typeof value === "string") {
+  var intArray = intArrayFromString(value);
+  var offset = ensureCache.alloc(intArray, HEAP8);
+  ensureCache.copy(intArray, HEAP8, offset);
+  return offset;
+ }
+ return value;
+}
+
+function ASS_ParserPriv() {
+ throw "cannot construct a ASS_ParserPriv, no constructor in IDL";
+}
+
+ASS_ParserPriv.prototype = Object.create(WrapperObject.prototype);
+
+ASS_ParserPriv.prototype.constructor = ASS_ParserPriv;
+
+ASS_ParserPriv.prototype.__class__ = ASS_ParserPriv;
+
+ASS_ParserPriv.__cache__ = {};
+
+Module["ASS_ParserPriv"] = ASS_ParserPriv;
+
+function ASS_Event() {
+ throw "cannot construct a ASS_Event, no constructor in IDL";
+}
+
+ASS_Event.prototype = Object.create(WrapperObject.prototype);
+
+ASS_Event.prototype.constructor = ASS_Event;
+
+ASS_Event.prototype.__class__ = ASS_Event;
+
+ASS_Event.__cache__ = {};
+
+Module["ASS_Event"] = ASS_Event;
+
+ASS_Event.prototype["get_Start"] = ASS_Event.prototype.get_Start = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Event_get_Start_0(self);
+};
+
+ASS_Event.prototype["set_Start"] = ASS_Event.prototype.set_Start = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Event_set_Start_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Event.prototype, "Start", {
+ get: ASS_Event.prototype.get_Start,
+ set: ASS_Event.prototype.set_Start
+});
+
+ASS_Event.prototype["get_Duration"] = ASS_Event.prototype.get_Duration = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Event_get_Duration_0(self);
+};
+
+ASS_Event.prototype["set_Duration"] = ASS_Event.prototype.set_Duration = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Event_set_Duration_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Event.prototype, "Duration", {
+ get: ASS_Event.prototype.get_Duration,
+ set: ASS_Event.prototype.set_Duration
+});
+
+ASS_Event.prototype["get_ReadOrder"] = ASS_Event.prototype.get_ReadOrder = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Event_get_ReadOrder_0(self);
+};
+
+ASS_Event.prototype["set_ReadOrder"] = ASS_Event.prototype.set_ReadOrder = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Event_set_ReadOrder_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Event.prototype, "ReadOrder", {
+ get: ASS_Event.prototype.get_ReadOrder,
+ set: ASS_Event.prototype.set_ReadOrder
+});
+
+ASS_Event.prototype["get_Layer"] = ASS_Event.prototype.get_Layer = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Event_get_Layer_0(self);
+};
+
+ASS_Event.prototype["set_Layer"] = ASS_Event.prototype.set_Layer = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Event_set_Layer_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Event.prototype, "Layer", {
+ get: ASS_Event.prototype.get_Layer,
+ set: ASS_Event.prototype.set_Layer
+});
+
+ASS_Event.prototype["get_Style"] = ASS_Event.prototype.get_Style = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Event_get_Style_0(self);
+};
+
+ASS_Event.prototype["set_Style"] = ASS_Event.prototype.set_Style = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Event_set_Style_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Event.prototype, "Style", {
+ get: ASS_Event.prototype.get_Style,
+ set: ASS_Event.prototype.set_Style
+});
+
+ASS_Event.prototype["get_Name"] = ASS_Event.prototype.get_Name = function() {
+ var self = this.ptr;
+ return UTF8ToString(_emscripten_bind_ASS_Event_get_Name_0(self));
+};
+
+ASS_Event.prototype["set_Name"] = ASS_Event.prototype.set_Name = function(arg0) {
+ var self = this.ptr;
+ ensureCache.prepare();
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr; else arg0 = ensureString(arg0);
+ _emscripten_bind_ASS_Event_set_Name_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Event.prototype, "Name", {
+ get: ASS_Event.prototype.get_Name,
+ set: ASS_Event.prototype.set_Name
+});
+
+ASS_Event.prototype["get_MarginL"] = ASS_Event.prototype.get_MarginL = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Event_get_MarginL_0(self);
+};
+
+ASS_Event.prototype["set_MarginL"] = ASS_Event.prototype.set_MarginL = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Event_set_MarginL_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Event.prototype, "MarginL", {
+ get: ASS_Event.prototype.get_MarginL,
+ set: ASS_Event.prototype.set_MarginL
+});
+
+ASS_Event.prototype["get_MarginR"] = ASS_Event.prototype.get_MarginR = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Event_get_MarginR_0(self);
+};
+
+ASS_Event.prototype["set_MarginR"] = ASS_Event.prototype.set_MarginR = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Event_set_MarginR_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Event.prototype, "MarginR", {
+ get: ASS_Event.prototype.get_MarginR,
+ set: ASS_Event.prototype.set_MarginR
+});
+
+ASS_Event.prototype["get_MarginV"] = ASS_Event.prototype.get_MarginV = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Event_get_MarginV_0(self);
+};
+
+ASS_Event.prototype["set_MarginV"] = ASS_Event.prototype.set_MarginV = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Event_set_MarginV_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Event.prototype, "MarginV", {
+ get: ASS_Event.prototype.get_MarginV,
+ set: ASS_Event.prototype.set_MarginV
+});
+
+ASS_Event.prototype["get_Effect"] = ASS_Event.prototype.get_Effect = function() {
+ var self = this.ptr;
+ return UTF8ToString(_emscripten_bind_ASS_Event_get_Effect_0(self));
+};
+
+ASS_Event.prototype["set_Effect"] = ASS_Event.prototype.set_Effect = function(arg0) {
+ var self = this.ptr;
+ ensureCache.prepare();
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr; else arg0 = ensureString(arg0);
+ _emscripten_bind_ASS_Event_set_Effect_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Event.prototype, "Effect", {
+ get: ASS_Event.prototype.get_Effect,
+ set: ASS_Event.prototype.set_Effect
+});
+
+ASS_Event.prototype["get_Text"] = ASS_Event.prototype.get_Text = function() {
+ var self = this.ptr;
+ return UTF8ToString(_emscripten_bind_ASS_Event_get_Text_0(self));
+};
+
+ASS_Event.prototype["set_Text"] = ASS_Event.prototype.set_Text = function(arg0) {
+ var self = this.ptr;
+ ensureCache.prepare();
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr; else arg0 = ensureString(arg0);
+ _emscripten_bind_ASS_Event_set_Text_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Event.prototype, "Text", {
+ get: ASS_Event.prototype.get_Text,
+ set: ASS_Event.prototype.set_Text
+});
+
+function ASS_Renderer() {
+ throw "cannot construct a ASS_Renderer, no constructor in IDL";
+}
+
+ASS_Renderer.prototype = Object.create(WrapperObject.prototype);
+
+ASS_Renderer.prototype.constructor = ASS_Renderer;
+
+ASS_Renderer.prototype.__class__ = ASS_Renderer;
+
+ASS_Renderer.__cache__ = {};
+
+Module["ASS_Renderer"] = ASS_Renderer;
+
+function SubtitleOctopus() {
+ this.ptr = _emscripten_bind_SubtitleOctopus_SubtitleOctopus_0();
+ getCache(SubtitleOctopus)[this.ptr] = this;
+}
+
+SubtitleOctopus.prototype = Object.create(WrapperObject.prototype);
+
+SubtitleOctopus.prototype.constructor = SubtitleOctopus;
+
+SubtitleOctopus.prototype.__class__ = SubtitleOctopus;
+
+SubtitleOctopus.__cache__ = {};
+
+Module["SubtitleOctopus"] = SubtitleOctopus;
+
+SubtitleOctopus.prototype["setLogLevel"] = SubtitleOctopus.prototype.setLogLevel = function(level) {
+ var self = this.ptr;
+ if (level && typeof level === "object") level = level.ptr;
+ _emscripten_bind_SubtitleOctopus_setLogLevel_1(self, level);
+};
+
+SubtitleOctopus.prototype["initLibrary"] = SubtitleOctopus.prototype.initLibrary = function(frame_w, frame_h) {
+ var self = this.ptr;
+ if (frame_w && typeof frame_w === "object") frame_w = frame_w.ptr;
+ if (frame_h && typeof frame_h === "object") frame_h = frame_h.ptr;
+ _emscripten_bind_SubtitleOctopus_initLibrary_2(self, frame_w, frame_h);
+};
+
+SubtitleOctopus.prototype["createTrack"] = SubtitleOctopus.prototype.createTrack = function(subfile) {
+ var self = this.ptr;
+ ensureCache.prepare();
+ if (subfile && typeof subfile === "object") subfile = subfile.ptr; else subfile = ensureString(subfile);
+ _emscripten_bind_SubtitleOctopus_createTrack_1(self, subfile);
+};
+
+SubtitleOctopus.prototype["createTrackMem"] = SubtitleOctopus.prototype.createTrackMem = function(buf, bufsize) {
+ var self = this.ptr;
+ ensureCache.prepare();
+ if (buf && typeof buf === "object") buf = buf.ptr; else buf = ensureString(buf);
+ if (bufsize && typeof bufsize === "object") bufsize = bufsize.ptr;
+ _emscripten_bind_SubtitleOctopus_createTrackMem_2(self, buf, bufsize);
+};
+
+SubtitleOctopus.prototype["removeTrack"] = SubtitleOctopus.prototype.removeTrack = function() {
+ var self = this.ptr;
+ _emscripten_bind_SubtitleOctopus_removeTrack_0(self);
+};
+
+SubtitleOctopus.prototype["resizeCanvas"] = SubtitleOctopus.prototype.resizeCanvas = function(frame_w, frame_h) {
+ var self = this.ptr;
+ if (frame_w && typeof frame_w === "object") frame_w = frame_w.ptr;
+ if (frame_h && typeof frame_h === "object") frame_h = frame_h.ptr;
+ _emscripten_bind_SubtitleOctopus_resizeCanvas_2(self, frame_w, frame_h);
+};
+
+SubtitleOctopus.prototype["renderImage"] = SubtitleOctopus.prototype.renderImage = function(time, changed) {
+ var self = this.ptr;
+ if (time && typeof time === "object") time = time.ptr;
+ if (changed && typeof changed === "object") changed = changed.ptr;
+ return wrapPointer(_emscripten_bind_SubtitleOctopus_renderImage_2(self, time, changed), ASS_Image);
+};
+
+SubtitleOctopus.prototype["quitLibrary"] = SubtitleOctopus.prototype.quitLibrary = function() {
+ var self = this.ptr;
+ _emscripten_bind_SubtitleOctopus_quitLibrary_0(self);
+};
+
+SubtitleOctopus.prototype["reloadLibrary"] = SubtitleOctopus.prototype.reloadLibrary = function() {
+ var self = this.ptr;
+ _emscripten_bind_SubtitleOctopus_reloadLibrary_0(self);
+};
+
+SubtitleOctopus.prototype["reloadFonts"] = SubtitleOctopus.prototype.reloadFonts = function() {
+ var self = this.ptr;
+ _emscripten_bind_SubtitleOctopus_reloadFonts_0(self);
+};
+
+SubtitleOctopus.prototype["setMargin"] = SubtitleOctopus.prototype.setMargin = function(top, bottom, left, right) {
+ var self = this.ptr;
+ if (top && typeof top === "object") top = top.ptr;
+ if (bottom && typeof bottom === "object") bottom = bottom.ptr;
+ if (left && typeof left === "object") left = left.ptr;
+ if (right && typeof right === "object") right = right.ptr;
+ _emscripten_bind_SubtitleOctopus_setMargin_4(self, top, bottom, left, right);
+};
+
+SubtitleOctopus.prototype["getEventCount"] = SubtitleOctopus.prototype.getEventCount = function() {
+ var self = this.ptr;
+ return _emscripten_bind_SubtitleOctopus_getEventCount_0(self);
+};
+
+SubtitleOctopus.prototype["allocEvent"] = SubtitleOctopus.prototype.allocEvent = function() {
+ var self = this.ptr;
+ return _emscripten_bind_SubtitleOctopus_allocEvent_0(self);
+};
+
+SubtitleOctopus.prototype["allocStyle"] = SubtitleOctopus.prototype.allocStyle = function() {
+ var self = this.ptr;
+ return _emscripten_bind_SubtitleOctopus_allocStyle_0(self);
+};
+
+SubtitleOctopus.prototype["removeEvent"] = SubtitleOctopus.prototype.removeEvent = function(eid) {
+ var self = this.ptr;
+ if (eid && typeof eid === "object") eid = eid.ptr;
+ _emscripten_bind_SubtitleOctopus_removeEvent_1(self, eid);
+};
+
+SubtitleOctopus.prototype["getStyleCount"] = SubtitleOctopus.prototype.getStyleCount = function() {
+ var self = this.ptr;
+ return _emscripten_bind_SubtitleOctopus_getStyleCount_0(self);
+};
+
+SubtitleOctopus.prototype["getStyleByName"] = SubtitleOctopus.prototype.getStyleByName = function(name) {
+ var self = this.ptr;
+ ensureCache.prepare();
+ if (name && typeof name === "object") name = name.ptr; else name = ensureString(name);
+ return _emscripten_bind_SubtitleOctopus_getStyleByName_1(self, name);
+};
+
+SubtitleOctopus.prototype["removeStyle"] = SubtitleOctopus.prototype.removeStyle = function(eid) {
+ var self = this.ptr;
+ if (eid && typeof eid === "object") eid = eid.ptr;
+ _emscripten_bind_SubtitleOctopus_removeStyle_1(self, eid);
+};
+
+SubtitleOctopus.prototype["removeAllEvents"] = SubtitleOctopus.prototype.removeAllEvents = function() {
+ var self = this.ptr;
+ _emscripten_bind_SubtitleOctopus_removeAllEvents_0(self);
+};
+
+SubtitleOctopus.prototype["get_track"] = SubtitleOctopus.prototype.get_track = function() {
+ var self = this.ptr;
+ return wrapPointer(_emscripten_bind_SubtitleOctopus_get_track_0(self), ASS_Track);
+};
+
+SubtitleOctopus.prototype["set_track"] = SubtitleOctopus.prototype.set_track = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_SubtitleOctopus_set_track_1(self, arg0);
+};
+
+Object.defineProperty(SubtitleOctopus.prototype, "track", {
+ get: SubtitleOctopus.prototype.get_track,
+ set: SubtitleOctopus.prototype.set_track
+});
+
+SubtitleOctopus.prototype["get_ass_renderer"] = SubtitleOctopus.prototype.get_ass_renderer = function() {
+ var self = this.ptr;
+ return wrapPointer(_emscripten_bind_SubtitleOctopus_get_ass_renderer_0(self), ASS_Renderer);
+};
+
+SubtitleOctopus.prototype["set_ass_renderer"] = SubtitleOctopus.prototype.set_ass_renderer = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_SubtitleOctopus_set_ass_renderer_1(self, arg0);
+};
+
+Object.defineProperty(SubtitleOctopus.prototype, "ass_renderer", {
+ get: SubtitleOctopus.prototype.get_ass_renderer,
+ set: SubtitleOctopus.prototype.set_ass_renderer
+});
+
+SubtitleOctopus.prototype["get_ass_library"] = SubtitleOctopus.prototype.get_ass_library = function() {
+ var self = this.ptr;
+ return wrapPointer(_emscripten_bind_SubtitleOctopus_get_ass_library_0(self), ASS_Library);
+};
+
+SubtitleOctopus.prototype["set_ass_library"] = SubtitleOctopus.prototype.set_ass_library = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_SubtitleOctopus_set_ass_library_1(self, arg0);
+};
+
+Object.defineProperty(SubtitleOctopus.prototype, "ass_library", {
+ get: SubtitleOctopus.prototype.get_ass_library,
+ set: SubtitleOctopus.prototype.set_ass_library
+});
+
+SubtitleOctopus.prototype["__destroy__"] = SubtitleOctopus.prototype.__destroy__ = function() {
+ var self = this.ptr;
+ _emscripten_bind_SubtitleOctopus___destroy___0(self);
+};
+
+function ASS_Track() {
+ throw "cannot construct a ASS_Track, no constructor in IDL";
+}
+
+ASS_Track.prototype = Object.create(WrapperObject.prototype);
+
+ASS_Track.prototype.constructor = ASS_Track;
+
+ASS_Track.prototype.__class__ = ASS_Track;
+
+ASS_Track.__cache__ = {};
+
+Module["ASS_Track"] = ASS_Track;
+
+ASS_Track.prototype["get_n_styles"] = ASS_Track.prototype.get_n_styles = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Track_get_n_styles_0(self);
+};
+
+ASS_Track.prototype["set_n_styles"] = ASS_Track.prototype.set_n_styles = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Track_set_n_styles_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Track.prototype, "n_styles", {
+ get: ASS_Track.prototype.get_n_styles,
+ set: ASS_Track.prototype.set_n_styles
+});
+
+ASS_Track.prototype["get_max_styles"] = ASS_Track.prototype.get_max_styles = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Track_get_max_styles_0(self);
+};
+
+ASS_Track.prototype["set_max_styles"] = ASS_Track.prototype.set_max_styles = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Track_set_max_styles_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Track.prototype, "max_styles", {
+ get: ASS_Track.prototype.get_max_styles,
+ set: ASS_Track.prototype.set_max_styles
+});
+
+ASS_Track.prototype["get_n_events"] = ASS_Track.prototype.get_n_events = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Track_get_n_events_0(self);
+};
+
+ASS_Track.prototype["set_n_events"] = ASS_Track.prototype.set_n_events = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Track_set_n_events_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Track.prototype, "n_events", {
+ get: ASS_Track.prototype.get_n_events,
+ set: ASS_Track.prototype.set_n_events
+});
+
+ASS_Track.prototype["get_max_events"] = ASS_Track.prototype.get_max_events = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Track_get_max_events_0(self);
+};
+
+ASS_Track.prototype["set_max_events"] = ASS_Track.prototype.set_max_events = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Track_set_max_events_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Track.prototype, "max_events", {
+ get: ASS_Track.prototype.get_max_events,
+ set: ASS_Track.prototype.set_max_events
+});
+
+ASS_Track.prototype["get_styles"] = ASS_Track.prototype.get_styles = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ return wrapPointer(_emscripten_bind_ASS_Track_get_styles_1(self, arg0), ASS_Style);
+};
+
+ASS_Track.prototype["set_styles"] = ASS_Track.prototype.set_styles = function(arg0, arg1) {
+ var self = this.ptr;
+ ensureCache.prepare();
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ if (arg1 && typeof arg1 === "object") arg1 = arg1.ptr;
+ _emscripten_bind_ASS_Track_set_styles_2(self, arg0, arg1);
+};
+
+Object.defineProperty(ASS_Track.prototype, "styles", {
+ get: ASS_Track.prototype.get_styles,
+ set: ASS_Track.prototype.set_styles
+});
+
+ASS_Track.prototype["get_events"] = ASS_Track.prototype.get_events = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ return wrapPointer(_emscripten_bind_ASS_Track_get_events_1(self, arg0), ASS_Event);
+};
+
+ASS_Track.prototype["set_events"] = ASS_Track.prototype.set_events = function(arg0, arg1) {
+ var self = this.ptr;
+ ensureCache.prepare();
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ if (arg1 && typeof arg1 === "object") arg1 = arg1.ptr;
+ _emscripten_bind_ASS_Track_set_events_2(self, arg0, arg1);
+};
+
+Object.defineProperty(ASS_Track.prototype, "events", {
+ get: ASS_Track.prototype.get_events,
+ set: ASS_Track.prototype.set_events
+});
+
+ASS_Track.prototype["get_style_format"] = ASS_Track.prototype.get_style_format = function() {
+ var self = this.ptr;
+ return UTF8ToString(_emscripten_bind_ASS_Track_get_style_format_0(self));
+};
+
+ASS_Track.prototype["set_style_format"] = ASS_Track.prototype.set_style_format = function(arg0) {
+ var self = this.ptr;
+ ensureCache.prepare();
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr; else arg0 = ensureString(arg0);
+ _emscripten_bind_ASS_Track_set_style_format_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Track.prototype, "style_format", {
+ get: ASS_Track.prototype.get_style_format,
+ set: ASS_Track.prototype.set_style_format
+});
+
+ASS_Track.prototype["get_event_format"] = ASS_Track.prototype.get_event_format = function() {
+ var self = this.ptr;
+ return UTF8ToString(_emscripten_bind_ASS_Track_get_event_format_0(self));
+};
+
+ASS_Track.prototype["set_event_format"] = ASS_Track.prototype.set_event_format = function(arg0) {
+ var self = this.ptr;
+ ensureCache.prepare();
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr; else arg0 = ensureString(arg0);
+ _emscripten_bind_ASS_Track_set_event_format_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Track.prototype, "event_format", {
+ get: ASS_Track.prototype.get_event_format,
+ set: ASS_Track.prototype.set_event_format
+});
+
+ASS_Track.prototype["get_PlayResX"] = ASS_Track.prototype.get_PlayResX = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Track_get_PlayResX_0(self);
+};
+
+ASS_Track.prototype["set_PlayResX"] = ASS_Track.prototype.set_PlayResX = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Track_set_PlayResX_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Track.prototype, "PlayResX", {
+ get: ASS_Track.prototype.get_PlayResX,
+ set: ASS_Track.prototype.set_PlayResX
+});
+
+ASS_Track.prototype["get_PlayResY"] = ASS_Track.prototype.get_PlayResY = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Track_get_PlayResY_0(self);
+};
+
+ASS_Track.prototype["set_PlayResY"] = ASS_Track.prototype.set_PlayResY = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Track_set_PlayResY_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Track.prototype, "PlayResY", {
+ get: ASS_Track.prototype.get_PlayResY,
+ set: ASS_Track.prototype.set_PlayResY
+});
+
+ASS_Track.prototype["get_Timer"] = ASS_Track.prototype.get_Timer = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Track_get_Timer_0(self);
+};
+
+ASS_Track.prototype["set_Timer"] = ASS_Track.prototype.set_Timer = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Track_set_Timer_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Track.prototype, "Timer", {
+ get: ASS_Track.prototype.get_Timer,
+ set: ASS_Track.prototype.set_Timer
+});
+
+ASS_Track.prototype["get_WrapStyle"] = ASS_Track.prototype.get_WrapStyle = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Track_get_WrapStyle_0(self);
+};
+
+ASS_Track.prototype["set_WrapStyle"] = ASS_Track.prototype.set_WrapStyle = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Track_set_WrapStyle_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Track.prototype, "WrapStyle", {
+ get: ASS_Track.prototype.get_WrapStyle,
+ set: ASS_Track.prototype.set_WrapStyle
+});
+
+ASS_Track.prototype["get_ScaledBorderAndShadow"] = ASS_Track.prototype.get_ScaledBorderAndShadow = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Track_get_ScaledBorderAndShadow_0(self);
+};
+
+ASS_Track.prototype["set_ScaledBorderAndShadow"] = ASS_Track.prototype.set_ScaledBorderAndShadow = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Track_set_ScaledBorderAndShadow_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Track.prototype, "ScaledBorderAndShadow", {
+ get: ASS_Track.prototype.get_ScaledBorderAndShadow,
+ set: ASS_Track.prototype.set_ScaledBorderAndShadow
+});
+
+ASS_Track.prototype["get_Kerning"] = ASS_Track.prototype.get_Kerning = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Track_get_Kerning_0(self);
+};
+
+ASS_Track.prototype["set_Kerning"] = ASS_Track.prototype.set_Kerning = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Track_set_Kerning_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Track.prototype, "Kerning", {
+ get: ASS_Track.prototype.get_Kerning,
+ set: ASS_Track.prototype.set_Kerning
+});
+
+ASS_Track.prototype["get_Language"] = ASS_Track.prototype.get_Language = function() {
+ var self = this.ptr;
+ return UTF8ToString(_emscripten_bind_ASS_Track_get_Language_0(self));
+};
+
+ASS_Track.prototype["set_Language"] = ASS_Track.prototype.set_Language = function(arg0) {
+ var self = this.ptr;
+ ensureCache.prepare();
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr; else arg0 = ensureString(arg0);
+ _emscripten_bind_ASS_Track_set_Language_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Track.prototype, "Language", {
+ get: ASS_Track.prototype.get_Language,
+ set: ASS_Track.prototype.set_Language
+});
+
+ASS_Track.prototype["get_default_style"] = ASS_Track.prototype.get_default_style = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Track_get_default_style_0(self);
+};
+
+ASS_Track.prototype["set_default_style"] = ASS_Track.prototype.set_default_style = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Track_set_default_style_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Track.prototype, "default_style", {
+ get: ASS_Track.prototype.get_default_style,
+ set: ASS_Track.prototype.set_default_style
+});
+
+ASS_Track.prototype["get_name"] = ASS_Track.prototype.get_name = function() {
+ var self = this.ptr;
+ return UTF8ToString(_emscripten_bind_ASS_Track_get_name_0(self));
+};
+
+ASS_Track.prototype["set_name"] = ASS_Track.prototype.set_name = function(arg0) {
+ var self = this.ptr;
+ ensureCache.prepare();
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr; else arg0 = ensureString(arg0);
+ _emscripten_bind_ASS_Track_set_name_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Track.prototype, "name", {
+ get: ASS_Track.prototype.get_name,
+ set: ASS_Track.prototype.set_name
+});
+
+function ASS_RenderPriv() {
+ throw "cannot construct a ASS_RenderPriv, no constructor in IDL";
+}
+
+ASS_RenderPriv.prototype = Object.create(WrapperObject.prototype);
+
+ASS_RenderPriv.prototype.constructor = ASS_RenderPriv;
+
+ASS_RenderPriv.prototype.__class__ = ASS_RenderPriv;
+
+ASS_RenderPriv.__cache__ = {};
+
+Module["ASS_RenderPriv"] = ASS_RenderPriv;
+
+function ASS_Style() {
+ throw "cannot construct a ASS_Style, no constructor in IDL";
+}
+
+ASS_Style.prototype = Object.create(WrapperObject.prototype);
+
+ASS_Style.prototype.constructor = ASS_Style;
+
+ASS_Style.prototype.__class__ = ASS_Style;
+
+ASS_Style.__cache__ = {};
+
+Module["ASS_Style"] = ASS_Style;
+
+ASS_Style.prototype["get_Name"] = ASS_Style.prototype.get_Name = function() {
+ var self = this.ptr;
+ return UTF8ToString(_emscripten_bind_ASS_Style_get_Name_0(self));
+};
+
+ASS_Style.prototype["set_Name"] = ASS_Style.prototype.set_Name = function(arg0) {
+ var self = this.ptr;
+ ensureCache.prepare();
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr; else arg0 = ensureString(arg0);
+ _emscripten_bind_ASS_Style_set_Name_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Style.prototype, "Name", {
+ get: ASS_Style.prototype.get_Name,
+ set: ASS_Style.prototype.set_Name
+});
+
+ASS_Style.prototype["get_FontName"] = ASS_Style.prototype.get_FontName = function() {
+ var self = this.ptr;
+ return UTF8ToString(_emscripten_bind_ASS_Style_get_FontName_0(self));
+};
+
+ASS_Style.prototype["set_FontName"] = ASS_Style.prototype.set_FontName = function(arg0) {
+ var self = this.ptr;
+ ensureCache.prepare();
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr; else arg0 = ensureString(arg0);
+ _emscripten_bind_ASS_Style_set_FontName_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Style.prototype, "FontName", {
+ get: ASS_Style.prototype.get_FontName,
+ set: ASS_Style.prototype.set_FontName
+});
+
+ASS_Style.prototype["get_FontSize"] = ASS_Style.prototype.get_FontSize = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Style_get_FontSize_0(self);
+};
+
+ASS_Style.prototype["set_FontSize"] = ASS_Style.prototype.set_FontSize = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Style_set_FontSize_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Style.prototype, "FontSize", {
+ get: ASS_Style.prototype.get_FontSize,
+ set: ASS_Style.prototype.set_FontSize
+});
+
+ASS_Style.prototype["get_PrimaryColour"] = ASS_Style.prototype.get_PrimaryColour = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Style_get_PrimaryColour_0(self);
+};
+
+ASS_Style.prototype["set_PrimaryColour"] = ASS_Style.prototype.set_PrimaryColour = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Style_set_PrimaryColour_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Style.prototype, "PrimaryColour", {
+ get: ASS_Style.prototype.get_PrimaryColour,
+ set: ASS_Style.prototype.set_PrimaryColour
+});
+
+ASS_Style.prototype["get_SecondaryColour"] = ASS_Style.prototype.get_SecondaryColour = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Style_get_SecondaryColour_0(self);
+};
+
+ASS_Style.prototype["set_SecondaryColour"] = ASS_Style.prototype.set_SecondaryColour = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Style_set_SecondaryColour_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Style.prototype, "SecondaryColour", {
+ get: ASS_Style.prototype.get_SecondaryColour,
+ set: ASS_Style.prototype.set_SecondaryColour
+});
+
+ASS_Style.prototype["get_OutlineColour"] = ASS_Style.prototype.get_OutlineColour = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Style_get_OutlineColour_0(self);
+};
+
+ASS_Style.prototype["set_OutlineColour"] = ASS_Style.prototype.set_OutlineColour = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Style_set_OutlineColour_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Style.prototype, "OutlineColour", {
+ get: ASS_Style.prototype.get_OutlineColour,
+ set: ASS_Style.prototype.set_OutlineColour
+});
+
+ASS_Style.prototype["get_BackColour"] = ASS_Style.prototype.get_BackColour = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Style_get_BackColour_0(self);
+};
+
+ASS_Style.prototype["set_BackColour"] = ASS_Style.prototype.set_BackColour = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Style_set_BackColour_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Style.prototype, "BackColour", {
+ get: ASS_Style.prototype.get_BackColour,
+ set: ASS_Style.prototype.set_BackColour
+});
+
+ASS_Style.prototype["get_Bold"] = ASS_Style.prototype.get_Bold = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Style_get_Bold_0(self);
+};
+
+ASS_Style.prototype["set_Bold"] = ASS_Style.prototype.set_Bold = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Style_set_Bold_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Style.prototype, "Bold", {
+ get: ASS_Style.prototype.get_Bold,
+ set: ASS_Style.prototype.set_Bold
+});
+
+ASS_Style.prototype["get_Italic"] = ASS_Style.prototype.get_Italic = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Style_get_Italic_0(self);
+};
+
+ASS_Style.prototype["set_Italic"] = ASS_Style.prototype.set_Italic = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Style_set_Italic_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Style.prototype, "Italic", {
+ get: ASS_Style.prototype.get_Italic,
+ set: ASS_Style.prototype.set_Italic
+});
+
+ASS_Style.prototype["get_Underline"] = ASS_Style.prototype.get_Underline = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Style_get_Underline_0(self);
+};
+
+ASS_Style.prototype["set_Underline"] = ASS_Style.prototype.set_Underline = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Style_set_Underline_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Style.prototype, "Underline", {
+ get: ASS_Style.prototype.get_Underline,
+ set: ASS_Style.prototype.set_Underline
+});
+
+ASS_Style.prototype["get_StrikeOut"] = ASS_Style.prototype.get_StrikeOut = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Style_get_StrikeOut_0(self);
+};
+
+ASS_Style.prototype["set_StrikeOut"] = ASS_Style.prototype.set_StrikeOut = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Style_set_StrikeOut_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Style.prototype, "StrikeOut", {
+ get: ASS_Style.prototype.get_StrikeOut,
+ set: ASS_Style.prototype.set_StrikeOut
+});
+
+ASS_Style.prototype["get_ScaleX"] = ASS_Style.prototype.get_ScaleX = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Style_get_ScaleX_0(self);
+};
+
+ASS_Style.prototype["set_ScaleX"] = ASS_Style.prototype.set_ScaleX = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Style_set_ScaleX_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Style.prototype, "ScaleX", {
+ get: ASS_Style.prototype.get_ScaleX,
+ set: ASS_Style.prototype.set_ScaleX
+});
+
+ASS_Style.prototype["get_ScaleY"] = ASS_Style.prototype.get_ScaleY = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Style_get_ScaleY_0(self);
+};
+
+ASS_Style.prototype["set_ScaleY"] = ASS_Style.prototype.set_ScaleY = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Style_set_ScaleY_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Style.prototype, "ScaleY", {
+ get: ASS_Style.prototype.get_ScaleY,
+ set: ASS_Style.prototype.set_ScaleY
+});
+
+ASS_Style.prototype["get_Spacing"] = ASS_Style.prototype.get_Spacing = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Style_get_Spacing_0(self);
+};
+
+ASS_Style.prototype["set_Spacing"] = ASS_Style.prototype.set_Spacing = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Style_set_Spacing_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Style.prototype, "Spacing", {
+ get: ASS_Style.prototype.get_Spacing,
+ set: ASS_Style.prototype.set_Spacing
+});
+
+ASS_Style.prototype["get_Angle"] = ASS_Style.prototype.get_Angle = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Style_get_Angle_0(self);
+};
+
+ASS_Style.prototype["set_Angle"] = ASS_Style.prototype.set_Angle = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Style_set_Angle_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Style.prototype, "Angle", {
+ get: ASS_Style.prototype.get_Angle,
+ set: ASS_Style.prototype.set_Angle
+});
+
+ASS_Style.prototype["get_BorderStyle"] = ASS_Style.prototype.get_BorderStyle = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Style_get_BorderStyle_0(self);
+};
+
+ASS_Style.prototype["set_BorderStyle"] = ASS_Style.prototype.set_BorderStyle = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Style_set_BorderStyle_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Style.prototype, "BorderStyle", {
+ get: ASS_Style.prototype.get_BorderStyle,
+ set: ASS_Style.prototype.set_BorderStyle
+});
+
+ASS_Style.prototype["get_Outline"] = ASS_Style.prototype.get_Outline = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Style_get_Outline_0(self);
+};
+
+ASS_Style.prototype["set_Outline"] = ASS_Style.prototype.set_Outline = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Style_set_Outline_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Style.prototype, "Outline", {
+ get: ASS_Style.prototype.get_Outline,
+ set: ASS_Style.prototype.set_Outline
+});
+
+ASS_Style.prototype["get_Shadow"] = ASS_Style.prototype.get_Shadow = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Style_get_Shadow_0(self);
+};
+
+ASS_Style.prototype["set_Shadow"] = ASS_Style.prototype.set_Shadow = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Style_set_Shadow_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Style.prototype, "Shadow", {
+ get: ASS_Style.prototype.get_Shadow,
+ set: ASS_Style.prototype.set_Shadow
+});
+
+ASS_Style.prototype["get_Alignment"] = ASS_Style.prototype.get_Alignment = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Style_get_Alignment_0(self);
+};
+
+ASS_Style.prototype["set_Alignment"] = ASS_Style.prototype.set_Alignment = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Style_set_Alignment_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Style.prototype, "Alignment", {
+ get: ASS_Style.prototype.get_Alignment,
+ set: ASS_Style.prototype.set_Alignment
+});
+
+ASS_Style.prototype["get_MarginL"] = ASS_Style.prototype.get_MarginL = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Style_get_MarginL_0(self);
+};
+
+ASS_Style.prototype["set_MarginL"] = ASS_Style.prototype.set_MarginL = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Style_set_MarginL_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Style.prototype, "MarginL", {
+ get: ASS_Style.prototype.get_MarginL,
+ set: ASS_Style.prototype.set_MarginL
+});
+
+ASS_Style.prototype["get_MarginR"] = ASS_Style.prototype.get_MarginR = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Style_get_MarginR_0(self);
+};
+
+ASS_Style.prototype["set_MarginR"] = ASS_Style.prototype.set_MarginR = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Style_set_MarginR_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Style.prototype, "MarginR", {
+ get: ASS_Style.prototype.get_MarginR,
+ set: ASS_Style.prototype.set_MarginR
+});
+
+ASS_Style.prototype["get_MarginV"] = ASS_Style.prototype.get_MarginV = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Style_get_MarginV_0(self);
+};
+
+ASS_Style.prototype["set_MarginV"] = ASS_Style.prototype.set_MarginV = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Style_set_MarginV_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Style.prototype, "MarginV", {
+ get: ASS_Style.prototype.get_MarginV,
+ set: ASS_Style.prototype.set_MarginV
+});
+
+ASS_Style.prototype["get_Encoding"] = ASS_Style.prototype.get_Encoding = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Style_get_Encoding_0(self);
+};
+
+ASS_Style.prototype["set_Encoding"] = ASS_Style.prototype.set_Encoding = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Style_set_Encoding_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Style.prototype, "Encoding", {
+ get: ASS_Style.prototype.get_Encoding,
+ set: ASS_Style.prototype.set_Encoding
+});
+
+ASS_Style.prototype["get_treat_fontname_as_pattern"] = ASS_Style.prototype.get_treat_fontname_as_pattern = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Style_get_treat_fontname_as_pattern_0(self);
+};
+
+ASS_Style.prototype["set_treat_fontname_as_pattern"] = ASS_Style.prototype.set_treat_fontname_as_pattern = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Style_set_treat_fontname_as_pattern_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Style.prototype, "treat_fontname_as_pattern", {
+ get: ASS_Style.prototype.get_treat_fontname_as_pattern,
+ set: ASS_Style.prototype.set_treat_fontname_as_pattern
+});
+
+ASS_Style.prototype["get_Blur"] = ASS_Style.prototype.get_Blur = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Style_get_Blur_0(self);
+};
+
+ASS_Style.prototype["set_Blur"] = ASS_Style.prototype.set_Blur = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Style_set_Blur_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Style.prototype, "Blur", {
+ get: ASS_Style.prototype.get_Blur,
+ set: ASS_Style.prototype.set_Blur
+});
+
+ASS_Style.prototype["get_Justify"] = ASS_Style.prototype.get_Justify = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Style_get_Justify_0(self);
+};
+
+ASS_Style.prototype["set_Justify"] = ASS_Style.prototype.set_Justify = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Style_set_Justify_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Style.prototype, "Justify", {
+ get: ASS_Style.prototype.get_Justify,
+ set: ASS_Style.prototype.set_Justify
+});
+
+function ASS_Image() {
+ throw "cannot construct a ASS_Image, no constructor in IDL";
+}
+
+ASS_Image.prototype = Object.create(WrapperObject.prototype);
+
+ASS_Image.prototype.constructor = ASS_Image;
+
+ASS_Image.prototype.__class__ = ASS_Image;
+
+ASS_Image.__cache__ = {};
+
+Module["ASS_Image"] = ASS_Image;
+
+ASS_Image.prototype["get_w"] = ASS_Image.prototype.get_w = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Image_get_w_0(self);
+};
+
+ASS_Image.prototype["set_w"] = ASS_Image.prototype.set_w = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Image_set_w_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Image.prototype, "w", {
+ get: ASS_Image.prototype.get_w,
+ set: ASS_Image.prototype.set_w
+});
+
+ASS_Image.prototype["get_h"] = ASS_Image.prototype.get_h = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Image_get_h_0(self);
+};
+
+ASS_Image.prototype["set_h"] = ASS_Image.prototype.set_h = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Image_set_h_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Image.prototype, "h", {
+ get: ASS_Image.prototype.get_h,
+ set: ASS_Image.prototype.set_h
+});
+
+ASS_Image.prototype["get_stride"] = ASS_Image.prototype.get_stride = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Image_get_stride_0(self);
+};
+
+ASS_Image.prototype["set_stride"] = ASS_Image.prototype.set_stride = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Image_set_stride_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Image.prototype, "stride", {
+ get: ASS_Image.prototype.get_stride,
+ set: ASS_Image.prototype.set_stride
+});
+
+ASS_Image.prototype["get_bitmap"] = ASS_Image.prototype.get_bitmap = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Image_get_bitmap_0(self);
+};
+
+ASS_Image.prototype["set_bitmap"] = ASS_Image.prototype.set_bitmap = function(arg0) {
+ var self = this.ptr;
+ ensureCache.prepare();
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr; else arg0 = ensureString(arg0);
+ _emscripten_bind_ASS_Image_set_bitmap_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Image.prototype, "bitmap", {
+ get: ASS_Image.prototype.get_bitmap,
+ set: ASS_Image.prototype.set_bitmap
+});
+
+ASS_Image.prototype["get_color"] = ASS_Image.prototype.get_color = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Image_get_color_0(self);
+};
+
+ASS_Image.prototype["set_color"] = ASS_Image.prototype.set_color = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Image_set_color_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Image.prototype, "color", {
+ get: ASS_Image.prototype.get_color,
+ set: ASS_Image.prototype.set_color
+});
+
+ASS_Image.prototype["get_dst_x"] = ASS_Image.prototype.get_dst_x = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Image_get_dst_x_0(self);
+};
+
+ASS_Image.prototype["set_dst_x"] = ASS_Image.prototype.set_dst_x = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Image_set_dst_x_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Image.prototype, "dst_x", {
+ get: ASS_Image.prototype.get_dst_x,
+ set: ASS_Image.prototype.set_dst_x
+});
+
+ASS_Image.prototype["get_dst_y"] = ASS_Image.prototype.get_dst_y = function() {
+ var self = this.ptr;
+ return _emscripten_bind_ASS_Image_get_dst_y_0(self);
+};
+
+ASS_Image.prototype["set_dst_y"] = ASS_Image.prototype.set_dst_y = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Image_set_dst_y_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Image.prototype, "dst_y", {
+ get: ASS_Image.prototype.get_dst_y,
+ set: ASS_Image.prototype.set_dst_y
+});
+
+ASS_Image.prototype["get_next"] = ASS_Image.prototype.get_next = function() {
+ var self = this.ptr;
+ return wrapPointer(_emscripten_bind_ASS_Image_get_next_0(self), ASS_Image);
+};
+
+ASS_Image.prototype["set_next"] = ASS_Image.prototype.set_next = function(arg0) {
+ var self = this.ptr;
+ if (arg0 && typeof arg0 === "object") arg0 = arg0.ptr;
+ _emscripten_bind_ASS_Image_set_next_1(self, arg0);
+};
+
+Object.defineProperty(ASS_Image.prototype, "next", {
+ get: ASS_Image.prototype.get_next,
+ set: ASS_Image.prototype.set_next
+});
+
+function VoidPtr() {
+ throw "cannot construct a VoidPtr, no constructor in IDL";
+}
+
+VoidPtr.prototype = Object.create(WrapperObject.prototype);
+
+VoidPtr.prototype.constructor = VoidPtr;
+
+VoidPtr.prototype.__class__ = VoidPtr;
+
+VoidPtr.__cache__ = {};
+
+Module["VoidPtr"] = VoidPtr;
+
+VoidPtr.prototype["__destroy__"] = VoidPtr.prototype.__destroy__ = function() {
+ var self = this.ptr;
+ _emscripten_bind_VoidPtr___destroy___0(self);
+};
+
+function ASS_Library() {
+ throw "cannot construct a ASS_Library, no constructor in IDL";
+}
+
+ASS_Library.prototype = Object.create(WrapperObject.prototype);
+
+ASS_Library.prototype.constructor = ASS_Library;
+
+ASS_Library.prototype.__class__ = ASS_Library;
+
+ASS_Library.__cache__ = {};
+
+Module["ASS_Library"] = ASS_Library;
+
+function libass() {
+ this.ptr = _emscripten_bind_libass_libass_0();
+ getCache(libass)[this.ptr] = this;
+}
+
+libass.prototype = Object.create(WrapperObject.prototype);
+
+libass.prototype.constructor = libass;
+
+libass.prototype.__class__ = libass;
+
+libass.__cache__ = {};
+
+Module["libass"] = libass;
+
+libass.prototype["oct_library_version"] = libass.prototype.oct_library_version = function() {
+ var self = this.ptr;
+ return _emscripten_bind_libass_oct_library_version_0(self);
+};
+
+libass.prototype["oct_library_init"] = libass.prototype.oct_library_init = function() {
+ var self = this.ptr;
+ return wrapPointer(_emscripten_bind_libass_oct_library_init_0(self), ASS_Library);
+};
+
+libass.prototype["oct_library_done"] = libass.prototype.oct_library_done = function(priv) {
+ var self = this.ptr;
+ if (priv && typeof priv === "object") priv = priv.ptr;
+ _emscripten_bind_libass_oct_library_done_1(self, priv);
+};
+
+libass.prototype["oct_set_fonts_dir"] = libass.prototype.oct_set_fonts_dir = function(priv, fonts_dir) {
+ var self = this.ptr;
+ ensureCache.prepare();
+ if (priv && typeof priv === "object") priv = priv.ptr;
+ if (fonts_dir && typeof fonts_dir === "object") fonts_dir = fonts_dir.ptr; else fonts_dir = ensureString(fonts_dir);
+ _emscripten_bind_libass_oct_set_fonts_dir_2(self, priv, fonts_dir);
+};
+
+libass.prototype["oct_set_extract_fonts"] = libass.prototype.oct_set_extract_fonts = function(priv, extract) {
+ var self = this.ptr;
+ if (priv && typeof priv === "object") priv = priv.ptr;
+ if (extract && typeof extract === "object") extract = extract.ptr;
+ _emscripten_bind_libass_oct_set_extract_fonts_2(self, priv, extract);
+};
+
+libass.prototype["oct_set_style_overrides"] = libass.prototype.oct_set_style_overrides = function(priv, list) {
+ var self = this.ptr;
+ ensureCache.prepare();
+ if (priv && typeof priv === "object") priv = priv.ptr;
+ _emscripten_bind_libass_oct_set_style_overrides_2(self, priv, list);
+};
+
+libass.prototype["oct_process_force_style"] = libass.prototype.oct_process_force_style = function(track) {
+ var self = this.ptr;
+ if (track && typeof track === "object") track = track.ptr;
+ _emscripten_bind_libass_oct_process_force_style_1(self, track);
+};
+
+libass.prototype["oct_renderer_init"] = libass.prototype.oct_renderer_init = function(priv) {
+ var self = this.ptr;
+ if (priv && typeof priv === "object") priv = priv.ptr;
+ return wrapPointer(_emscripten_bind_libass_oct_renderer_init_1(self, priv), ASS_Renderer);
+};
+
+libass.prototype["oct_renderer_done"] = libass.prototype.oct_renderer_done = function(priv) {
+ var self = this.ptr;
+ if (priv && typeof priv === "object") priv = priv.ptr;
+ _emscripten_bind_libass_oct_renderer_done_1(self, priv);
+};
+
+libass.prototype["oct_set_frame_size"] = libass.prototype.oct_set_frame_size = function(priv, w, h) {
+ var self = this.ptr;
+ if (priv && typeof priv === "object") priv = priv.ptr;
+ if (w && typeof w === "object") w = w.ptr;
+ if (h && typeof h === "object") h = h.ptr;
+ _emscripten_bind_libass_oct_set_frame_size_3(self, priv, w, h);
+};
+
+libass.prototype["oct_set_storage_size"] = libass.prototype.oct_set_storage_size = function(priv, w, h) {
+ var self = this.ptr;
+ if (priv && typeof priv === "object") priv = priv.ptr;
+ if (w && typeof w === "object") w = w.ptr;
+ if (h && typeof h === "object") h = h.ptr;
+ _emscripten_bind_libass_oct_set_storage_size_3(self, priv, w, h);
+};
+
+libass.prototype["oct_set_shaper"] = libass.prototype.oct_set_shaper = function(priv, level) {
+ var self = this.ptr;
+ if (priv && typeof priv === "object") priv = priv.ptr;
+ if (level && typeof level === "object") level = level.ptr;
+ _emscripten_bind_libass_oct_set_shaper_2(self, priv, level);
+};
+
+libass.prototype["oct_set_margins"] = libass.prototype.oct_set_margins = function(priv, t, b, l, r) {
+ var self = this.ptr;
+ if (priv && typeof priv === "object") priv = priv.ptr;
+ if (t && typeof t === "object") t = t.ptr;
+ if (b && typeof b === "object") b = b.ptr;
+ if (l && typeof l === "object") l = l.ptr;
+ if (r && typeof r === "object") r = r.ptr;
+ _emscripten_bind_libass_oct_set_margins_5(self, priv, t, b, l, r);
+};
+
+libass.prototype["oct_set_use_margins"] = libass.prototype.oct_set_use_margins = function(priv, use) {
+ var self = this.ptr;
+ if (priv && typeof priv === "object") priv = priv.ptr;
+ if (use && typeof use === "object") use = use.ptr;
+ _emscripten_bind_libass_oct_set_use_margins_2(self, priv, use);
+};
+
+libass.prototype["oct_set_pixel_aspect"] = libass.prototype.oct_set_pixel_aspect = function(priv, par) {
+ var self = this.ptr;
+ if (priv && typeof priv === "object") priv = priv.ptr;
+ if (par && typeof par === "object") par = par.ptr;
+ _emscripten_bind_libass_oct_set_pixel_aspect_2(self, priv, par);
+};
+
+libass.prototype["oct_set_aspect_ratio"] = libass.prototype.oct_set_aspect_ratio = function(priv, dar, sar) {
+ var self = this.ptr;
+ if (priv && typeof priv === "object") priv = priv.ptr;
+ if (dar && typeof dar === "object") dar = dar.ptr;
+ if (sar && typeof sar === "object") sar = sar.ptr;
+ _emscripten_bind_libass_oct_set_aspect_ratio_3(self, priv, dar, sar);
+};
+
+libass.prototype["oct_set_font_scale"] = libass.prototype.oct_set_font_scale = function(priv, font_scale) {
+ var self = this.ptr;
+ if (priv && typeof priv === "object") priv = priv.ptr;
+ if (font_scale && typeof font_scale === "object") font_scale = font_scale.ptr;
+ _emscripten_bind_libass_oct_set_font_scale_2(self, priv, font_scale);
+};
+
+libass.prototype["oct_set_hinting"] = libass.prototype.oct_set_hinting = function(priv, ht) {
+ var self = this.ptr;
+ if (priv && typeof priv === "object") priv = priv.ptr;
+ if (ht && typeof ht === "object") ht = ht.ptr;
+ _emscripten_bind_libass_oct_set_hinting_2(self, priv, ht);
+};
+
+libass.prototype["oct_set_line_spacing"] = libass.prototype.oct_set_line_spacing = function(priv, line_spacing) {
+ var self = this.ptr;
+ if (priv && typeof priv === "object") priv = priv.ptr;
+ if (line_spacing && typeof line_spacing === "object") line_spacing = line_spacing.ptr;
+ _emscripten_bind_libass_oct_set_line_spacing_2(self, priv, line_spacing);
+};
+
+libass.prototype["oct_set_line_position"] = libass.prototype.oct_set_line_position = function(priv, line_position) {
+ var self = this.ptr;
+ if (priv && typeof priv === "object") priv = priv.ptr;
+ if (line_position && typeof line_position === "object") line_position = line_position.ptr;
+ _emscripten_bind_libass_oct_set_line_position_2(self, priv, line_position);
+};
+
+libass.prototype["oct_set_fonts"] = libass.prototype.oct_set_fonts = function(priv, default_font, default_family, dfp, config, update) {
+ var self = this.ptr;
+ ensureCache.prepare();
+ if (priv && typeof priv === "object") priv = priv.ptr;
+ if (default_font && typeof default_font === "object") default_font = default_font.ptr; else default_font = ensureString(default_font);
+ if (default_family && typeof default_family === "object") default_family = default_family.ptr; else default_family = ensureString(default_family);
+ if (dfp && typeof dfp === "object") dfp = dfp.ptr;
+ if (config && typeof config === "object") config = config.ptr; else config = ensureString(config);
+ if (update && typeof update === "object") update = update.ptr;
+ _emscripten_bind_libass_oct_set_fonts_6(self, priv, default_font, default_family, dfp, config, update);
+};
+
+libass.prototype["oct_set_selective_style_override_enabled"] = libass.prototype.oct_set_selective_style_override_enabled = function(priv, bits) {
+ var self = this.ptr;
+ if (priv && typeof priv === "object") priv = priv.ptr;
+ if (bits && typeof bits === "object") bits = bits.ptr;
+ _emscripten_bind_libass_oct_set_selective_style_override_enabled_2(self, priv, bits);
+};
+
+libass.prototype["oct_set_selective_style_override"] = libass.prototype.oct_set_selective_style_override = function(priv, style) {
+ var self = this.ptr;
+ if (priv && typeof priv === "object") priv = priv.ptr;
+ if (style && typeof style === "object") style = style.ptr;
+ _emscripten_bind_libass_oct_set_selective_style_override_2(self, priv, style);
+};
+
+libass.prototype["oct_set_cache_limits"] = libass.prototype.oct_set_cache_limits = function(priv, glyph_max, bitmap_max_size) {
+ var self = this.ptr;
+ if (priv && typeof priv === "object") priv = priv.ptr;
+ if (glyph_max && typeof glyph_max === "object") glyph_max = glyph_max.ptr;
+ if (bitmap_max_size && typeof bitmap_max_size === "object") bitmap_max_size = bitmap_max_size.ptr;
+ _emscripten_bind_libass_oct_set_cache_limits_3(self, priv, glyph_max, bitmap_max_size);
+};
+
+libass.prototype["oct_render_frame"] = libass.prototype.oct_render_frame = function(priv, track, now, detect_change) {
+ var self = this.ptr;
+ if (priv && typeof priv === "object") priv = priv.ptr;
+ if (track && typeof track === "object") track = track.ptr;
+ if (now && typeof now === "object") now = now.ptr;
+ if (detect_change && typeof detect_change === "object") detect_change = detect_change.ptr;
+ return wrapPointer(_emscripten_bind_libass_oct_render_frame_4(self, priv, track, now, detect_change), ASS_Image);
+};
+
+libass.prototype["oct_new_track"] = libass.prototype.oct_new_track = function(priv) {
+ var self = this.ptr;
+ if (priv && typeof priv === "object") priv = priv.ptr;
+ return wrapPointer(_emscripten_bind_libass_oct_new_track_1(self, priv), ASS_Track);
+};
+
+libass.prototype["oct_free_track"] = libass.prototype.oct_free_track = function(track) {
+ var self = this.ptr;
+ if (track && typeof track === "object") track = track.ptr;
+ _emscripten_bind_libass_oct_free_track_1(self, track);
+};
+
+libass.prototype["oct_alloc_style"] = libass.prototype.oct_alloc_style = function(track) {
+ var self = this.ptr;
+ if (track && typeof track === "object") track = track.ptr;
+ return _emscripten_bind_libass_oct_alloc_style_1(self, track);
+};
+
+libass.prototype["oct_alloc_event"] = libass.prototype.oct_alloc_event = function(track) {
+ var self = this.ptr;
+ if (track && typeof track === "object") track = track.ptr;
+ return _emscripten_bind_libass_oct_alloc_event_1(self, track);
+};
+
+libass.prototype["oct_free_style"] = libass.prototype.oct_free_style = function(track, sid) {
+ var self = this.ptr;
+ if (track && typeof track === "object") track = track.ptr;
+ if (sid && typeof sid === "object") sid = sid.ptr;
+ _emscripten_bind_libass_oct_free_style_2(self, track, sid);
+};
+
+libass.prototype["oct_free_event"] = libass.prototype.oct_free_event = function(track, eid) {
+ var self = this.ptr;
+ if (track && typeof track === "object") track = track.ptr;
+ if (eid && typeof eid === "object") eid = eid.ptr;
+ _emscripten_bind_libass_oct_free_event_2(self, track, eid);
+};
+
+libass.prototype["oct_flush_events"] = libass.prototype.oct_flush_events = function(track) {
+ var self = this.ptr;
+ if (track && typeof track === "object") track = track.ptr;
+ _emscripten_bind_libass_oct_flush_events_1(self, track);
+};
+
+libass.prototype["oct_read_file"] = libass.prototype.oct_read_file = function(library, fname, codepage) {
+ var self = this.ptr;
+ ensureCache.prepare();
+ if (library && typeof library === "object") library = library.ptr;
+ if (fname && typeof fname === "object") fname = fname.ptr; else fname = ensureString(fname);
+ if (codepage && typeof codepage === "object") codepage = codepage.ptr; else codepage = ensureString(codepage);
+ return wrapPointer(_emscripten_bind_libass_oct_read_file_3(self, library, fname, codepage), ASS_Track);
+};
+
+libass.prototype["oct_add_font"] = libass.prototype.oct_add_font = function(library, name, data, data_size) {
+ var self = this.ptr;
+ ensureCache.prepare();
+ if (library && typeof library === "object") library = library.ptr;
+ if (name && typeof name === "object") name = name.ptr; else name = ensureString(name);
+ if (data && typeof data === "object") data = data.ptr; else data = ensureString(data);
+ if (data_size && typeof data_size === "object") data_size = data_size.ptr;
+ _emscripten_bind_libass_oct_add_font_4(self, library, name, data, data_size);
+};
+
+libass.prototype["oct_clear_fonts"] = libass.prototype.oct_clear_fonts = function(library) {
+ var self = this.ptr;
+ if (library && typeof library === "object") library = library.ptr;
+ _emscripten_bind_libass_oct_clear_fonts_1(self, library);
+};
+
+libass.prototype["oct_step_sub"] = libass.prototype.oct_step_sub = function(track, now, movement) {
+ var self = this.ptr;
+ if (track && typeof track === "object") track = track.ptr;
+ if (now && typeof now === "object") now = now.ptr;
+ if (movement && typeof movement === "object") movement = movement.ptr;
+ return _emscripten_bind_libass_oct_step_sub_3(self, track, now, movement);
+};
+
+(function() {
+ function setupEnums() {
+  Module["ASS_HINTING_NONE"] = _emscripten_enum_ASS_Hinting_ASS_HINTING_NONE();
+  Module["ASS_HINTING_LIGHT"] = _emscripten_enum_ASS_Hinting_ASS_HINTING_LIGHT();
+  Module["ASS_HINTING_NORMAL"] = _emscripten_enum_ASS_Hinting_ASS_HINTING_NORMAL();
+  Module["ASS_HINTING_NATIVE"] = _emscripten_enum_ASS_Hinting_ASS_HINTING_NATIVE();
+  Module["ASS_SHAPING_SIMPLE"] = _emscripten_enum_ASS_ShapingLevel_ASS_SHAPING_SIMPLE();
+  Module["ASS_SHAPING_COMPLEX"] = _emscripten_enum_ASS_ShapingLevel_ASS_SHAPING_COMPLEX();
+  Module["ASS_OVERRIDE_DEFAULT"] = _emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_DEFAULT();
+  Module["ASS_OVERRIDE_BIT_STYLE"] = _emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_STYLE();
+  Module["ASS_OVERRIDE_BIT_SELECTIVE_FONT_SCALE"] = _emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_SELECTIVE_FONT_SCALE();
+  Module["ASS_OVERRIDE_BIT_FONT_SIZE"] = _emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_FONT_SIZE();
+  Module["ASS_OVERRIDE_BIT_FONT_SIZE_FIELDS"] = _emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_FONT_SIZE_FIELDS();
+  Module["ASS_OVERRIDE_BIT_FONT_NAME"] = _emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_FONT_NAME();
+  Module["ASS_OVERRIDE_BIT_COLORS"] = _emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_COLORS();
+  Module["ASS_OVERRIDE_BIT_ATTRIBUTES"] = _emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_ATTRIBUTES();
+  Module["ASS_OVERRIDE_BIT_BORDER"] = _emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_BORDER();
+  Module["ASS_OVERRIDE_BIT_ALIGNMENT"] = _emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_ALIGNMENT();
+  Module["ASS_OVERRIDE_BIT_MARGINS"] = _emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_MARGINS();
+  Module["ASS_OVERRIDE_FULL_STYLE"] = _emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_FULL_STYLE();
+  Module["ASS_OVERRIDE_BIT_JUSTIFY"] = _emscripten_enum_ASS_OverrideBits_ASS_OVERRIDE_BIT_JUSTIFY();
+ }
+ if (runtimeInitialized) setupEnums(); else addOnPreMain(setupEnums);
+})();
+
 Module["FS"] = FS;
 
 self.delay = 0;
@@ -7102,7 +9667,8 @@ self.writeAvailableFontsToFS = function(content) {
 self.setTrack = function(content) {
  self.writeAvailableFontsToFS(content);
  Module["FS"].writeFile("/sub.ass", content);
- self._create_track("/sub.ass");
+ self.octObj.createTrack("/sub.ass");
+ self.ass_track = self.octObj.track;
  if (self.fastRenderMode) {
   self.fastRender();
  } else {
@@ -7111,7 +9677,7 @@ self.setTrack = function(content) {
 };
 
 self.freeTrack = function() {
- self._free_track();
+ self.octObj.removeTrack();
  if (self.fastRenderMode) {
   self.fastRender();
  } else {
@@ -7132,7 +9698,7 @@ self.setTrackByUrl = function(url) {
 self.resize = function(width, height) {
  self.width = width;
  self.height = height;
- self._resize(width, height);
+ self.octObj.resizeCanvas(width, height);
 };
 
 self.getCurrentTime = function() {
@@ -7200,7 +9766,7 @@ self.render = function(force) {
  self.rafId = 0;
  self.renderPending = false;
  var startTime = performance.now();
- var renderResult = self._render(self.getCurrentTime() + self.delay, self.changed);
+ var renderResult = self.octObj.renderImage(self.getCurrentTime() + self.delay, self.changed);
  var changed = Module.getValue(self.changed, "i32");
  if (changed != 0 || force) {
   var result = self.buildResult(renderResult);
@@ -7222,7 +9788,7 @@ self.fastRender = function(force) {
  self.rafId = 0;
  self.renderPending = false;
  var startTime = performance.now();
- var renderResult = self._render(self.getCurrentTime() + self.delay, self.changed);
+ var renderResult = self.octObj.renderImage(self.getCurrentTime() + self.delay, self.changed);
  var changed = Module.getValue(self.changed, "i32");
  if (changed != 0 || force) {
   var result = self.buildResult(renderResult);
@@ -7265,19 +9831,19 @@ self.buildResult = function(ptr) {
  var items = [];
  var transferable = [];
  var item;
- while (ptr != 0) {
+ while (ptr.ptr != 0) {
   item = self.buildResultItem(ptr);
   if (item !== null) {
    items.push(item);
    transferable.push(item.buffer);
   }
-  ptr = Module.getValue(ptr + 28, "*");
+  ptr = ptr.next;
  }
  return [ items, transferable ];
 };
 
 self.buildResultItem = function(ptr) {
- var bitmap = Module.getValue(ptr + 12, "*"), stride = Module.getValue(ptr + 8, "i32"), w = Module.getValue(ptr + 0, "i32"), h = Module.getValue(ptr + 4, "i32"), color = Module.getValue(ptr + 16, "i32");
+ var bitmap = ptr.bitmap, stride = ptr.stride, w = ptr.w, h = ptr.h, color = ptr.color;
  if (w == 0 || h == 0) {
   return null;
  }
@@ -7296,8 +9862,8 @@ self.buildResultItem = function(ptr) {
   }
   bitmapPosition += stride;
  }
- x = Module.getValue(ptr + 20, "i32");
- y = Module.getValue(ptr + 24, "i32");
+ x = ptr.dst_x;
+ y = ptr.dst_y;
  return {
   w: w,
   h: h,
@@ -7519,7 +10085,7 @@ function onMessageFromMainEmscriptenThread(message) {
   }
 
  case "destroy":
-  self.quit();
+  self.octObj.quitLibrary();
   break;
 
  case "free-track":
