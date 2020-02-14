@@ -280,7 +280,12 @@ OCTP_DEPS = \
 	$(DIST_DIR)/lib/libfontconfig.a \
 	$(DIST_DIR)/lib/libass.a
 
-src/Makefile:
+# Require a patch to fix some errors
+src/SubOctpInterface.cpp:
+	cd src && \
+	python ../build/webidl_binder.py SubtitleOctopus.idl SubOctpInterface
+
+src/Makefile: src/SubOctpInterface.cpp
 	cd src && \
 	autoreconf -fi
 
@@ -294,7 +299,7 @@ src/subtitles-octopus-worker.bc: dist/libraries/lib/libass.a src/Makefile
 # Dist Files
 EMCC_COMMON_ARGS = \
 	-O2 \
-	-s EXPORTED_FUNCTIONS="['_main', '_malloc', '_libassjs_init', '_libassjs_quit', '_libassjs_resize', '_libassjs_render', '_libassjs_free_track', '_libassjs_create_track']" \
+	-s EXPORTED_FUNCTIONS="['_main', '_malloc']" \
 	-s EXTRA_EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'getValue', 'FS_createPreloadedFile', 'FS_createFolder']" \
 	-s NO_EXIT_RUNTIME=1 \
 	--use-preload-plugins \
@@ -311,25 +316,27 @@ EMCC_COMMON_ARGS = \
 	#--memory-init-file 0 \
 	#-s OUTLINING_LIMIT=20000 \
 
-dist: src/subtitles-octopus-worker.bc dist/subtitles-octopus-worker.js dist/subtitles-octopus.js
+dist: src/subtitles-octopus-worker.bc dist/js/subtitles-octopus-worker.js dist/js/subtitles-octopus.js
 
-dist/subtitles-octopus-worker.js: src/subtitles-octopus-worker.bc
+
+dist/js/subtitles-octopus-worker.js: src/subtitles-octopus-worker.bc
 	emcc src/subtitles-octopus-worker.bc $(OCTP_DEPS) \
 		--pre-js src/pre-worker.js \
 		--pre-js src/unbrotli.js \
+		--post-js src/SubOctpInterface.js \
 		--post-js src/post-worker.js \
 		-s WASM=1 \
 		$(EMCC_COMMON_ARGS)
 
-dist/subtitles-octopus.js:
-	cp src/subtitles-octopus.js dist/
+dist/js/subtitles-octopus.js:
+	cp src/subtitles-octopus.js dist/js/
 
 # Clean Tasks
 
 clean: clean-dist clean-freetype clean-fribidi clean-harfbuzz clean-fontconfig clean-expat clean-libass clean-octopus clean-brotli
 
 clean-dist:
-	cd dist && rm -frv ./*
+	cd dist && rm -frv ./libraries/* && rm -frv ./js/*
 clean-freetype:
 	cd lib/freetype && git clean -fdx
 clean-fribidi:
