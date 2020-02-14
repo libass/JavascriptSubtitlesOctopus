@@ -11,7 +11,7 @@ jobs:
       shell: bash
       run: |
         git submodule sync
-        git submodule update --init --force --depth=1
+        git submodule update --init --force
     - name: Build the Docker image
       run: docker build . --file Dockerfile --tag dador/javascriptsubtitlesoctopus:latest
     - name: Build All
