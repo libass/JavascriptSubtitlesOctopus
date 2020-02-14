@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
         libtool \
         itstool \
         pkg-config \
-        python2 \
+        python \
         zip \
         python-lxml \
         python-pip \
@@ -23,6 +23,6 @@ RUN apt-get update && apt-get install -y \
     cd emsdk && \
     ./emsdk install latest && \
     ./emsdk activate latest
-ENV PATH=$PATH:/emsdk:/emsdk/fastcomp/emscripten:/emsdk/node/12.9.1_64bit/bin
+ENV PATH=$PATH:/emsdk:/emsdk/upstream/emscripten:/emsdk/node/12.9.1_64bit/bin
 WORKDIR /code
 CMD ["make"]
