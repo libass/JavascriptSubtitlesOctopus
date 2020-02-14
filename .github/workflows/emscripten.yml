@@ -10,8 +10,8 @@ jobs:
     - name: Checkout submodules
       shell: bash
       run: |
-        git submodule sync --recursive
-        git submodule update --init --force --recursive --depth=1
+        git submodule sync
+        git submodule update --init --force --depth=1
     - name: Build the Docker image
       run: docker build . --file Dockerfile --tag dador/javascriptsubtitlesoctopus:latest
     - name: Build All
