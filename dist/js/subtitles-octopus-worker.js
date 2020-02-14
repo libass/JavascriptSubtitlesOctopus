@@ -172,7 +172,7 @@ Module.expectedDataFileDownloads++;
    "filename": "/assets/fonts.conf"
   } ],
   "remote_package_size": 146775,
-  "package_uuid": "71e58824-dc8c-4703-83ea-10beae87553f"
+  "package_uuid": "7e09f46d-e6e6-4f37-94d2-2b7522edae07"
  });
 })();
 
@@ -2155,7 +2155,7 @@ function updateGlobalBufferAndViews(buf) {
  Module["HEAPF64"] = HEAPF64 = new Float64Array(buf);
 }
 
-var STACK_BASE = 5888032, DYNAMIC_BASE = 5888032, DYNAMICTOP_PTR = 644992;
+var STACK_BASE = 5888112, DYNAMIC_BASE = 5888112, DYNAMICTOP_PTR = 645072;
 
 var INITIAL_TOTAL_MEMORY = Module["TOTAL_MEMORY"] || 16777216;
 
@@ -6117,7 +6117,7 @@ function _emscripten_get_heap_size() {
 }
 
 function _emscripten_get_sbrk_ptr() {
- return 644992;
+ return 645072;
 }
 
 var setjmpId = 0;
