@@ -1,4 +1,3 @@
-//var Module = Module || {};
 Module = Module || {};
 
 Module["preRun"] = Module["preRun"] || [];
@@ -48,15 +47,13 @@ Module["preRun"].push(function () {
 });
 
 Module['onRuntimeInitialized'] = function () {
-    self.init = Module['cwrap']('libassjs_init', 'number', ['number', 'number', 'string']);
-    self._resize = Module['cwrap']('libassjs_resize', null, ['number', 'number']);
-    self._render = Module['cwrap']('libassjs_render', null, ['number', 'number']);
-    self._free_track = Module['cwrap']('libassjs_free_track', null, null);
-    self._create_track = Module['cwrap']('libassjs_create_track', null, ['string']);
-    self.quit = Module['cwrap']('libassjs_quit', null, []);
+    self.octObj = new Module.SubtitleOctopus();
     self.changed = Module._malloc(4);
-
-    self.init(screen.width, screen.height, "/sub.ass");
+    self.octObj.initLibrary(screen.width, screen.height);
+    self.octObj.createTrack("/sub.ass");
+    self.ass_track = self.octObj.track;
+    self.ass_library = self.octObj.ass_library;
+    self.ass_renderer = self.octObj.ass_renderer;
 };
 
 Module["print"] = function (text) {

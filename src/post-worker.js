@@ -73,7 +73,8 @@ self.setTrack = function (content) {
     Module["FS"].writeFile("/sub.ass", content);
 
     // Tell libass to render the new track
-    self._create_track("/sub.ass");
+    self.octObj.createTrack("/sub.ass");
+    self.ass_track = self.octObj.track;
     if (self.fastRenderMode) {
         self.fastRender();
     } else {
@@ -85,7 +86,7 @@ self.setTrack = function (content) {
  * Remove subtitle track.
  */
 self.freeTrack = function () {
-    self._free_track();
+    self.octObj.removeTrack();
     if (self.fastRenderMode) {
         self.fastRender();
     } else {
@@ -110,7 +111,7 @@ self.setTrackByUrl = function (url) {
 self.resize = function (width, height) {
     self.width = width;
     self.height = height;
-    self._resize(width, height);
+    self.octObj.resizeCanvas(width, height);
 };
 
 self.getCurrentTime = function () {
@@ -181,7 +182,7 @@ self.render = function (force) {
     self.rafId = 0;
     self.renderPending = false;
     var startTime = performance.now();
-    var renderResult = self._render(self.getCurrentTime() + self.delay, self.changed);
+    var renderResult = self.octObj.renderImage(self.getCurrentTime() + self.delay, self.changed);
     var changed = Module.getValue(self.changed, 'i32');
     if (changed != 0 || force) {
         var result = self.buildResult(renderResult);
@@ -204,7 +205,7 @@ self.fastRender = function (force) {
     self.rafId = 0;
     self.renderPending = false;
     var startTime = performance.now();
-    var renderResult = self._render(self.getCurrentTime() + self.delay, self.changed);
+    var renderResult = self.octObj.renderImage(self.getCurrentTime() + self.delay, self.changed);
     var changed = Module.getValue(self.changed, "i32");
     if (changed != 0 || force) {
         var result = self.buildResult(renderResult);
@@ -244,24 +245,24 @@ self.buildResult = function (ptr) {
     var transferable = [];
     var item;
 
-    while (ptr != 0) {
+    while (ptr.ptr != 0) {
         item = self.buildResultItem(ptr);
         if (item !== null) {
             items.push(item);
             transferable.push(item.buffer);
         }
-        ptr = Module.getValue(ptr + 28, '*');
+        ptr = ptr.next;
     }
 
     return [items, transferable];
-};
+}
 
 self.buildResultItem = function (ptr) {
-    var bitmap = Module.getValue(ptr + 12, '*'),
-        stride = Module.getValue(ptr + 8, 'i32'),
-        w = Module.getValue(ptr + 0, 'i32'),
-        h = Module.getValue(ptr + 4, 'i32'),
-        color = Module.getValue(ptr + 16, 'i32');
+    var bitmap = ptr.bitmap,
+        stride = ptr.stride,
+        w = ptr.w,
+        h = ptr.h,
+        color = ptr.color;
 
     if (w == 0 || h == 0) {
         return null;
@@ -289,8 +290,8 @@ self.buildResultItem = function (ptr) {
         bitmapPosition += stride;
     }
 
-    x = Module.getValue(ptr + 20, 'i32');
-    y = Module.getValue(ptr + 24, 'i32');
+    x = ptr.dst_x;
+    y = ptr.dst_y;
 
     return {w: w, h: h, x: x, y: y, buffer: result.buffer};
 };
@@ -520,7 +521,7 @@ function onMessageFromMainEmscriptenThread(message) {
             break;
         }
         case 'destroy':
-            self.quit();
+            self.octObj.quitLibrary();
             break;
         case 'free-track':
             self.freeTrack();
