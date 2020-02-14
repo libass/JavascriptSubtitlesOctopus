@@ -27,6 +27,7 @@ dist/libraries/lib/libfribidi.a: lib/fribidi/configure
 		-s NO_FILESYSTEM=1 \
 		-s NO_EXIT_RUNTIME=1 \
 		-s STRICT=1 \
+		-DFRIBIDI_ENTRY=extern \
 		--llvm-lto 1 \
 		-s MODULARIZE=1 \
 		" \
