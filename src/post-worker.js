@@ -201,6 +201,38 @@ self.render = function (force) {
     }
 };
 
+self.blendRender = function (force) {
+    self.rafId = 0;
+    self.renderPending = false;
+    var startTime = performance.now();
+
+    var renderResult = self._render_blend(self.getCurrentTime() + self.delay, force ? 1 : 0,
+                                          self.blendX, self.blendY, self.blendW, self.blendH);
+    if (renderResult) {
+        var blendX = Module.getValue(self.blendX, 'i32');
+        var blendY = Module.getValue(self.blendY, 'i32');
+        var blendW = Module.getValue(self.blendW, 'i32');
+        var blendH = Module.getValue(self.blendH, 'i32');
+        // make a copy, as we should free the memory so subsequent calls can utilize it
+        var result = new HEAPU8.slice(renderResult, renderResult + blendW * blendH * 4);
+        Module._free(renderResult);
+        var spentTime = performance.now() - startTime;
+
+        var elem = {w: blendW, h: blendH, x: blendX, y: blendY, buffer: result.buffer};
+        postMessage({
+            target: 'canvas',
+            op: 'renderCanvas',
+            time: Date.now(),
+            spentTime: spentTime,
+            canvases: [elem]
+        }, [result.buffer]);
+    }
+
+    if (!self._isPaused) {
+        self.rafId = self.requestAnimationFrame(self.render);
+    }
+};
+
 self.fastRender = function (force) {
     self.rafId = 0;
     self.renderPending = false;

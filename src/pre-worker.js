@@ -47,7 +47,7 @@ Module["preRun"] = Module["preRun"] || [];
 
 Module["preRun"].push(function () {
     var i;
-    
+
     Module["FS_createFolder"]("/", "fonts", true, true);
 
     if (!self.subContent) {
@@ -58,7 +58,7 @@ Module["preRun"].push(function () {
             self.subContent = read_(self.subUrl);
         }
     }
-    
+
     if (self.availableFonts && self.availableFonts.length !== 0) {
         var sections = parseAss(self.subContent);
             for (var i = 0; i < sections.length; i++) {
@@ -68,7 +68,7 @@ Module["preRun"].push(function () {
                     }
                 }
             }
-            
+
             var regex = /\\fn([^\\}]*?)[\\}]/g;
             var matches;
             while (matches = regex.exec(self.subContent)) {
@@ -91,7 +91,16 @@ Module["preRun"].push(function () {
 
 Module['onRuntimeInitialized'] = function () {
     self.octObj = new Module.SubtitleOctopus();
+
+    self._render_blend = Module['cwrap']('libassjs_render_blend', null, ['number', 'number', 'number', 'number', 'number', 'number']);
+
     self.changed = Module._malloc(4);
+
+    self.blendX = Module._malloc(4);
+    self.blendY = Module._malloc(4);
+    self.blendW = Module._malloc(4);
+    self.blendH = Module._malloc(4);
+
     self.octObj.initLibrary(screen.width, screen.height);
     self.octObj.createTrack("/sub.ass");
     self.ass_track = self.octObj.track;
