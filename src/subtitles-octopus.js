@@ -13,7 +13,7 @@ var SubtitlesOctopus = function (options) {
 
     var self = this;
     self.canvas = options.canvas; // HTML canvas element (optional if video specified)
-    self.lossyRender = options.lossyRender; // Speedup render for heavy subs
+    self.renderMode = options.lossyRender ? 'fast' : (options.blendRender ? 'blend' : 'normal');
     self.isOurCanvas = false; // (internal) we created canvas and manage it
     self.video = options.video; // HTML video element (optional if canvas specified)
     self.canvasParent = null; // (internal) HTML canvas parent element
@@ -99,7 +99,7 @@ var SubtitlesOctopus = function (options) {
             URL: document.URL,
             currentScript: self.workerUrl,
             preMain: true,
-            fastRender: self.lossyRender,
+            renderMode: self.renderMode,
             subUrl: self.subUrl,
             subContent: self.subContent,
             fonts: self.fonts,
