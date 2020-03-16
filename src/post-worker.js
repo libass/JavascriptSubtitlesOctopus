@@ -203,7 +203,7 @@ self.blendRender = function (force) {
         var blendW = Module.getValue(self.blendW, 'i32');
         var blendH = Module.getValue(self.blendH, 'i32');
         // make a copy, as we should free the memory so subsequent calls can utilize it
-        var result = new HEAPU8.slice(renderResult, renderResult + blendW * blendH * 4);
+        var result = new Uint8Array(HEAPU8.subarray(renderResult, renderResult + blendW * blendH * 4));
         Module._free(renderResult);
         var spentTime = performance.now() - startTime;
 
@@ -218,7 +218,7 @@ self.blendRender = function (force) {
     }
 
     if (!self._isPaused) {
-        self.rafId = self.requestAnimationFrame(self.render);
+        self.rafId = self.requestAnimationFrame(self.blendRender);
     }
 };
 
