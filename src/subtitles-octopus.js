@@ -236,7 +236,6 @@ var SubtitlesOctopus = function (options) {
     function renderFrames() {
         var data = self.renderFramesData;
         var beforeDrawTime = performance.now();
-        self.ctx.clearRect(0, 0, self.canvas.width, self.canvas.height);
         for (var i = 0; i < data.canvases.length; i++) {
             var image = data.canvases[i];
             self.bufferCanvas.width = image.w;

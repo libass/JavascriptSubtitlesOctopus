@@ -166,7 +166,10 @@ public:
     }
 };
 
-#define CLAMP_UINT8(value) ((value > 0) ? ((value <= 255) ? (int)value : 255) : 0)
+const float MIN_UINT8_CAST = 0.9 / 255;
+const float MAX_UINT8_CAST = 256.0 / 255;
+
+#define CLAMP_UINT8(value) ((value > MIN_UINT8_CAST) ? ((value < MAX_UINT8_CAST) ? (int)(value * 255) : 255) : 0)
 
 void* libassjs_render_blend(double tm, int force, int *dest_x, int *dest_y, int *dest_width, int *dest_height)
 {
@@ -214,28 +217,24 @@ void* libassjs_render_blend(double tm, int force, int *dest_x, int *dest_y, int 
     {
         int curw = cur->w, curh = cur->h;
         if (curw == 0 || curh == 0) continue; // skip empty images
-        int curs = (cur->stride >= curw) ? cur->stride : curw, curx = cur->dst_x, cury = cur->dst_y;
-        
+        int a = (255 - (cur->color & 0xFF));
+        if (a == 0) continue; // skip transparent images
+
+        int curs = (cur->stride >= curw) ? cur->stride : curw;
+        int curx = cur->dst_x - min_x, cury = cur->dst_y - min_y;
+
         unsigned char *bitmap = cur->bitmap;
-        float a = (cur->color & 0xFF) / 255.0;
+        float normalized_a = a / 255.0;
+        float r = ((cur->color >> 24) & 0xFF) / 255.0;
+        float g = ((cur->color >> 16) & 0xFF) / 255.0;
+        float b = ((cur->color >> 8) & 0xFF) / 255.0;
 
-        // premultiply by alpha
-        float r = a * ((cur->color >> 24) & 0xFF) / 255.0;
-        float g = a * ((cur->color >> 16) & 0xFF) / 255.0;
-        float b = a * ((cur->color >> 8) & 0xFF) / 255.0;
-
-        // float a = (255 - (cur->color & 0xFF)) / 255.0;
-
-        for (int y = 0, bitmap_offset = 0; y < curh; y++, bitmap_offset += curs)
+        int buf_line_coord = cury * width;
+        for (int y = 0, bitmap_offset = 0; y < curh; y++, bitmap_offset += curs, buf_line_coord += width)
         {
-            int buf_line_coord = (cury + y) * width;
             for (int x = 0; x < curw; x++)
             {
-                // manual bounds check
-                //if (x + curx >= width) printf("libass: outside by x");
-                //if (y + cury >= height) printf("libass: outside by y");
-
-                float pix_alpha = bitmap[bitmap_offset + x] * a / 255.0;
+                float pix_alpha = bitmap[bitmap_offset + x] * normalized_a / 255.0;
                 float inv_alpha = 1.0 - pix_alpha;
                 
                 int buf_coord = (buf_line_coord + curx + x) << 2;
@@ -244,13 +243,11 @@ void* libassjs_render_blend(double tm, int force, int *dest_x, int *dest_y, int 
                 float *buf_b = buf + buf_coord + 2;
                 float *buf_a = buf + buf_coord + 3;
                 
-                float buf_alpha = *buf_a;
-                
-                // do the compositing
-                *buf_a = pix_alpha + buf_alpha * inv_alpha;
-                *buf_r = r + *buf_r * inv_alpha;
-                *buf_g = g + *buf_g * inv_alpha;
-                *buf_b = b + *buf_b * inv_alpha;
+                // do the compositing, pre-multiply image RGB with alpha for current pixel
+                *buf_a = pix_alpha + *buf_a * inv_alpha;
+                *buf_r = r * pix_alpha + *buf_r * inv_alpha;
+                *buf_g = g * pix_alpha + *buf_g * inv_alpha;
+                *buf_b = b * pix_alpha + *buf_b * inv_alpha;
             }
         }
     }
@@ -261,12 +258,12 @@ void* libassjs_render_blend(double tm, int force, int *dest_x, int *dest_y, int 
         for (int x = 0; x < width; x++)
         {
             int buf_coord = (buf_line_coord + x) << 2;
-            // need to un-multiply the result
             float alpha = buf[buf_coord + 3];
-            if (alpha > 1e-5)
+            if (alpha > MIN_UINT8_CAST)
             {
                 for (int offset = 0; offset < 3; offset++)
                 {
+                    // need to un-multiply the result
                     float value = buf[buf_coord + offset] / alpha;
                     result[buf_coord + offset] = CLAMP_UINT8(value);
                 }
@@ -276,7 +273,6 @@ void* libassjs_render_blend(double tm, int force, int *dest_x, int *dest_y, int 
     }
     
     // return the thing
-    printf("libass: returning result");
     free(buf);
     *dest_x = min_x;
     *dest_y = min_y;

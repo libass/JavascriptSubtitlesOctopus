@@ -4,6 +4,8 @@
 BASE_DIR:=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 DIST_DIR:=$(BASE_DIR)dist/libraries
 
+GLOBAL_CFLAGS:=-O3
+
 all: subtitleoctopus
 
 subtitleoctopus: dist
@@ -22,8 +24,7 @@ dist/libraries/lib/libfribidi.a: lib/fribidi/configure
 	emconfigure ./configure \
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
-		-O2 \
-		-s NO_FILESYSTEM=1 \
+		$(GLOBAL_CFLAGS) \
 		-s NO_EXIT_RUNTIME=1 \
 		-DFRIBIDI_ENTRY=extern \
 		--llvm-lto 1 \
@@ -52,8 +53,7 @@ dist/libraries/lib/libexpat.a: lib/expat/expat/configured
 	emcmake cmake \
 		-DCMAKE_C_FLAGS=" \
 		-s USE_PTHREADS=0 \
-		-O2 \
-		-s NO_FILESYSTEM=1 \
+		$(GLOBAL_CFLAGS) \
 		-s NO_EXIT_RUNTIME=1 \
 		--llvm-lto 1 \
 		-s MODULARIZE=1 \
@@ -81,7 +81,7 @@ dist/libraries/lib/libbrotlidec.a: lib/brotli/configured
 	cd lib/brotli/build && \
 	emcmake cmake \
 		-DCMAKE_C_FLAGS=" \
-		-O2 \
+		$(GLOBAL_CFLAGS) \
 		" \
 		-DCMAKE_INSTALL_PREFIX=$(DIST_DIR) \
 		.. \
@@ -104,8 +104,7 @@ lib/freetype/build_hb/dist_hb/lib/libfreetype.a: dist/libraries/lib/libbrotlidec
 	emconfigure ../configure \
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
-		-O2 \
-		-s NO_FILESYSTEM=1 \
+		$(GLOBAL_CFLAGS) \
 		-s NO_EXIT_RUNTIME=1 \
 		--llvm-lto 1 \
 		-s MODULARIZE=1 \
@@ -139,8 +138,7 @@ dist/libraries/lib/libharfbuzz.a: lib/freetype/build_hb/dist_hb/lib/libfreetype.
 	emconfigure ./configure \
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
-		-O2 \
-		-s NO_FILESYSTEM=1 \
+		$(GLOBAL_CFLAGS) \
 		-s NO_EXIT_RUNTIME=1 \
 		--llvm-lto 1 \
 		-s MODULARIZE=1 \
@@ -174,8 +172,7 @@ dist/libraries/lib/libfreetype.a: dist/libraries/lib/libharfbuzz.a dist/librarie
 	emconfigure ./configure \
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
-		-O2 \
-		-s NO_FILESYSTEM=1 \
+		$(GLOBAL_CFLAGS) \
 		-s NO_EXIT_RUNTIME=1 \
 		--llvm-lto 1 \
 		-s MODULARIZE=1 \
@@ -211,7 +208,7 @@ dist/libraries/lib/libfontconfig.a: dist/libraries/lib/libharfbuzz.a dist/librar
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
 		-DEMSCRIPTEN \
-		-O2 \
+		$(GLOBAL_CFLAGS) \
 		-s NO_EXIT_RUNTIME=1 \
 		--llvm-lto 1 \
 		-s MODULARIZE=1 \
@@ -243,7 +240,7 @@ dist/libraries/lib/libass.a: dist/libraries/lib/libfontconfig.a dist/libraries/l
 	emconfigure ./configure \
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
-		-O2 \
+		$(GLOBAL_CFLAGS) \
 		-s NO_EXIT_RUNTIME=1 \
 		--llvm-lto 1 \
 		-s MODULARIZE=1 \
@@ -279,18 +276,18 @@ src/SubOctpInterface.cpp:
 
 src/Makefile: src/SubOctpInterface.cpp
 	cd src && \
-	autoreconf -fi
-
-src/subtitles-octopus-worker.bc: dist/libraries/lib/libass.a src/Makefile
-	cd src && \
+	autoreconf -fi && \
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
-	emconfigure ./configure --host=x86-none-linux --build=x86_64 CFLAGS='-g -O3 -fsanitize=undefined -s SAFE_HEAP=1'  && \
+	emconfigure ./configure --host=x86-none-linux --build=x86_64 CFLAGS="$(GLOBAL_CFLAGS)"
+
+src/subtitles-octopus-worker.bc: dist/libraries/lib/libass.a src/Makefile src/subtitles-octopus-worker.c
+	cd src && \
 	emmake make -j8 && \
 	mv subtitlesoctopus subtitles-octopus-worker.bc
 
 # Dist Files
 EMCC_COMMON_ARGS = \
-	-O3 \
+	$(GLOBAL_CFLAGS) \
 	-s EXPORTED_FUNCTIONS="['_main', '_malloc', '_libassjs_render_blend', '_free']" \
 	-s EXTRA_EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'getValue', 'FS_createPreloadedFile', 'FS_createFolder']" \
 	-s NO_EXIT_RUNTIME=1 \
@@ -300,9 +297,6 @@ EMCC_COMMON_ARGS = \
 	-s ALLOW_MEMORY_GROWTH=1 \
 	-s FORCE_FILESYSTEM=1 \
 	--llvm-lto 1 \
-	-g \
-	-fsanitize=undefined \
-	-s SAFE_HEAP=1 \
 	--no-heap-copy \
 	-o $@
 	#--js-opts 0 -g4 \
@@ -320,6 +314,7 @@ dist/js/subtitles-octopus-worker.js: src/subtitles-octopus-worker.bc
 		--post-js src/SubOctpInterface.js \
 		--post-js src/post-worker.js \
 		-s WASM=1 \
+		--source-map-base http://localhost:8080/assets/js/ \
 		$(EMCC_COMMON_ARGS)
 
 dist/js/subtitles-octopus-worker-legacy.js: src/subtitles-octopus-worker.bc
@@ -332,7 +327,7 @@ dist/js/subtitles-octopus-worker-legacy.js: src/subtitles-octopus-worker.bc
 		-s LEGACY_VM_SUPPORT=1 \
 		$(EMCC_COMMON_ARGS)
 
-dist/js/subtitles-octopus.js:
+dist/js/subtitles-octopus.js: src/subtitles-octopus.js
 	cp src/subtitles-octopus.js dist/js/
 
 # Clean Tasks
