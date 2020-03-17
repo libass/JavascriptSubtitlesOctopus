@@ -92,10 +92,11 @@ Module["preRun"].push(function () {
 Module['onRuntimeInitialized'] = function () {
     self.octObj = new Module.SubtitleOctopus();
 
-    self._render_blend = Module['cwrap']('libassjs_render_blend', null, ['number', 'number', 'number', 'number', 'number', 'number']);
+    self._render_blend = Module['cwrap']('libassjs_render_blend', null, ['number', 'number', 'number', 'number', 'number', 'number', 'number', 'number']);
 
     self.changed = Module._malloc(4);
 
+    self.blendTime = Module._malloc(8);
     self.blendX = Module._malloc(4);
     self.blendY = Module._malloc(4);
     self.blendW = Module._malloc(4);

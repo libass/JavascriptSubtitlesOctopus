@@ -171,14 +171,18 @@ const float MAX_UINT8_CAST = 256.0 / 255;
 
 #define CLAMP_UINT8(value) ((value > MIN_UINT8_CAST) ? ((value < MAX_UINT8_CAST) ? (int)(value * 255) : 255) : 0)
 
-void* libassjs_render_blend(double tm, int force, int *dest_x, int *dest_y, int *dest_width, int *dest_height)
+void* libassjs_render_blend(double tm, int force, int *changed, double *blend_time,
+        int *dest_x, int *dest_y, int *dest_width, int *dest_height)
 {
-    int changed;
-    ASS_Image *img = ass_render_frame(ass_renderer, track, (int)(tm * 1000), &changed);
-    if (img == NULL || (changed == 0 && !force))
+    *blend_time = 0.0;
+
+    ASS_Image *img = ass_render_frame(ass_renderer, track, (int)(tm * 1000), changed);
+    if (img == NULL || (*changed == 0 && !force))
     {
         return NULL;
     }
+
+    double start_blend_time = emscripten_get_now();
 
     // find bounding rect first
     int min_x = img->dst_x, min_y = img->dst_y;
@@ -278,6 +282,7 @@ void* libassjs_render_blend(double tm, int force, int *dest_x, int *dest_y, int 
     *dest_y = min_y;
     *dest_width = width;
     *dest_height = height;
+    *blend_time = emscripten_get_now() - start_blend_time;
     return result;
 }
 
