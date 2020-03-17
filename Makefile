@@ -25,6 +25,7 @@ dist/libraries/lib/libfribidi.a: lib/fribidi/configure
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
 		$(GLOBAL_CFLAGS) \
+		-s NO_FILESYSTEM=1 \
 		-s NO_EXIT_RUNTIME=1 \
 		-DFRIBIDI_ENTRY=extern \
 		--llvm-lto 1 \
@@ -54,6 +55,7 @@ dist/libraries/lib/libexpat.a: lib/expat/expat/configured
 		-DCMAKE_C_FLAGS=" \
 		-s USE_PTHREADS=0 \
 		$(GLOBAL_CFLAGS) \
+		-s NO_FILESYSTEM=1 \
 		-s NO_EXIT_RUNTIME=1 \
 		--llvm-lto 1 \
 		-s MODULARIZE=1 \
@@ -105,6 +107,7 @@ lib/freetype/build_hb/dist_hb/lib/libfreetype.a: dist/libraries/lib/libbrotlidec
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
 		$(GLOBAL_CFLAGS) \
+		-s NO_FILESYSTEM=1 \
 		-s NO_EXIT_RUNTIME=1 \
 		--llvm-lto 1 \
 		-s MODULARIZE=1 \
@@ -139,6 +142,7 @@ dist/libraries/lib/libharfbuzz.a: lib/freetype/build_hb/dist_hb/lib/libfreetype.
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
 		$(GLOBAL_CFLAGS) \
+		-s NO_FILESYSTEM=1 \
 		-s NO_EXIT_RUNTIME=1 \
 		--llvm-lto 1 \
 		-s MODULARIZE=1 \
@@ -173,6 +177,7 @@ dist/libraries/lib/libfreetype.a: dist/libraries/lib/libharfbuzz.a dist/librarie
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
 		$(GLOBAL_CFLAGS) \
+		-s NO_FILESYSTEM=1 \
 		-s NO_EXIT_RUNTIME=1 \
 		--llvm-lto 1 \
 		-s MODULARIZE=1 \
@@ -306,18 +311,16 @@ EMCC_COMMON_ARGS = \
 
 dist: src/subtitles-octopus-worker.bc dist/js/subtitles-octopus-worker.js dist/js/subtitles-octopus-worker-legacy.js dist/js/subtitles-octopus.js
 
-
-dist/js/subtitles-octopus-worker.js: src/subtitles-octopus-worker.bc
+dist/js/subtitles-octopus-worker.js: src/subtitles-octopus-worker.bc src/pre-worker.js src/unbrotli.js src/SubOctpInterface.js src/post-worker.js
 	emcc src/subtitles-octopus-worker.bc $(OCTP_DEPS) \
 		--pre-js src/pre-worker.js \
 		--pre-js src/unbrotli.js \
 		--post-js src/SubOctpInterface.js \
 		--post-js src/post-worker.js \
 		-s WASM=1 \
-		--source-map-base http://localhost:8080/assets/js/ \
 		$(EMCC_COMMON_ARGS)
 
-dist/js/subtitles-octopus-worker-legacy.js: src/subtitles-octopus-worker.bc
+dist/js/subtitles-octopus-worker-legacy.js: src/subtitles-octopus-worker.bc src/pre-worker.js src/unbrotli.js src/SubOctpInterface.js src/post-worker.js
 	emcc src/subtitles-octopus-worker.bc $(OCTP_DEPS) \
 		--pre-js src/pre-worker.js \
 		--pre-js src/unbrotli.js \
