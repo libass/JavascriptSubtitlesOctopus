@@ -212,6 +212,13 @@ public:
     }
 };
 
+void libassjs_set_memory_limit(int limit) {
+    if (limit > 0) {
+        printf("libass: setting total libass memory limit to %d MiB\n", limit);
+        ass_set_cache_limits(ass_renderer, 0, limit);
+    }
+}
+
 const float MIN_UINT8_CAST = 0.9 / 255;
 const float MAX_UINT8_CAST = 255.9 / 255;
 

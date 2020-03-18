@@ -14,6 +14,8 @@ var SubtitlesOctopus = function (options) {
     var self = this;
     self.canvas = options.canvas; // HTML canvas element (optional if video specified)
     self.renderMode = options.lossyRender ? 'fast' : (options.blendRender ? 'blend' : 'normal');
+    self.libassMemoryLimit = options.libassMemoryLimit || 0;
+    self.targetFps = options.targetFps || undefined;
     self.isOurCanvas = false; // (internal) we created canvas and manage it
     self.video = options.video; // HTML video element (optional if canvas specified)
     self.canvasParent = null; // (internal) HTML canvas parent element
@@ -28,7 +30,7 @@ var SubtitlesOctopus = function (options) {
     self.subUrl = options.subUrl; // Link to sub file (optional if subContent specified)
     self.subContent = options.subContent || null; // Sub content (optional if subUrl specified)
     self.onErrorEvent = options.onError; // Function called in case of critical error meaning sub wouldn't be shown and you should use alternative method (for instance it occurs if browser doesn't support web workers).
-    self.debug = options.debug || false; // When debug enabled, some performance info printed in console.
+    self.debug = options.debug || false;  // When debug enabled, some performance info printed in console.
     self.lastRenderTime = 0; // (internal) Last time we got some frame from worker
     self.pixelRatio = window.devicePixelRatio || 1; // (internal) Device pixel ratio (for high dpi devices)
 
@@ -104,7 +106,9 @@ var SubtitlesOctopus = function (options) {
             subContent: self.subContent,
             fonts: self.fonts,
             availableFonts: self.availableFonts,
-            debug: self.debug
+            debug: self.debug,
+            targetFps: self.targetFps,
+            libassMemoryLimit: self.libassMemoryLimit
         });
     };
 
@@ -253,9 +257,9 @@ var SubtitlesOctopus = function (options) {
         }
         if (self.debug) {
             var drawTime = Math.round(performance.now() - beforeDrawTime);
-            var blendTime = data.blendTime || 0;
-            if (blendTime > 0) {
-                console.log('render: ' + Math.round(data.spentTime - blendTime) + ' ms, blend: ' + Math.round(blendTime) + ' ms, draw: ' + drawTime + ' ms');
+            var blendTime = data.blendTime;
+            if (typeof blendTime !== 'undefined') {
+                console.log('render: ' + Math.round(data.spentTime - blendTime) + ' ms, blend: ' + Math.round(blendTime) + ' ms, draw: ' + drawTime + ' ms; TOTAL=' + Math.round(data.spentTime + drawTime) + ' ms');
             } else {
                 console.log(Math.round(data.spentTime) + ' ms (+ ' + drawTime + ' ms draw)');
             }
