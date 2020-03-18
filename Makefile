@@ -293,7 +293,7 @@ src/subtitles-octopus-worker.bc: dist/libraries/lib/libass.a src/Makefile src/su
 # Dist Files
 EMCC_COMMON_ARGS = \
 	$(GLOBAL_CFLAGS) \
-	-s EXPORTED_FUNCTIONS="['_main', '_malloc', '_libassjs_render_blend', '_libassjs_set_memory_limit']" \
+	-s EXPORTED_FUNCTIONS="['_main', '_malloc', '_libassjs_render_blend', '_libassjs_set_memory_limits']" \
 	-s EXTRA_EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'getValue', 'FS_createPreloadedFile', 'FS_createFolder']" \
 	-s NO_EXIT_RUNTIME=1 \
 	--use-preload-plugins \

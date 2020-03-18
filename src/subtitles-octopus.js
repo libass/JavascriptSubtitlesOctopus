@@ -15,6 +15,7 @@ var SubtitlesOctopus = function (options) {
     self.canvas = options.canvas; // HTML canvas element (optional if video specified)
     self.renderMode = options.lossyRender ? 'fast' : (options.blendRender ? 'blend' : 'normal');
     self.libassMemoryLimit = options.libassMemoryLimit || 0;
+    self.libassGlyphLimit = options.libassGlyphLimit || 0;
     self.targetFps = options.targetFps || undefined;
     self.isOurCanvas = false; // (internal) we created canvas and manage it
     self.video = options.video; // HTML video element (optional if canvas specified)
@@ -108,7 +109,8 @@ var SubtitlesOctopus = function (options) {
             availableFonts: self.availableFonts,
             debug: self.debug,
             targetFps: self.targetFps,
-            libassMemoryLimit: self.libassMemoryLimit
+            libassMemoryLimit: self.libassMemoryLimit,
+            libassGlyphLimit: self.libassGlyphLimit
         });
     };
 

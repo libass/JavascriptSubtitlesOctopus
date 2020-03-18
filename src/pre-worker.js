@@ -93,7 +93,7 @@ Module['onRuntimeInitialized'] = function () {
     self.octObj = new Module.SubtitleOctopus();
 
     self._render_blend = Module['cwrap']('libassjs_render_blend', null, ['number', 'number', 'number', 'number', 'number', 'number', 'number', 'number']);
-    self._set_memory_limit = Module['cwrap']('libassjs_set_memory_limit', null, ['number']);
+    self._set_memory_limits = Module['cwrap']('libassjs_set_memory_limits', null, ['number', 'number']);
 
     self.changed = Module._malloc(4);
 
@@ -108,8 +108,8 @@ Module['onRuntimeInitialized'] = function () {
     self.ass_track = self.octObj.track;
     self.ass_library = self.octObj.ass_library;
     self.ass_renderer = self.octObj.ass_renderer;
-    if (self.libassMemoryLimit > 0) {
-        self._set_memory_limit(self.libassMemoryLimit);
+    if (self.libassMemoryLimit > 0 || self.libassGlyphLimit > 0) {
+        self._set_memory_limits(self.libassGlyphLimit, self.libassMemoryLimit);
     }
 };
 

@@ -212,11 +212,10 @@ public:
     }
 };
 
-void libassjs_set_memory_limit(int limit) {
-    if (limit > 0) {
-        printf("libass: setting total libass memory limit to %d MiB\n", limit);
-        ass_set_cache_limits(ass_renderer, 0, limit);
-    }
+void libassjs_set_memory_limits(int glyph_limit, int bitmap_cache_limit) {
+    printf("libass: setting total libass memory limits to: glyph=%d MiB, bitmap cache=%d MiB\n",
+        glyph_limit, bitmap_cache_limit);
+    ass_set_cache_limits(ass_renderer, glyph_limit, bitmap_cache_limit);
 }
 
 const float MIN_UINT8_CAST = 0.9 / 255;
