@@ -13,10 +13,11 @@ var SubtitlesOctopus = function (options) {
 
     var self = this;
     self.canvas = options.canvas; // HTML canvas element (optional if video specified)
-    self.renderMode = options.lossyRender ? 'fast' : (options.blendRender ? 'blend' : 'normal');
+    self.renderMode = options.renderMode || (options.lossyRender ? 'fast' : (options.blendRender ? 'blend' : 'normal'));
     self.libassMemoryLimit = options.libassMemoryLimit || 0;
     self.libassGlyphLimit = options.libassGlyphLimit || 0;
     self.targetFps = options.targetFps || undefined;
+    self.renderAhead = options.renderAhead || 0; // how many frames to render ahead and store; 0 to disable
     self.isOurCanvas = false; // (internal) we created canvas and manage it
     self.video = options.video; // HTML video element (optional if canvas specified)
     self.canvasParent = null; // (internal) HTML canvas parent element
@@ -110,7 +111,8 @@ var SubtitlesOctopus = function (options) {
             debug: self.debug,
             targetFps: self.targetFps,
             libassMemoryLimit: self.libassMemoryLimit,
-            libassGlyphLimit: self.libassGlyphLimit
+            libassGlyphLimit: self.libassGlyphLimit,
+            renderOnDemand: renderAhead > 0
         });
     };
 

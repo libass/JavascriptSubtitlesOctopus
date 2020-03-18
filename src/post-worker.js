@@ -8,6 +8,7 @@ self.nextIsRaf = false;
 self.lastCurrentTimeReceivedAt = Date.now();
 self.targetFps = 30;
 self.libassMemoryLimit = 0; // in MiB
+self.renderOnDemand = false; // determines if only rendering on demand
 
 self.width = 0;
 self.height = 0;
@@ -86,7 +87,9 @@ self.setTrack = function (content) {
     // Tell libass to render the new track
     self.octObj.createTrack("/sub.ass");
     self.ass_track = self.octObj.track;
-    self.getRenderMethod()();
+    if (!self.renderOnDemand) {
+        self.getRenderMethod()();
+    }
 };
 
 /**
@@ -94,7 +97,9 @@ self.setTrack = function (content) {
  */
 self.freeTrack = function () {
     self.octObj.removeTrack();
-    self.getRenderMethod()();
+    if (!self.renderOnDemand) {
+        self.getRenderMethod()();
+    }
 };
 
 /**
@@ -135,10 +140,14 @@ self.setCurrentTime = function (currentTime) {
     self.lastCurrentTimeReceivedAt = Date.now();
     if (!self.rafId) {
         if (self.nextIsRaf) {
-            self.rafId = self.requestAnimationFrame(self.getRenderMethod());
+            if (!self.renderOnDemand) {
+                self.rafId = self.requestAnimationFrame(self.getRenderMethod());
+            }
         }
         else {
-            self.getRenderMethod()();
+            if (!self.renderOnDemand) {
+                self.getRenderMethod()();
+            }
             
             // Give onmessage chance to receive all queued messages
             setTimeout(function () {
@@ -163,7 +172,9 @@ self.setIsPaused = function (isPaused) {
         }
         else {
             self.lastCurrentTimeReceivedAt = Date.now();
-            self.rafId = self.requestAnimationFrame(self.getRenderMethod());
+            if (!self.renderOnDemand) {
+                self.rafId = self.requestAnimationFrame(self.getRenderMethod());
+            }
         }
     }
 };
@@ -191,38 +202,76 @@ self.render = function (force) {
     }
 };
 
-self.blendRender = function (force) {
-    self.rafId = 0;
-    self.renderPending = false;
+self.blendRenderTiming(timing, force) {
     var startTime = performance.now();
 
     var renderResult = self.octObj.renderBlend(self.getCurrentTime() + self.delay, force);
-    if (renderResult.changed != 0 || force) {
-        var canvases = [];
-        var buffers = [];
 
-        if (renderResult.image) {
-            // make a copy, as we should free the memory so subsequent calls can utilize it
-            var result = new Uint8Array(HEAPU8.subarray(renderResult.image, renderResult.image + renderResult.dest_width * renderResult.dest_height * 4));
+    var canvases = [];
+    var buffers = [];
 
-            canvases = [{w: renderResult.dest_width, h: renderResult.dest_height, x: renderResult.dest_x, y: renderResult.dest_y, buffer: result.buffer}];
-            buffers = [result.buffer];
-        }
+    if (renderResult.image) {
+        // make a copy, as we should free the memory so subsequent calls can utilize it
+        var result = new Uint8Array(HEAPU8.subarray(renderResult.image, renderResult.image + renderResult.dest_width * renderResult.dest_height * 4));
 
+        canvases = [{w: renderResult.dest_width, h: renderResult.dest_height, x: renderResult.dest_x, y: renderResult.dest_y, buffer: result.buffer}];
+        buffers = [result.buffer];
+    }
+
+    return {
+        changed: renderResult.changed || force || false,
+        time: Date.now(),
+        spentTime: performance.now() - startTime,
+        blendTime: renderResult.blend_time,
+        canvases: canvases,
+        buffers: buffers
+    }
+}
+
+self.blendRender = function (force) {
+    self.rafId = 0;
+    self.renderPending = false;
+
+    var rendered = self.blendRenderTiming(self.getCurrentTime() + self.delay, force);
+    if (rendered.changed) {
         postMessage({
             target: 'canvas',
             op: 'renderCanvas',
-            time: Date.now(),
-            spentTime: performance.now() - startTime,
-            blendTime: renderResult.blend_time,
-            canvases: canvases
-        }, buffers);
+            time: rendered.time,
+            spentTime: rendered.spentTime,
+            blendTime: rendered.blendTime,
+            canvases: rendered.canvases
+        }, rendered.buffers);
     }
 
     if (!self._isPaused) {
         self.rafId = self.requestAnimationFrame(self.blendRender);
     }
 };
+
+self.oneshotRender = function (lastRenderedTime, renderNow) {
+    var eventStart = renderNow ? lastRenderedTime : self._find_next_event_start(lastRenderedTime);
+    var eventFinish = -1.0, emptyFinish = -1.0;
+    var rendered = {};
+    if (eventStart >= 0) {
+        self._libassjs_find_event_stop_times(eventStart, self.eventFinish, self.emptyFinish);
+        eventFinish = Module.getValue(self.eventFinish, 'double');
+        emptyFinish = Module.getValue(self.emptyFinish, 'double');
+
+        rendered = self.blendRenderTiming(eventStart, true);
+    }
+
+    postMessage({
+        target: 'canvas',
+        op: 'oneshot-result',
+        eventStart: eventStart,
+        eventFinish: eventFinish,
+        emptyFinish: emptyFinish,
+        spentTime: rendered.spentTime || 0,
+        blendTime: rendered.blendTime || 0,
+        canvases: rendered.canvases || []
+    }, rendered.buffers || []);
+}
 
 self.fastRender = function (force) {
     self.rafId = 0;
@@ -508,7 +557,9 @@ function onMessageFromMainEmscriptenThread(message) {
                     Module.canvas.boundingClientRect = message.data.boundingClientRect;
                 }
                 self.resize(message.data.width, message.data.height);
-                self.getRenderMethod()();
+                if (!self.renderOnDemand) {
+                    self.getRenderMethod()();
+                }
             } else throw 'ey?';
             break;
         }
@@ -552,12 +603,16 @@ function onMessageFromMainEmscriptenThread(message) {
             self.targetFps = message.data.targetFps || self.targetFps;
             self.libassMemoryLimit = message.data.libassMemoryLimit || self.libassMemoryLimit;
             self.libassGlyphLimit = message.data.libassGlyphLimit || 0;
+            self.renderOnDemand = message.data.renderOnDemand || false;
             removeRunDependency('worker-init');
             postMessage({
                 target: "ready",
             });
             break;
         }
+        case 'oneshot':
+            self.oneshotRender(message.data.lastRendered, message.data.renderNow || false);
+            break;
         case 'destroy':
             self.octObj.quitLibrary();
             break;
