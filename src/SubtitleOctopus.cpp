@@ -85,6 +85,69 @@ public:
     unsigned char* image;
 } RenderBlendResult;
 
+double libassjs_find_next_event_start(double tm) {
+    if (!track || track->n_events == 0) return -1;
+
+    ASS_Event *cur = track->events;
+    long long now = (long long)(tm * 1000);
+    long long closest = -1;
+
+    for (int i = 0; i < tracks->n_events; i++, cur++) {
+        long long start = cur->Start;
+        if (start >= now && (start < closest || closest == -1)) {
+            closest = start;
+        }
+    }
+
+    return closest / 1000.0;
+}
+
+void libassjs_find_event_stop_times(double tm, double *eventFinish, double *emptyFinish) {
+    if (!track || track->n_events == 0) {
+        *eventFinish = *emptyFinish = -1;
+        return;
+    }
+
+    ASS_Event *cur = track->events;
+    long long now = (long long)(tm * 1000);
+
+    long long minFinish = -1, maxFinish = -1, minStart = -1;
+
+    for (int i = 0; i < track->n_events; i++, cur++) {
+        long long start = cur->Start;
+        long long finish = start + cur->Duration;
+        if (start <= now) {
+            if (finish > now) {
+                if (finish < minFinish || minFinish == -1) {
+                    minFinish = finish;
+                }
+                if (finish > maxFinish) {
+                    maxFinish = finish;
+                }
+            }
+        } else if (start < minStart || minStart == -1) {
+            minStart = start;
+        }
+    }
+
+    if (minFinish != -1) {
+        // some event is going on, so we need to re-draw either when it stops
+        // or when some other event starts
+        *eventFinish = ((minFinish < minStart) ? minFinish : minStart) / 1000.0;
+    } else {
+        // there's no current event, so no need to draw anything
+        *eventFinish = -1;
+    }
+
+    if (minFinish == maxFinish && (minStart == -1 || minStart > maxFinish)) {
+        // there's empty space after this event ends
+        *emptyFinish = minStart / 1000.0;
+    } else {
+        // there's no empty space after eventFinish happens
+        *emptyFinish = *eventFinish;
+    }
+}
+
 class SubtitleOctopus {
 public:
     ASS_Library* ass_library;
