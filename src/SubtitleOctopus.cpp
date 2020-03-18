@@ -22,7 +22,7 @@ typedef struct {
     int lessen_counter;
 } buffer_t;
 
-buffer_t blend, blend_result;
+buffer_t blend;
 
 void* buffer_resize(buffer_t *buf, int new_size, int keep_content) {
     if (buf->size >= new_size) {
@@ -57,6 +57,10 @@ void buffer_init(buffer_t *buf) {
     buf->buffer = NULL;
     buf->size = -1;
     buf->lessen_counter = 0;
+}
+
+void buffer_free(buffer_t *buf) {
+    free(buf->buffer);
 }
 
 void msg_callback(int level, const char *fmt, va_list va, void *data) {
@@ -110,7 +114,6 @@ public:
 
         reloadFonts();
         buffer_init(&blend);
-        buffer_init(&blend_result);
     }
 
     /* TRACK */
@@ -156,8 +159,7 @@ public:
         ass_free_track(track);
         ass_renderer_done(ass_renderer);
         ass_library_done(ass_library);
-        free(blend.buffer);
-        free(blend_result.buffer);
+        buffer_free(&blend);
     }
     void reloadLibrary() {
         quitLibrary();
@@ -211,7 +213,7 @@ public:
 };
 
 const float MIN_UINT8_CAST = 0.9 / 255;
-const float MAX_UINT8_CAST = 256.0 / 255;
+const float MAX_UINT8_CAST = 255.9 / 255;
 
 #define CLAMP_UINT8(value) ((value > MIN_UINT8_CAST) ? ((value < MAX_UINT8_CAST) ? (int)(value * 255) : 255) : 0)
 
@@ -246,14 +248,7 @@ void* libassjs_render_blend(double tm, int force, int *changed, double *blend_ti
         printf("libass: error: cannot allocate buffer for blending");
         return NULL;
     }
-    unsigned char *result = (unsigned char*)buffer_resize(&blend_result,
-            sizeof(unsigned char) * width * height * 4, 0);
-    if (result == NULL) {
-        printf("libass: error: cannot allocate result for blending");
-        return NULL;
-    }
     memset(buf, 0, sizeof(float) * width * height * 4);
-    memset(result, 0, sizeof(unsigned char) * width * height * 4);
 
     // blend things in
     for (cur = img; cur != NULL; cur = cur->next) {
@@ -293,20 +288,27 @@ void* libassjs_render_blend(double tm, int force, int *changed, double *blend_ti
             }
         }
     }
-    
-    // now build the result
+
+    // now build the result;
+    // NOTE: we use a "view" over [float,float,float,float] array of pixels,
+    // so we _must_ go left-right top-bottom to not mangle the result
+    unsigned int *result = (unsigned int*)buf;
     for (int y = 0, buf_line_coord = 0; y < height; y++, buf_line_coord += width) {
         for (int x = 0; x < width; x++) {
+            unsigned int pixel = 0;
             int buf_coord = (buf_line_coord + x) << 2;
             float alpha = buf[buf_coord + 3];
             if (alpha > MIN_UINT8_CAST) {
-                for (int offset = 0; offset < 3; offset++) {
-                    // need to un-multiply the result
-                    float value = buf[buf_coord + offset] / alpha;
-                    result[buf_coord + offset] = CLAMP_UINT8(value);
-                }
-                result[buf_coord + 3] = CLAMP_UINT8(alpha);
+                // need to un-multiply the result
+                float value = buf[buf_coord] / alpha;
+                pixel |= CLAMP_UINT8(value); // R
+                value = buf[buf_coord + 1] / alpha;
+                pixel |= CLAMP_UINT8(value) << 8; // G
+                value = buf[buf_coord + 2] / alpha;
+                pixel |= CLAMP_UINT8(value) << 16; // B
+                pixel |= CLAMP_UINT8(alpha) << 24; // A
             }
+            result[buf_line_coord + x] = pixel;
         }
     }
     
