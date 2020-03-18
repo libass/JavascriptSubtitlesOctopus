@@ -31,7 +31,7 @@ var SubtitlesOctopus = function (options) {
     self.subUrl = options.subUrl; // Link to sub file (optional if subContent specified)
     self.subContent = options.subContent || null; // Sub content (optional if subUrl specified)
     self.onErrorEvent = options.onError; // Function called in case of critical error meaning sub wouldn't be shown and you should use alternative method (for instance it occurs if browser doesn't support web workers).
-    self.debug = options.debug || false;  // When debug enabled, some performance info printed in console.
+    self.debug = options.debug || false; // When debug enabled, some performance info printed in console.
     self.lastRenderTime = 0; // (internal) Last time we got some frame from worker
     self.pixelRatio = window.devicePixelRatio || 1; // (internal) Device pixel ratio (for high dpi devices)
 
