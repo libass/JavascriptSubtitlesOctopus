@@ -43,7 +43,9 @@ var SubtitlesOctopus = function (options) {
     self.oneshotState = {
         eventStart: null,
         eventOver: false,
-        iteration: 0
+        iteration: 0,
+        renderRequested: false,
+        requestNextTimestamp: -1
     }
 
     self.hasAlphaBug = false;
@@ -175,6 +177,7 @@ var SubtitlesOctopus = function (options) {
         self.video = video;
         if (self.video) {
             if (self.renderAhead > 0) {
+                console.debug('starting oneshot render because new video detected');
                 window.requestAnimationFrame(oneshotRender);
                 tryRequestOneshot();
             }
@@ -266,8 +269,9 @@ var SubtitlesOctopus = function (options) {
         return removed;
     }
 
-    function tryRequestOneshot(currentTime) {
+    function tryRequestOneshot(currentTime, postIfBusy) {
         if (!self.renderAhead || self.renderAhead <= 0) return;
+        if (self.oneshotState.renderRequested && !postIfBusy) return;
 
         if (typeof currentTime === 'undefined') {
             if (!self.video) return;
@@ -277,31 +281,45 @@ var SubtitlesOctopus = function (options) {
         var size = 0;
         for (var i = 0, len = self.renderedItems.length; i < len; i++) {
             var item = self.renderedItems[i];
-            if ((item.eventStart < 0 || currentTime >= item.eventStart) &&
-                (item.emptyFinish < 0 || currentTime < item.emptyFinish)) {
+            if (item.emptyFinish < 0) {
+                console.info('oneshot already reached end-of-events');
+                return;
+            }
+            if (currentTime >= item.eventStart && currentTime < item.emptyFinish) {
                 // an event for requested time already exists
+                console.debug('not requesting a render for ' + currentTime +
+                    ' as event already covering it exists (start=' +
+                    item.eventStart + ', empty=' + item.emptyFinish + ')');
                 return;
             }
             size += item.size;
         }
 
         if (size <= self.renderAhead) {
-            self.worker.postMessage({
-                target: 'oneshot-render',
-                lastRendered: currentTime - 0.001,
-                renderNow: false,
-                iteration: self.oneshotState.iteration
-            });
+            lastRendered = currentTime - 0.001;
+            console.info('requesting new frame because current prerender size is less than limit (start=' + lastRendered + ')');
+            if (!self.oneshotState.renderRequested) {
+                self.oneshotState.renderRequested = true;
+                self.worker.postMessage({
+                    target: 'oneshot-render',
+                    lastRendered: lastRendered,
+                    renderNow: false,
+                    iteration: self.oneshotState.iteration
+                });
+            } else {
+                console.info('worker busy, requesting to seek');
+                self.oneshotState.requestNextTimestamp = lastRendered;
+            }
+        } else {
+            console.debug('not requesting new frame yet as prerender size is over limit');
         }
     }
 
     function _renderSubtitleEvent(event, currentTime) {
         var eventOver = event.eventFinish < currentTime;
         if (self.oneshotState.eventStart == event.eventStart && self.oneshotState.eventOver == eventOver) return;
-        self.oneshotState = {
-            eventStart: event.eventStart,
-            eventOver: eventOver
-        };
+        self.oneshotState.eventStart = event.eventStart;
+        self.oneshotState.eventOver = eventOver;
 
         var beforeDrawTime = performance.now();
         self.ctx.clearRect(0, 0, self.canvas.width, self.canvas.height);
@@ -325,25 +343,34 @@ var SubtitlesOctopus = function (options) {
         if (!self.video) return;
 
         var currentTime = self.video.currentTime + self.timeOffset;
-        var finishTime = -1;
+        var finishTime = -1, eventShown = false;
         for (var i = 0, len = self.renderedItems.length; i < len; i++) {
             var item = self.renderedItems[i];
-            if (item.eventStart <= currentTime && (item.emptyFinish < 0 || item.emptyFinish >= currentTime)) {
+            if (!eventShown && item.eventStart <= currentTime && (item.emptyFinish < 0 || item.emptyFinish >= currentTime)) {
                 _renderSubtitleEvent(item, currentTime);
+                eventShown = true;
+            }
+            if (item.emptyFinish > finishTime) {
                 finishTime = item.emptyFinish;
-                break;
             }
         }
 
         if (_cleanPastRendered(currentTime) && finishTime >= 0) {
-            tryRequestOneshot(finishTime);
+            console.debug('some prerendered frame retired, requesting new');
+            if (eventShown) {
+                tryRequestOneshot(finishTime);
+            } else {
+                tryRequestOneshot(currentTime, true);
+            }
         }
     }
 
     function resetRenderAheadCache() {
+        console.debug('resetting prerender cache');
         self.renderedItems = [];
         self.oneshotState.eventStart = null;
         self.oneshotState.iteration++;
+        self.oneshotState.renderRequested = false;
         tryRequestOneshot();
     }
 
@@ -473,9 +500,14 @@ var SubtitlesOctopus = function (options) {
                     }
                     case 'oneshot-result': {
                         if (data.iteration != self.oneshotState.iteration) {
-                            // stale render, ignore
+                            console.debug('received stale prerender, ignoring');
                             return;
                         }
+
+                        console.info('oneshot received (start=' +
+                                data.eventStart + ', empty=' + data.emptyFinish +
+                                '), render: ' + Math.round(data.spentTime) + ' ms');
+                        self.oneshotState.renderRequested = false;
                         var items = [];
                         var size = 0;
                         for (var i = 0, len = data.canvases.length; i < len; i++) {
@@ -489,6 +521,10 @@ var SubtitlesOctopus = function (options) {
                             });
                             size += item.buffer.byteLength;
                         }
+                        if (data.emptyFinish > 0 && data.emptyFinish - data.eventStart < 1.0 / self.targetFps) {
+                            data.emptyFinish = data.eventStart + 1.0 / self.targetFps;
+                            data.eventFinish = data.emptyFinish;
+                        }
                         self.renderedItems.push({
                             eventStart: data.eventStart,
                             eventFinish: data.eventFinish,
@@ -498,9 +534,18 @@ var SubtitlesOctopus = function (options) {
                             items: items,
                             size: size
                         });
-                        if (data.emptyFinish >= 0) {
-                            // there's some more event to render, try doing so
+
+                        if (self.oneshotState.requestNextTimestamp >= 0) {
+                            console.debug("requesting out of order event at " + self.oneshotState.requestNextTimestamp);
+                            tryRequestOneshot(self.oneshotState.requestNextTimestamp);
+                            self.oneshotState.requestNextTimestamp = -1;
+                        } else if (data.eventStart < 0) {
+                            console.info('oneshot received "end of frames" event');
+                        } else if (data.emptyFinish >= 0) {
+                            console.debug("there's some more event to render, try requesting next event");
                             tryRequestOneshot(data.emptyFinish);
+                        } else {
+                            console.info('there are no more events to prerender');
                         }
                         break;
                     }

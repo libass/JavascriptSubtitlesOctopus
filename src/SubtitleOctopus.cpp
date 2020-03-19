@@ -102,6 +102,27 @@ double libassjs_find_next_event_start(double tm) {
     return closest / 1000.0;
 }
 
+int _is_event_complex(ASS_Event *event) {
+    // event is complex if it's animated in any way,
+    // either by having non-empty Effect or
+    // by having tags (enclosed in '{}' in Text)
+    if (event->Effect && event->Effect[0] != '\0') return 1;
+
+    int escaped = 0;
+    for (char *p = event->Text; *p != '\0'; p++) {
+        switch (*p) {
+            case '\\':
+                escaped = !escaped;
+                break;
+            case '{':
+                if (escaped) return 1;
+                break;
+        }
+    }
+
+    return 0;
+}
+
 void libassjs_find_event_stop_times(double tm, double *eventFinish, double *emptyFinish) {
     if (!track || track->n_events == 0) {
         *eventFinish = *emptyFinish = -1;
@@ -112,6 +133,7 @@ void libassjs_find_event_stop_times(double tm, double *eventFinish, double *empt
     long long now = (long long)(tm * 1000);
 
     long long minFinish = -1, maxFinish = -1, minStart = -1;
+    int current_animated = 0;
 
     for (int i = 0; i < track->n_events; i++, cur++) {
         long long start = cur->Start;
@@ -124,10 +146,19 @@ void libassjs_find_event_stop_times(double tm, double *eventFinish, double *empt
                 if (finish > maxFinish) {
                     maxFinish = finish;
                 }
+                if (!current_animated && _is_event_complex(cur)) current_animated = 1;
             }
         } else if (start < minStart || minStart == -1) {
             minStart = start;
         }
+    }
+
+    if (current_animated) {
+        printf("libass: detected animated event, forcing finish times to be +5ms from %f\n", tm);
+        // what plays now is animated, so consider this event border to be
+        // after 5ms from now, so it's properly redrawn afterwards
+        *eventFinish = *emptyFinish = tm + 0.005;
+        return;
     }
 
     if (minFinish != -1) {
