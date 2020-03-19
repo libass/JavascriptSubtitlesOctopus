@@ -174,7 +174,6 @@ var SubtitlesOctopus = function (options) {
     self.setVideo = function (video) {
         self.video = video;
         if (self.video) {
-            // hack, for testing
             if (self.renderAhead > 0) {
                 window.requestAnimationFrame(oneshotRender);
                 tryRequestOneshot();
@@ -265,6 +264,8 @@ var SubtitlesOctopus = function (options) {
     }
 
     function tryRequestOneshot(currentTime) {
+        if (!self.renderAhead || self.renderAhead <= 0) return;
+
         if (typeof currentTime === 'undefined') {
             if (!self.video) return;
             currentTime = self.video.currentTime + self.timeOffset;
@@ -590,6 +591,7 @@ var SubtitlesOctopus = function (options) {
                 width: self.canvas.width,
                 height: self.canvas.height
             });
+            resetRenderAheadCache();
         }
     };
 
@@ -625,6 +627,7 @@ var SubtitlesOctopus = function (options) {
             target: 'set-track-by-url',
             url: url
         });
+        resetRenderAheadCache();
     };
 
     self.setTrack = function (content) {
@@ -632,12 +635,14 @@ var SubtitlesOctopus = function (options) {
             target: 'set-track',
             content: content
         });
+        resetRenderAheadCache();
     };
 
     self.freeTrack = function (content) {
         self.worker.postMessage({
             target: 'free-track'
         });
+        resetRenderAheadCache();
     };
 
 
