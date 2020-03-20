@@ -318,7 +318,6 @@ var SubtitlesOctopus = function (options) {
 
         if (size <= self.renderAhead) {
             lastRendered = currentTime - (renderNow ? 0 : 0.001);
-            console.info('requesting new frame because current prerender size is less than limit (start=' + lastRendered + ')');
             if (!self.oneshotState.renderRequested) {
                 self.oneshotState.renderRequested = true;
                 self.worker.postMessage({
@@ -331,8 +330,6 @@ var SubtitlesOctopus = function (options) {
                 console.info('worker busy, requesting to seek');
                 self.oneshotState.requestNextTimestamp = lastRendered;
             }
-        } else {
-            console.debug('not requesting new frame yet as prerender size is over limit');
         }
     }
 
@@ -389,14 +386,13 @@ var SubtitlesOctopus = function (options) {
                 tryRequestOneshot(currentTime, true);
             }
         } else if (_cleanPastRendered(currentTime) && finishTime >= 0) {
-            console.debug('some prerendered frame retired, requesting new');
             tryRequestOneshot(finishTime, animated);
         }
     }
 
     function resetRenderAheadCache() {
         if (self.renderAhead > 0) {
-            console.debug('resetting prerender cache');
+            console.info('resetting prerender cache');
             self.renderedItems = [];
             self.oneshotState.eventStart = null;
             self.oneshotState.iteration++;
@@ -537,9 +533,11 @@ var SubtitlesOctopus = function (options) {
                             return;
                         }
 
-                        console.info('oneshot received (start=' +
-                                data.eventStart + ', empty=' + data.emptyFinish +
-                                '), render: ' + Math.round(data.spentTime) + ' ms');
+                        if (self.debug) {
+                            console.info('oneshot received (start=' +
+                                    data.eventStart + ', empty=' + data.emptyFinish +
+                                    '), render: ' + Math.round(data.spentTime) + ' ms');
+                        }
                         self.oneshotState.renderRequested = false;
                         if (Math.abs(data.lastRenderedTime - self.oneshotState.requestNextTimestamp) < 0.01) {
                             self.oneshotState.requestNextTimestamp = -1;
@@ -594,12 +592,12 @@ var SubtitlesOctopus = function (options) {
                         });
 
                         if (self.oneshotState.requestNextTimestamp >= 0) {
-                            console.debug("requesting out of order event at " + self.oneshotState.requestNextTimestamp);
+                            // requesting an out of order event render
                             tryRequestOneshot(self.oneshotState.requestNextTimestamp, true);
                         } else if (data.eventStart < 0) {
                             console.info('oneshot received "end of frames" event');
                         } else if (data.emptyFinish >= 0) {
-                            console.debug("there's some more event to render, try requesting next event");
+                            // there's some more event to render, try requesting next event
                             tryRequestOneshot(data.emptyFinish, data.animated);
                         } else {
                             console.info('there are no more events to prerender');
