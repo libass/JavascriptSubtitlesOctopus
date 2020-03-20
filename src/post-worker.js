@@ -248,10 +248,10 @@ self.blendRender = function (force) {
 
 self.oneshotRender = function (lastRenderedTime, renderNow, iteration) {
     var eventStart = renderNow ? lastRenderedTime : self._find_next_event_start(lastRenderedTime);
-    var eventFinish = -1.0, emptyFinish = -1.0;
+    var eventFinish = -1.0, emptyFinish = -1.0, animated = false;
     var rendered = {};
     if (eventStart >= 0) {
-        self._libassjs_find_event_stop_times(eventStart, self.eventFinish, self.emptyFinish);
+        animated = self._find_event_stop_times(eventStart, self.eventFinish, self.emptyFinish) != 0;
         eventFinish = Module.getValue(self.eventFinish, 'double');
         emptyFinish = Module.getValue(self.emptyFinish, 'double');
 
@@ -266,6 +266,7 @@ self.oneshotRender = function (lastRenderedTime, renderNow, iteration) {
         eventStart: eventStart,
         eventFinish: eventFinish,
         emptyFinish: emptyFinish,
+        animated: animated,
         spentTime: rendered.spentTime || 0,
         blendTime: rendered.blendTime || 0,
         canvases: rendered.canvases || []
