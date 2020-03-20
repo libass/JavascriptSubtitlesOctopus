@@ -197,6 +197,9 @@ var SubtitlesOctopus = function (options) {
             self.video.addEventListener("seeked", function () {
                 self.video.addEventListener("timeupdate", timeupdate, false);
                 self.setCurrentTime(video.currentTime + self.timeOffset);
+                if (self.renderAhead > 0) {
+                    _cleanPastRendered(video.currentTime + self.timeOffset, true);
+                }
             }, false);
             self.video.addEventListener("ratechange", function () {
                 self.setRate(video.playbackRate);
@@ -251,14 +254,37 @@ var SubtitlesOctopus = function (options) {
     self.setSubUrl = function (subUrl) {
         self.subUrl = subUrl;
     };
-
-    function _cleanPastRendered(currentTime) {
+    
+    function _cleanPastRendered(currentTime, seekClean) {
         var retainedItems = [];
         for (var i = 0, len = self.renderedItems.length; i < len; i++) {
             var item = self.renderedItems[i];
             if (item.emptyFinish < 0 || item.emptyFinish >= currentTime) {
                 // item is not yet finished, retain it
                 retainedItems.push(item);
+            }
+        }
+        if (seekClean && retainedItems.length > 0) {
+            // order items by event start time
+            retainedItems.sort(function (a, b) {
+                return a.eventStart - b.eventStart;
+            });
+            if (currentTime < retainedItems[0].eventStart) {
+                if (retainedItems[0].eventStart - currentTime > 60) {
+                    console.info("seeked back too far, cleaning prerender buffer");
+                    retainedItems = [];
+                } else {
+                    console.info("seeked backwards, need to free up some buffer");
+                    var size = 0, limit = self.renderAhead * 0.3 /* try to take no more than 1/3 of buffer */;
+                    var retain = [];
+                    for (var i = 0, len = retainedItems.length; i < len; i++) {
+                        var item = retainedItems[i];
+                        size += item.size;
+                        if (size >= limit) break;
+                        retain.push(item);
+                    }
+                    retainedItems = retain;
+                }
             }
         }
         var removed = retainedItems.length != self.renderedItems.length;
@@ -352,13 +378,13 @@ var SubtitlesOctopus = function (options) {
             }
         }
 
-        if (_cleanPastRendered(currentTime) && finishTime >= 0) {
-            console.debug('some prerendered frame retired, requesting new');
-            if (eventShown) {
-                tryRequestOneshot(finishTime);
-            } else {
+        if (!eventShown) {
+            if (Math.abs(self.oneshotState.requestNextTimestamp - currentTime) > 0.1) {
                 tryRequestOneshot(currentTime, true);
             }
+        } else if (_cleanPastRendered(currentTime) && finishTime >= 0) {
+            console.debug('some prerendered frame retired, requesting new');
+            tryRequestOneshot(finishTime);
         }
     }
 
@@ -505,6 +531,10 @@ var SubtitlesOctopus = function (options) {
                                 data.eventStart + ', empty=' + data.emptyFinish +
                                 '), render: ' + Math.round(data.spentTime) + ' ms');
                         self.oneshotState.renderRequested = false;
+                        if (data.lastRenderedTime == self.oneshotState.requestNextTimestamp) {
+                            self.oneshotState.requestNextTimestamp = -1;
+                        }
+
                         var items = [];
                         var size = 0;
                         for (var i = 0, len = data.canvases.length; i < len; i++) {
@@ -535,7 +565,6 @@ var SubtitlesOctopus = function (options) {
                         if (self.oneshotState.requestNextTimestamp >= 0) {
                             console.debug("requesting out of order event at " + self.oneshotState.requestNextTimestamp);
                             tryRequestOneshot(self.oneshotState.requestNextTimestamp);
-                            self.oneshotState.requestNextTimestamp = -1;
                         } else if (data.eventStart < 0) {
                             console.info('oneshot received "end of frames" event');
                         } else if (data.emptyFinish >= 0) {
