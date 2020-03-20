@@ -101,7 +101,7 @@ Module['onRuntimeInitialized'] = function () {
     self.octObj = new Module.SubtitleOctopus();
 
     self._find_next_event_start = Module['cwrap']('libassjs_find_next_event_start', 'number', ['number']);
-    self._find_event_stop_times = Module['cwrap']('libassjs_find_event_stop_times', null, ['number', 'number', 'number']);
+    self._find_event_stop_times = Module['cwrap']('libassjs_find_event_stop_times', null, ['number', 'number', 'number', 'number']);
 
     self.changed = Module._malloc(4);
     self.blendTime = Module._malloc(8);
@@ -112,6 +112,7 @@ Module['onRuntimeInitialized'] = function () {
 
     self.eventFinish = Module._malloc(8);
     self.emptyFinish = Module._malloc(8);
+    self.isAnimated = Module._malloc(4);
 
     self.octObj.initLibrary(screen.width, screen.height);
     self.octObj.createTrack("/sub.ass");
