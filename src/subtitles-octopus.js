@@ -176,11 +176,6 @@ var SubtitlesOctopus = function (options) {
     self.setVideo = function (video) {
         self.video = video;
         if (self.video) {
-            if (self.renderAhead > 0) {
-                console.debug('starting oneshot render because new video detected');
-                window.requestAnimationFrame(oneshotRender);
-                tryRequestOneshot();
-            }
             var timeupdate = function () {
                 self.setCurrentTime(video.currentTime + self.timeOffset);
             }
@@ -264,11 +259,10 @@ var SubtitlesOctopus = function (options) {
                 retainedItems.push(item);
             }
         }
+
         if (seekClean && retainedItems.length > 0) {
-            // order items by event start time
-            retainedItems.sort(function (a, b) {
-                return a.eventStart - b.eventStart;
-            });
+            // items are ordered by event start time when we push to self.renderedItems,
+            // so first item is the earliest
             if (currentTime < retainedItems[0].eventStart) {
                 if (retainedItems[0].eventStart - currentTime > 60) {
                     console.info("seeked back too far, cleaning prerender buffer");
@@ -287,14 +281,15 @@ var SubtitlesOctopus = function (options) {
                 }
             }
         }
-        var removed = retainedItems.length != self.renderedItems.length;
+
+        var removed = retainedItems.length < self.renderedItems;
         self.renderedItems = retainedItems;
         return removed;
     }
 
-    function tryRequestOneshot(currentTime, postIfBusy) {
+    function tryRequestOneshot(currentTime, renderNow) {
         if (!self.renderAhead || self.renderAhead <= 0) return;
-        if (self.oneshotState.renderRequested && !postIfBusy) return;
+        if (self.oneshotState.renderRequested && !renderNow) return;
 
         if (typeof currentTime === 'undefined') {
             if (!self.video) return;
@@ -319,14 +314,14 @@ var SubtitlesOctopus = function (options) {
         }
 
         if (size <= self.renderAhead) {
-            lastRendered = currentTime - 0.001;
+            lastRendered = currentTime - (renderNow ? 0 : 0.001);
             console.info('requesting new frame because current prerender size is less than limit (start=' + lastRendered + ')');
             if (!self.oneshotState.renderRequested) {
                 self.oneshotState.renderRequested = true;
                 self.worker.postMessage({
                     target: 'oneshot-render',
                     lastRendered: lastRendered,
-                    renderNow: false,
+                    renderNow: renderNow,
                     iteration: self.oneshotState.iteration
                 });
             } else {
@@ -366,35 +361,47 @@ var SubtitlesOctopus = function (options) {
         if (!self.video) return;
 
         var currentTime = self.video.currentTime + self.timeOffset;
-        var finishTime = -1, eventShown = false;
+        var finishTime = -1, eventShown = false, animated = false;
         for (var i = 0, len = self.renderedItems.length; i < len; i++) {
             var item = self.renderedItems[i];
             if (!eventShown && item.eventStart <= currentTime && (item.emptyFinish < 0 || item.emptyFinish >= currentTime)) {
                 _renderSubtitleEvent(item, currentTime);
                 eventShown = true;
-            }
-            if (item.emptyFinish > finishTime) {
                 finishTime = item.emptyFinish;
+            } else if (finishTime >= 0) {
+                // we've already found a known event, now find
+                // the farthest point of consequent events
+                // NOTE: self.renderedItems may have gaps due to seeking
+                if (item.eventStart - finishTime < 0.01) {
+                    finishTime = item.emptyFinish;
+                    animated = item.animated;
+                } else {
+                    break;
+                }
             }
         }
 
         if (!eventShown) {
-            if (Math.abs(self.oneshotState.requestNextTimestamp - currentTime) > 0.1) {
+            if (Math.abs(self.oneshotState.requestNextTimestamp - currentTime) > 0.01) {
                 tryRequestOneshot(currentTime, true);
             }
         } else if (_cleanPastRendered(currentTime) && finishTime >= 0) {
             console.debug('some prerendered frame retired, requesting new');
-            tryRequestOneshot(finishTime);
+            tryRequestOneshot(finishTime, animated);
         }
     }
 
     function resetRenderAheadCache() {
-        console.debug('resetting prerender cache');
-        self.renderedItems = [];
-        self.oneshotState.eventStart = null;
-        self.oneshotState.iteration++;
-        self.oneshotState.renderRequested = false;
-        tryRequestOneshot();
+        if (self.renderAhead > 0) {
+            console.debug('resetting prerender cache');
+            self.renderedItems = [];
+            self.oneshotState.eventStart = null;
+            self.oneshotState.iteration++;
+            self.oneshotState.renderRequested = false;
+
+            window.requestAnimationFrame(oneshotRender);
+            tryRequestOneshot(undefined, true);
+        }
     }
 
     self.renderFrameData = null;
@@ -531,8 +538,21 @@ var SubtitlesOctopus = function (options) {
                                 data.eventStart + ', empty=' + data.emptyFinish +
                                 '), render: ' + Math.round(data.spentTime) + ' ms');
                         self.oneshotState.renderRequested = false;
-                        if (data.lastRenderedTime == self.oneshotState.requestNextTimestamp) {
+                        if (Math.abs(data.lastRenderedTime - self.oneshotState.requestNextTimestamp) < 0.01) {
                             self.oneshotState.requestNextTimestamp = -1;
+                        }
+                        if (data.eventStart - data.lastRenderedTime > 0.01) {
+                            // generate bogus empty element, so all timeline is covered anyway
+                            self.renderedItems.push({
+                                eventStart: data.lastRenderedTime,
+                                eventFinish: data.lastRenderedTime - 0.001,
+                                emptyFinish: data.eventStart,
+                                spentTime: 0,
+                                blendTime: 0,
+                                items: [],
+                                animated: false,
+                                size: 0
+                            });
                         }
 
                         var items = [];
@@ -548,9 +568,12 @@ var SubtitlesOctopus = function (options) {
                             });
                             size += item.buffer.byteLength;
                         }
-                        if (data.emptyFinish > 0 && data.emptyFinish - data.eventStart < 1.0 / self.targetFps) {
-                            data.emptyFinish = data.eventStart + 1.0 / self.targetFps;
-                            data.eventFinish = data.emptyFinish;
+                        if ((data.emptyFinish > 0 && data.emptyFinish - data.eventStart < 1.0 / self.targetFps) || data.animated) {
+                            newFinish = data.eventStart + 1.0 / self.targetFps;
+                            if (newFinish < data.emptyFinish) {
+                                data.emptyFinish = newFinish;
+                                data.eventFinish = (data.eventFinish > newFinish) ? newFinish : data.eventFinish;
+                            }
                         }
                         self.renderedItems.push({
                             eventStart: data.eventStart,
@@ -559,17 +582,22 @@ var SubtitlesOctopus = function (options) {
                             spentTime: data.spentTime,
                             blendTime: data.blendTime,
                             items: items,
+                            animated: data.animated,
                             size: size
+                        });
+                        
+                        self.renderedItems.sort(function (a, b) {
+                            return a.eventStart - b.eventStart;
                         });
 
                         if (self.oneshotState.requestNextTimestamp >= 0) {
                             console.debug("requesting out of order event at " + self.oneshotState.requestNextTimestamp);
-                            tryRequestOneshot(self.oneshotState.requestNextTimestamp);
+                            tryRequestOneshot(self.oneshotState.requestNextTimestamp, true);
                         } else if (data.eventStart < 0) {
                             console.info('oneshot received "end of frames" event');
                         } else if (data.emptyFinish >= 0) {
                             console.debug("there's some more event to render, try requesting next event");
-                            tryRequestOneshot(data.emptyFinish);
+                            tryRequestOneshot(data.emptyFinish, data.animated);
                         } else {
                             console.info('there are no more events to prerender');
                         }

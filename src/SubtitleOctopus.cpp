@@ -123,10 +123,10 @@ int _is_event_complex(ASS_Event *event) {
     return 0;
 }
 
-void libassjs_find_event_stop_times(double tm, double *eventFinish, double *emptyFinish) {
+int libassjs_find_event_stop_times(double tm, double *eventFinish, double *emptyFinish) {
     if (!track || track->n_events == 0) {
         *eventFinish = *emptyFinish = -1;
-        return;
+        return 0;
     }
 
     ASS_Event *cur = track->events;
@@ -153,14 +153,6 @@ void libassjs_find_event_stop_times(double tm, double *eventFinish, double *empt
         }
     }
 
-    if (current_animated) {
-        printf("libass: detected animated event, forcing finish times to be +5ms from %f\n", tm);
-        // what plays now is animated, so consider this event border to be
-        // after 5ms from now, so it's properly redrawn afterwards
-        *eventFinish = *emptyFinish = tm + 0.005;
-        return;
-    }
-
     if (minFinish != -1) {
         // some event is going on, so we need to re-draw either when it stops
         // or when some other event starts
@@ -177,6 +169,8 @@ void libassjs_find_event_stop_times(double tm, double *eventFinish, double *empt
         // there's no empty space after eventFinish happens
         *emptyFinish = *eventFinish;
     }
+
+    return current_animated;
 }
 
 class SubtitleOctopus {
