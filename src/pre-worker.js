@@ -1,4 +1,48 @@
 //var Module = Module || {};
+
+if (!String.prototype.endsWith) {
+	String.prototype.endsWith = function(search, this_len) {
+		if (this_len === undefined || this_len > this.length) {
+			this_len = this.length;
+		}
+		return this.substring(this_len - search.length, this_len) === search;
+	};
+}
+
+var hasNativeConsole = typeof console !== "undefined";
+
+// implement console methods if they're missing
+function makeCustomConsole() {
+    var console = (function () {
+        function postConsoleMessage(prefix, args) {
+            postMessage({
+                target: "console-" + prefix,
+                content: JSON.stringify(Array.prototype.slice.call(args)),
+            })
+        }
+
+        return {
+            log: function() {
+                postConsoleMessage("log", arguments);
+            },
+            debug: function() {
+                postConsoleMessage("debug", arguments);
+            },
+            info: function() {
+                postConsoleMessage("info", arguments);
+            },
+            warn: function() {
+                postConsoleMessage("warn", arguments);
+            },
+            error: function() {
+                postConsoleMessage("error", arguments);
+            }
+        }
+    })();
+
+    return console;
+}
+
 Module = Module || {};
 
 Module["preRun"] = Module["preRun"] || [];
@@ -69,7 +113,7 @@ Module["printErr"] = function (text) {
 };
 
 // Modified from https://github.com/kripken/emscripten/blob/6dc4ac5f9e4d8484e273e4dcc554f809738cedd6/src/proxyWorker.js
-if (typeof console === 'undefined') {
+if (!hasNativeConsole) {
     // we can't call Module.printErr because that might be circular
     var console = {
         log: function (x) {

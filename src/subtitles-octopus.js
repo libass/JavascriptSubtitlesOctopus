@@ -1,4 +1,16 @@
 var SubtitlesOctopus = function (options) {
+    var supportsWebAssembly = false;
+    try {
+        if (typeof WebAssembly === "object"
+            && typeof WebAssembly.instantiate === "function") {
+            const module = new WebAssembly.Module(Uint8Array.of(0x0, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00));
+            if (module instanceof WebAssembly.Module)
+                supportsWebAssembly = (new WebAssembly.Instance(module) instanceof WebAssembly.Instance);
+        }
+    } catch (e) {
+    }
+    console.log("WebAssembly support detected: " + (supportsWebAssembly ? "yes" : "no"));
+
     var self = this;
     self.canvas = options.canvas; // HTML canvas element (optional if video specified)
     self.lossyRender = options.lossyRender; // Speedup render for heavy subs
@@ -8,7 +20,11 @@ var SubtitlesOctopus = function (options) {
     self.fonts = options.fonts || []; // Array with links to fonts used in sub (optional)
     self.availableFonts = options.availableFonts || []; // Object with all available fonts (optional). Key is font name in lower case, value is link: {"arial": "/font1.ttf"}
     self.onReadyEvent = options.onReady; // Function called when SubtitlesOctopus is ready (optional)
-    self.workerUrl = options.workerUrl || 'libassjs-worker.js'; // Link to worker
+    if (supportsWebAssembly) {
+        self.workerUrl = options.workerUrl || 'subtitles-octopus-worker.js'; // Link to WebAssembly worker
+    } else {
+        self.workerUrl = options.legacyWorkerUrl || 'subtitles-octopus-worker-legacy.js'; // Link to legacy worker
+    }
     self.subUrl = options.subUrl; // Link to sub file (optional if subContent specified)
     self.subContent = options.subContent || null; // Sub content (optional if subUrl specified)
     self.onErrorEvent = options.onError; // Function called in case of critical error meaning sub wouldn't be shown and you should use alternative method (for instance it occurs if browser doesn't support web workers).
@@ -18,25 +34,36 @@ var SubtitlesOctopus = function (options) {
 
     self.timeOffset = options.timeOffset || 0; // Time offset would be applied to currentTime from video (option)
 
-    if (typeof ImageData.prototype.constructor !== 'function') {
-        (function () {
-            var canvas = document.createElement('canvas');
-            var ctx = canvas.getContext('2d');
+    self.hasAlphaBug = false;
 
-            window.ImageData = function () {
-                var i = 0;
-                if (arguments[0] instanceof Uint8ClampedArray) {
-                    var data = arguments[i++];
-                }
-                var width = arguments[i++];
-                var height = arguments[i];
-
-                var imageData = ctx.createImageData(width, height);
-                if (data) imageData.data.set(data);
-                return imageData;
+    (function() {
+        if (typeof ImageData.prototype.constructor === 'function') {
+            try {
+                // try actually calling ImageData, as on some browsers it's reported
+                // as existing but calling it errors out as "TypeError: Illegal constructor"
+                new window.ImageData(new Uint8ClampedArray([0, 0, 0, 0]), 1, 1);
+                return;
+            } catch (e) {
+                console.log("detected that ImageData is not constructable despite browser saying so");
             }
-        })();
-    }
+        }
+
+        var canvas = document.createElement('canvas');
+        var ctx = canvas.getContext('2d');
+
+        window.ImageData = function () {
+            var i = 0;
+            if (arguments[0] instanceof Uint8ClampedArray) {
+                var data = arguments[i++];
+            }
+            var width = arguments[i++];
+            var height = arguments[i];
+
+            var imageData = ctx.createImageData(width, height);
+            if (data) imageData.data.set(data);
+            return imageData;
+        }
+    })();
 
     self.workerError = function (error) {
         console.error('Worker error: ', error);
@@ -76,7 +103,8 @@ var SubtitlesOctopus = function (options) {
             subUrl: self.subUrl,
             subContent: self.subContent,
             fonts: self.fonts,
-            availableFonts: self.availableFonts
+            availableFonts: self.availableFonts,
+            debug: self.debug
         });
     };
 
@@ -108,6 +136,23 @@ var SubtitlesOctopus = function (options) {
         self.ctx = self.canvas.getContext('2d');
         self.bufferCanvas = document.createElement('canvas');
         self.bufferCanvasCtx = self.bufferCanvas.getContext('2d');
+
+        // test for alpha bug, where e.g. WebKit can render a transparent pixel
+        // (with alpha == 0) as non-black which then leads to visual artifacts
+        self.bufferCanvas.width = 1;
+        self.bufferCanvas.height = 1;
+        var testBuf = new Uint8ClampedArray([0, 255, 0, 0]);
+        var testImage = new ImageData(testBuf, 1, 1);
+        self.bufferCanvasCtx.clearRect(0, 0, 1, 1);
+        self.ctx.clearRect(0, 0, 1, 1);
+        var prePut = self.ctx.getImageData(0, 0, 1, 1).data;
+        self.bufferCanvasCtx.putImageData(testImage, 0, 0);
+        self.ctx.drawImage(self.bufferCanvas, 0, 0);
+        var postPut = self.ctx.getImageData(0, 0, 1, 1).data;
+        self.hasAlphaBug = prePut[1] != postPut[1];
+        if (self.hasAlphaBug) {
+            console.log("Detected a browser having issue with transparent pixels, applying workaround");
+        }
     };
 
     self.setVideo = function (video) {
@@ -197,6 +242,11 @@ var SubtitlesOctopus = function (options) {
             self.bufferCanvas.width = image.w;
             self.bufferCanvas.height = image.h;
             var imageBuffer = new Uint8ClampedArray(image.buffer);
+            if (self.hasAlphaBug) {
+                for (var j = 3; j < imageBuffer.length; j = j + 4) {
+                    imageBuffer[j] = (imageBuffer[j] >= 1) ? imageBuffer[j] : 1;
+                }
+            }
             var imageData = new ImageData(imageBuffer, image.w, image.h);
             self.bufferCanvasCtx.putImageData(imageData, 0, 0);
             self.ctx.drawImage(self.bufferCanvas, image.x, image.y);
@@ -207,10 +257,10 @@ var SubtitlesOctopus = function (options) {
             self.renderStart = performance.now();
         }
     }
-    
+
     /**
      * Lossy Render Mode
-     * 
+     *
      */
     function renderFastFrames() {
         var data = self.renderFramesData;
@@ -241,6 +291,26 @@ var SubtitlesOctopus = function (options) {
         switch (data.target) {
             case 'stdout': {
                 console.log(data.content);
+                break;
+            }
+            case 'console-log': {
+                console.log.apply(console, JSON.parse(data.content));
+                break;
+            }
+            case 'console-debug': {
+                console.debug.apply(console, JSON.parse(data.content));
+                break;
+            }
+            case 'console-info': {
+                console.info.apply(console, JSON.parse(data.content));
+                break;
+            }
+            case 'console-warn': {
+                console.warn.apply(console, JSON.parse(data.content));
+                break;
+            }
+            case 'console-error': {
+                console.error.apply(console, JSON.parse(data.content));
                 break;
             }
             case 'stderr': {

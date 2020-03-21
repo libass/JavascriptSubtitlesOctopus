@@ -509,6 +509,11 @@ function onMessageFromMainEmscriptenThread(message) {
             self.fontFiles = message.data.fonts;
             self.fastRenderMode = message.data.fastRender;
             self.availableFonts = message.data.availableFonts;
+            self.debug = message.data.debug;
+            if (!hasNativeConsole && self.debug) {
+                console = makeCustomConsole();
+                console.log("overridden console");
+            }
             if (Module.canvas) {
                 Module.canvas.width_ = message.data.width;
                 Module.canvas.height_ = message.data.height;
