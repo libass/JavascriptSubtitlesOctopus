@@ -307,7 +307,7 @@ EMCC_COMMON_ARGS = \
 	#--memory-init-file 0 \
 	#-s OUTLINING_LIMIT=20000 \
 
-dist: src/subtitles-octopus-worker.bc dist/js/subtitles-octopus-worker.js dist/js/subtitles-octopus.js
+dist: src/subtitles-octopus-worker.bc dist/js/subtitles-octopus-worker.js dist/js/subtitles-octopus-worker-legacy.js dist/js/subtitles-octopus.js
 
 
 dist/js/subtitles-octopus-worker.js: src/subtitles-octopus-worker.bc
@@ -317,6 +317,15 @@ dist/js/subtitles-octopus-worker.js: src/subtitles-octopus-worker.bc
 		--post-js src/SubOctpInterface.js \
 		--post-js src/post-worker.js \
 		-s WASM=1 \
+		$(EMCC_COMMON_ARGS)
+
+dist/js/subtitles-octopus-worker-legacy.js: src/subtitles-octopus-worker.bc
+	emcc src/subtitles-octopus-worker.bc $(OCTP_DEPS) \
+		--pre-js src/pre-worker.js \
+		--pre-js src/unbrotli.js \
+		--post-js src/post-worker.js \
+		-s WASM=0 \
+		-s LEGACY_VM_SUPPORT=1 \
 		$(EMCC_COMMON_ARGS)
 
 dist/js/subtitles-octopus.js:
