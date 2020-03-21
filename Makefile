@@ -49,7 +49,7 @@ lib/expat/expat/configured:
 
 dist/libraries/lib/libexpat.a: lib/expat/expat/configured
 	cd lib/expat/expat/build && \
-	emconfigure cmake \
+	emcmake cmake \
 		-DCMAKE_C_FLAGS=" \
 		-s USE_PTHREADS=0 \
 		-O2 \
@@ -79,7 +79,7 @@ lib/brotli/configured:
 
 dist/libraries/lib/libbrotlidec.a: lib/brotli/configured
 	cd lib/brotli/build && \
-	emconfigure cmake \
+	emcmake cmake \
 		-DCMAKE_C_FLAGS=" \
 		-O2 \
 		" \
@@ -323,6 +323,7 @@ dist/js/subtitles-octopus-worker-legacy.js: src/subtitles-octopus-worker.bc
 	emcc src/subtitles-octopus-worker.bc $(OCTP_DEPS) \
 		--pre-js src/pre-worker.js \
 		--pre-js src/unbrotli.js \
+		--post-js src/SubOctpInterface.js \
 		--post-js src/post-worker.js \
 		-s WASM=0 \
 		-s LEGACY_VM_SUPPORT=1 \
