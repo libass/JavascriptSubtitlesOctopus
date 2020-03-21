@@ -17,7 +17,6 @@ lib/fribidi/configure:
 	patch -d "$(BASE_DIR)lib/fribidi" -Np1 -i $(file);) \
 	NOCONFIGURE=1 ./autogen.sh
 
-# NM=llvm-nm
 dist/libraries/lib/libfribidi.a: lib/fribidi/configure
 	cd lib/fribidi && \
 	emconfigure ./configure \
@@ -26,7 +25,6 @@ dist/libraries/lib/libfribidi.a: lib/fribidi/configure
 		-O2 \
 		-s NO_FILESYSTEM=1 \
 		-s NO_EXIT_RUNTIME=1 \
-		-s STRICT=1 \
 		-DFRIBIDI_ENTRY=extern \
 		--llvm-lto 1 \
 		-s MODULARIZE=1 \
@@ -41,7 +39,6 @@ dist/libraries/lib/libfribidi.a: lib/fribidi/configure
 	&& \
 	emmake make -j8 && \
 	emmake make install
-
 	
 lib/expat/expat/configured:
 	cd lib/expat/expat && \
@@ -58,7 +55,6 @@ dist/libraries/lib/libexpat.a: lib/expat/expat/configured
 		-O2 \
 		-s NO_FILESYSTEM=1 \
 		-s NO_EXIT_RUNTIME=1 \
-		-s STRICT=1 \
 		--llvm-lto 1 \
 		-s MODULARIZE=1 \
 		" \
@@ -111,7 +107,6 @@ lib/freetype/build_hb/dist_hb/lib/libfreetype.a: dist/libraries/lib/libbrotlidec
 		-O2 \
 		-s NO_FILESYSTEM=1 \
 		-s NO_EXIT_RUNTIME=1 \
-		-s STRICT=1 \
 		--llvm-lto 1 \
 		-s MODULARIZE=1 \
 		" \
@@ -147,7 +142,6 @@ dist/libraries/lib/libharfbuzz.a: lib/freetype/build_hb/dist_hb/lib/libfreetype.
 		-O2 \
 		-s NO_FILESYSTEM=1 \
 		-s NO_EXIT_RUNTIME=1 \
-		-s STRICT=1 \
 		--llvm-lto 1 \
 		-s MODULARIZE=1 \
 		" \
@@ -183,7 +177,6 @@ dist/libraries/lib/libfreetype.a: dist/libraries/lib/libharfbuzz.a dist/librarie
 		-O2 \
 		-s NO_FILESYSTEM=1 \
 		-s NO_EXIT_RUNTIME=1 \
-		-s STRICT=1 \
 		--llvm-lto 1 \
 		-s MODULARIZE=1 \
 		" \
@@ -221,7 +214,6 @@ dist/libraries/lib/libfontconfig.a: dist/libraries/lib/libharfbuzz.a dist/librar
 		-O2 \
 		-s NO_EXIT_RUNTIME=1 \
 		--llvm-lto 1 \
-		-s STRICT=1 \
 		-s MODULARIZE=1 \
 		" \
 		--prefix="$(DIST_DIR)" \
@@ -253,7 +245,6 @@ dist/libraries/lib/libass.a: dist/libraries/lib/libfontconfig.a dist/libraries/l
 		-s USE_PTHREADS=0 \
 		-O2 \
 		-s NO_EXIT_RUNTIME=1 \
-		-s STRICT=1 \
 		--llvm-lto 1 \
 		-s MODULARIZE=1 \
 		" \
@@ -307,7 +298,6 @@ EMCC_COMMON_ARGS = \
 	--preload-file assets/default.woff2 \
 	--preload-file assets/fonts.conf \
 	-s ALLOW_MEMORY_GROWTH=1 \
-	-s STRICT=1 \
 	-s FORCE_FILESYSTEM=1 \
 	--llvm-lto 1 \
 	-g1 \
