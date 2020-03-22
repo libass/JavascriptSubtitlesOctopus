@@ -73,7 +73,8 @@ self.setTrack = function (content) {
     Module["FS"].writeFile("/sub.ass", content);
 
     // Tell libass to render the new track
-    self._create_track("/sub.ass");
+    self.octObj.createTrack("/sub.ass");
+    self.ass_track = self.octObj.track;
     if (self.fastRenderMode) {
         self.fastRender();
     } else {
@@ -85,7 +86,7 @@ self.setTrack = function (content) {
  * Remove subtitle track.
  */
 self.freeTrack = function () {
-    self._free_track();
+    self.octObj.removeTrack();
     if (self.fastRenderMode) {
         self.fastRender();
     } else {
@@ -110,7 +111,7 @@ self.setTrackByUrl = function (url) {
 self.resize = function (width, height) {
     self.width = width;
     self.height = height;
-    self._resize(width, height);
+    self.octObj.resizeCanvas(width, height);
 };
 
 self.getCurrentTime = function () {
@@ -181,7 +182,7 @@ self.render = function (force) {
     self.rafId = 0;
     self.renderPending = false;
     var startTime = performance.now();
-    var renderResult = self._render(self.getCurrentTime() + self.delay, self.changed);
+    var renderResult = self.octObj.renderImage(self.getCurrentTime() + self.delay, self.changed);
     var changed = Module.getValue(self.changed, 'i32');
     if (changed != 0 || force) {
         var result = self.buildResult(renderResult);
@@ -204,7 +205,7 @@ self.fastRender = function (force) {
     self.rafId = 0;
     self.renderPending = false;
     var startTime = performance.now();
-    var renderResult = self._render(self.getCurrentTime() + self.delay, self.changed);
+    var renderResult = self.octObj.renderImage(self.getCurrentTime() + self.delay, self.changed);
     var changed = Module.getValue(self.changed, "i32");
     if (changed != 0 || force) {
         var result = self.buildResult(renderResult);
@@ -244,24 +245,24 @@ self.buildResult = function (ptr) {
     var transferable = [];
     var item;
 
-    while (ptr != 0) {
+    while (ptr.ptr != 0) {
         item = self.buildResultItem(ptr);
         if (item !== null) {
             items.push(item);
             transferable.push(item.buffer);
         }
-        ptr = Module.getValue(ptr + 28, '*');
+        ptr = ptr.next;
     }
 
     return [items, transferable];
-};
+}
 
 self.buildResultItem = function (ptr) {
-    var bitmap = Module.getValue(ptr + 12, '*'),
-        stride = Module.getValue(ptr + 8, 'i32'),
-        w = Module.getValue(ptr + 0, 'i32'),
-        h = Module.getValue(ptr + 4, 'i32'),
-        color = Module.getValue(ptr + 16, 'i32');
+    var bitmap = ptr.bitmap,
+        stride = ptr.stride,
+        w = ptr.w,
+        h = ptr.h,
+        color = ptr.color;
 
     if (w == 0 || h == 0) {
         return null;
@@ -289,8 +290,8 @@ self.buildResultItem = function (ptr) {
         bitmapPosition += stride;
     }
 
-    x = Module.getValue(ptr + 20, 'i32');
-    y = Module.getValue(ptr + 24, 'i32');
+    x = ptr.dst_x;
+    y = ptr.dst_y;
 
     return {w: w, h: h, x: x, y: y, buffer: result.buffer};
 };
@@ -525,7 +526,7 @@ function onMessageFromMainEmscriptenThread(message) {
             break;
         }
         case 'destroy':
-            self.quit();
+            self.octObj.quitLibrary();
             break;
         case 'free-track':
             self.freeTrack();
@@ -535,6 +536,121 @@ function onMessageFromMainEmscriptenThread(message) {
             break;
         case 'set-track-by-url':
             self.setTrackByUrl(message.data.url);
+            break;
+        case 'create-event':
+            var event = message.data.event;
+            var i = self.octObj.allocEvent();
+            var evnt_ptr = self.octObj.track.get_events(i);
+            var vargs = Object.keys(event);
+
+            for (const varg of vargs) {
+                evnt_ptr[varg] = event[varg];
+            }
+            break;
+        case 'get-events':
+            var events = [];
+            for (var i = 0; i < self.octObj.getEventCount(); i++) {
+                var evnt_ptr = self.octObj.track.get_events(i);
+                var event = {
+                    Start: evnt_ptr.get_Start(),
+                    Duration: evnt_ptr.get_Duration(),
+                    ReadOrder: evnt_ptr.get_ReadOrder(),
+                    Layer: evnt_ptr.get_Layer(),
+                    Style: evnt_ptr.get_Style(),
+                    Name: evnt_ptr.get_Name(),
+                    MarginL: evnt_ptr.get_MarginL(),
+                    MarginR: evnt_ptr.get_MarginR(),
+                    MarginV: evnt_ptr.get_MarginV(),
+                    Effect: evnt_ptr.get_Effect(),
+                    Text: evnt_ptr.get_Text()
+                };
+
+                events.push(event);
+            }
+            postMessage({
+                target: "get-events",
+                time: Date.now(),
+                events: events
+            });
+            break;
+        case 'set-event':
+            var event = message.data.event;
+            var i = message.data.index;
+            var evnt_ptr = self.octObj.track.get_events(i);
+            
+            var vargs = Object.keys(event);
+
+            for (const varg of vargs) {
+                evnt_ptr[varg] = event[varg];
+            }
+            break;
+        case 'remove-event':
+            var i = message.data.index;
+            self.octObj.removeEvent(i);
+            break;
+        case 'create-style':
+            var style = message.data.style;
+            var i = self.octObj.allocStyle();
+            var styl_ptr = self.octObj.track.get_styles(i);
+            var vargs = Object.keys(style);
+
+            for (const varg of vargs) {
+                styl_ptr[varg] = style[varg];
+            }
+            break;
+        case 'get-styles':
+            var styles = [];
+            for (var i = 0; i < self.octObj.getStyleCount(); i++) {
+                var styl_ptr = self.octObj.track.get_styles(i);
+                var style = {
+                    Name: styl_ptr.get_Name(),
+                    FontName: styl_ptr.get_FontName(),
+                    FontSize: styl_ptr.get_FontSize(),
+                    PrimaryColour: styl_ptr.get_PrimaryColour(),
+                    SecondaryColour: styl_ptr.get_SecondaryColour(),
+                    OutlineColour: styl_ptr.get_OutlineColour(),
+                    BackColour: styl_ptr.get_BackColour(),
+                    Bold: styl_ptr.get_Bold(),
+                    Italic: styl_ptr.get_Italic(),
+                    Underline: styl_ptr.get_Underline(),
+                    StrikeOut: styl_ptr.get_StrikeOut(),
+                    ScaleX: styl_ptr.get_ScaleX(),
+                    ScaleY: styl_ptr.get_ScaleY(),
+                    Spacing: styl_ptr.get_Spacing(),
+                    Angle: styl_ptr.get_Angle(),
+                    BorderStyle: styl_ptr.get_BorderStyle(),
+                    Outline: styl_ptr.get_Outline(),
+                    Shadow: styl_ptr.get_Shadow(),
+                    Alignment: styl_ptr.get_Alignment(),
+                    MarginL: styl_ptr.get_MarginL(),
+                    MarginR: styl_ptr.get_MarginR(),
+                    MarginV: styl_ptr.get_MarginV(),
+                    Encoding: styl_ptr.get_Encoding(),
+                    treat_fontname_as_pattern: styl_ptr.get_treat_fontname_as_pattern(),
+                    Blur: styl_ptr.get_Blur(),
+                    Justify: styl_ptr.get_Justify()
+                };
+                styles.push(style);
+            }
+            postMessage({
+                target: "get-styles",
+                time: Date.now(),
+                styles: styles
+            });
+            break;
+        case 'set-style':
+            var style = message.data.style;
+            var i = message.data.index;
+            var styl_ptr = self.octObj.track.get_styles(i);
+            var vargs = Object.keys(style);
+
+            for (const varg of vargs) {
+                styl_ptr[varg] = style[varg];
+            }
+            break;
+        case 'remove-style':
+            var i = message.data.index;
+            self.octObj.removeStyle(i);
             break;
         case 'runBenchmark': {
             self.runBenchmark();

@@ -1,0 +1,22 @@
+name: Emscripten
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Checkout submodules
+      shell: bash
+      run: |
+        git submodule sync
+        git submodule update --init --force
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag dador/javascriptsubtitlesoctopus:latest
+    - name: Build All
+      run: docker run --rm -v ${PWD}:/code dador/javascriptsubtitlesoctopus:latest
+    - uses: actions/upload-artifact@v1
+      with:
+        name: js
+        path: dist/js

@@ -378,6 +378,16 @@ var SubtitlesOctopus = function (options) {
                 });
                 break;
             }
+            case 'get-events': {
+                console.log(data.target);
+                console.log(data.events);
+                break;
+            }
+            case 'get-styles': {
+                console.log(data.target);
+                console.log(data.styles);
+                break;
+            }
             default:
                 throw 'what? ' + data.target;
         }
@@ -507,6 +517,62 @@ var SubtitlesOctopus = function (options) {
         if (self.video) {
             self.video.parentNode.removeChild(self.canvasParent);
         }
+    };
+
+    self.createEvent = function (event) {
+        self.worker.postMessage({
+            target: 'create-event',
+            event: event
+        });
+    };
+
+    self.getEvents = function () {
+        self.worker.postMessage({
+            target: 'get-events'
+        });
+    };
+
+    self.setEvent = function (event, index) {
+        self.worker.postMessage({
+            target: 'set-event',
+            event: event,
+            index: index
+        });
+    };
+
+    self.removeEvent = function (index) {
+        self.worker.postMessage({
+            target: 'remove-event',
+            index: index
+        });
+    };
+
+    self.createStyle = function (style) {
+        self.worker.postMessage({
+            target: 'create-style',
+            style: style
+        });
+    };
+
+    self.getStyles = function () {
+        self.worker.postMessage({
+            target: 'get-styles'
+        });
+    };
+
+    self.setStyle = function (style, index) {
+        self.worker.postMessage({
+            target: 'set-style',
+            style: style,
+            index: index
+        });
+    };
+
+    self.removeStyle = function (index) {
+        self.worker.postMessage({
+            target: 'remove-style',
+            index: index
+        });
     };
 
     self.init();

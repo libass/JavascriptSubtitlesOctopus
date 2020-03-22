@@ -17,7 +17,6 @@ lib/fribidi/configure:
 	patch -d "$(BASE_DIR)lib/fribidi" -Np1 -i $(file);) \
 	NOCONFIGURE=1 ./autogen.sh
 
-# NM=llvm-nm
 dist/libraries/lib/libfribidi.a: lib/fribidi/configure
 	cd lib/fribidi && \
 	emconfigure ./configure \
@@ -26,7 +25,7 @@ dist/libraries/lib/libfribidi.a: lib/fribidi/configure
 		-O2 \
 		-s NO_FILESYSTEM=1 \
 		-s NO_EXIT_RUNTIME=1 \
-		-s STRICT=1 \
+		-DFRIBIDI_ENTRY=extern \
 		--llvm-lto 1 \
 		-s MODULARIZE=1 \
 		" \
@@ -40,7 +39,6 @@ dist/libraries/lib/libfribidi.a: lib/fribidi/configure
 	&& \
 	emmake make -j8 && \
 	emmake make install
-
 	
 lib/expat/expat/configured:
 	cd lib/expat/expat && \
@@ -51,13 +49,12 @@ lib/expat/expat/configured:
 
 dist/libraries/lib/libexpat.a: lib/expat/expat/configured
 	cd lib/expat/expat/build && \
-	emconfigure cmake \
+	emcmake cmake \
 		-DCMAKE_C_FLAGS=" \
 		-s USE_PTHREADS=0 \
 		-O2 \
 		-s NO_FILESYSTEM=1 \
 		-s NO_EXIT_RUNTIME=1 \
-		-s STRICT=1 \
 		--llvm-lto 1 \
 		-s MODULARIZE=1 \
 		" \
@@ -82,7 +79,7 @@ lib/brotli/configured:
 
 dist/libraries/lib/libbrotlidec.a: lib/brotli/configured
 	cd lib/brotli/build && \
-	emconfigure cmake \
+	emcmake cmake \
 		-DCMAKE_C_FLAGS=" \
 		-O2 \
 		" \
@@ -110,7 +107,6 @@ lib/freetype/build_hb/dist_hb/lib/libfreetype.a: dist/libraries/lib/libbrotlidec
 		-O2 \
 		-s NO_FILESYSTEM=1 \
 		-s NO_EXIT_RUNTIME=1 \
-		-s STRICT=1 \
 		--llvm-lto 1 \
 		-s MODULARIZE=1 \
 		" \
@@ -146,7 +142,6 @@ dist/libraries/lib/libharfbuzz.a: lib/freetype/build_hb/dist_hb/lib/libfreetype.
 		-O2 \
 		-s NO_FILESYSTEM=1 \
 		-s NO_EXIT_RUNTIME=1 \
-		-s STRICT=1 \
 		--llvm-lto 1 \
 		-s MODULARIZE=1 \
 		" \
@@ -182,7 +177,6 @@ dist/libraries/lib/libfreetype.a: dist/libraries/lib/libharfbuzz.a dist/librarie
 		-O2 \
 		-s NO_FILESYSTEM=1 \
 		-s NO_EXIT_RUNTIME=1 \
-		-s STRICT=1 \
 		--llvm-lto 1 \
 		-s MODULARIZE=1 \
 		" \
@@ -220,7 +214,6 @@ dist/libraries/lib/libfontconfig.a: dist/libraries/lib/libharfbuzz.a dist/librar
 		-O2 \
 		-s NO_EXIT_RUNTIME=1 \
 		--llvm-lto 1 \
-		-s STRICT=1 \
 		-s MODULARIZE=1 \
 		" \
 		--prefix="$(DIST_DIR)" \
@@ -252,7 +245,6 @@ dist/libraries/lib/libass.a: dist/libraries/lib/libfontconfig.a dist/libraries/l
 		-s USE_PTHREADS=0 \
 		-O2 \
 		-s NO_EXIT_RUNTIME=1 \
-		-s STRICT=1 \
 		--llvm-lto 1 \
 		-s MODULARIZE=1 \
 		" \
@@ -280,7 +272,12 @@ OCTP_DEPS = \
 	$(DIST_DIR)/lib/libfontconfig.a \
 	$(DIST_DIR)/lib/libass.a
 
-src/Makefile:
+# Require a patch to fix some errors
+src/SubOctpInterface.cpp:
+	cd src && \
+	python ../build/webidl_binder.py SubtitleOctopus.idl SubOctpInterface
+
+src/Makefile: src/SubOctpInterface.cpp
 	cd src && \
 	autoreconf -fi
 
@@ -294,14 +291,13 @@ src/subtitles-octopus-worker.bc: dist/libraries/lib/libass.a src/Makefile
 # Dist Files
 EMCC_COMMON_ARGS = \
 	-O2 \
-	-s EXPORTED_FUNCTIONS="['_main', '_malloc', '_libassjs_init', '_libassjs_quit', '_libassjs_resize', '_libassjs_render', '_libassjs_free_track', '_libassjs_create_track']" \
+	-s EXPORTED_FUNCTIONS="['_main', '_malloc']" \
 	-s EXTRA_EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'getValue', 'FS_createPreloadedFile', 'FS_createFolder']" \
 	-s NO_EXIT_RUNTIME=1 \
 	--use-preload-plugins \
-	--preload-file default.woff2 \
-	--preload-file fonts.conf \
+	--preload-file assets/default.woff2 \
+	--preload-file assets/fonts.conf \
 	-s ALLOW_MEMORY_GROWTH=1 \
-	-s STRICT=1 \
 	-s FORCE_FILESYSTEM=1 \
 	--llvm-lto 1 \
 	-g1 \
@@ -311,34 +307,37 @@ EMCC_COMMON_ARGS = \
 	#--memory-init-file 0 \
 	#-s OUTLINING_LIMIT=20000 \
 
-dist: src/subtitles-octopus-worker.bc dist/subtitles-octopus-worker.js dist/subtitles-octopus-worker-legacy.js dist/subtitles-octopus.js
+dist: src/subtitles-octopus-worker.bc dist/js/subtitles-octopus-worker.js dist/js/subtitles-octopus-worker-legacy.js dist/js/subtitles-octopus.js
 
-dist/subtitles-octopus-worker.js: src/subtitles-octopus-worker.bc
+
+dist/js/subtitles-octopus-worker.js: src/subtitles-octopus-worker.bc
 	emcc src/subtitles-octopus-worker.bc $(OCTP_DEPS) \
 		--pre-js src/pre-worker.js \
 		--pre-js src/unbrotli.js \
+		--post-js src/SubOctpInterface.js \
 		--post-js src/post-worker.js \
 		-s WASM=1 \
 		$(EMCC_COMMON_ARGS)
 
-dist/subtitles-octopus-worker-legacy.js: src/subtitles-octopus-worker.bc
+dist/js/subtitles-octopus-worker-legacy.js: src/subtitles-octopus-worker.bc
 	emcc src/subtitles-octopus-worker.bc $(OCTP_DEPS) \
 		--pre-js src/pre-worker.js \
 		--pre-js src/unbrotli.js \
+		--post-js src/SubOctpInterface.js \
 		--post-js src/post-worker.js \
 		-s WASM=0 \
 		-s LEGACY_VM_SUPPORT=1 \
 		$(EMCC_COMMON_ARGS)
 
-dist/subtitles-octopus.js:
-	cp src/subtitles-octopus.js dist/
+dist/js/subtitles-octopus.js:
+	cp src/subtitles-octopus.js dist/js/
 
 # Clean Tasks
 
 clean: clean-dist clean-freetype clean-fribidi clean-harfbuzz clean-fontconfig clean-expat clean-libass clean-octopus clean-brotli
 
 clean-dist:
-	cd dist && rm -frv ./*
+	cd dist && rm -frv ./libraries/* && rm -frv ./js/*
 clean-freetype:
 	cd lib/freetype && git clean -fdx
 clean-fribidi:

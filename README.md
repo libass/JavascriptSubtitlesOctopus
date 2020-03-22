@@ -1,4 +1,4 @@
-[![Build Status](https://gitlab.com/TFSThiagoBR98/JavascriptSubtitlesOctopus/badges/master/build.svg)](https://gitlab.com/TFSThiagoBR98/JavascriptSubtitlesOctopus/pipelines)
+[![Actions Status](https://github.com/Dador/JavascriptSubtitlesOctopus/workflows/Emscripten/badge.svg)](https://github.com/Dador/JavascriptSubtitlesOctopus/actions)
 
 SubtitlesOctopus displays subtitles in .ass format and easily integrates with HTML5 videos. It supports all SSA/ASS features and fully compatible with [libass](https://github.com/libass/libass).
 
@@ -137,33 +137,27 @@ To use, just run: `brotli subFile.ass` and use the .br result file with the subU
 * ragel
 * make
 * autoconf
-* python2
+* python3
 * pkgconfig
 * patch
 * libtool
 * itstool
 * automake
-* python2-lxml
-* python2-pip
-* python2-html5lib
-* python2-chardet
+* python-lxml
+* python-pip
+* python-html5lib
+* python-chardet
 * gperf
 
 ### Get the Source
 
 Run `git clone --recursive https://github.com/Dador/JavascriptSubtitlesOctopus.git`
 
-### Build
-1) Install Dependencies, see above
-2) `cd JavascriptSubtitlesOctopus`
-3) `make`
-4) Artifacts are in /dist
-
 ### Build with Docker
 1) Install Docker
 2) `docker build -t dador/javascriptsubtitlesoctopus .`
-3) `docker run --rm -v ${PWD}:/code dador/javascriptsubtitlesoctopus:latest`
-4) Artifacts are in /dist
+3) `docker run -it --rm -v ${PWD}:/code dador/javascriptsubtitlesoctopus:latest`
+4) Artifacts are in /dist/js
 
 ## Why "Octopus"?
 How am I an Octopus? [Ba da ba da ba!](https://www.youtube.com/watch?v=tOzOD-82mW0)

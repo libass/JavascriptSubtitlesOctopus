@@ -1,0 +1,181 @@
+[NoDelete]
+interface ASS_Image {
+    attribute long w;
+    attribute long h;
+    attribute long stride;
+    attribute ByteString bitmap;
+    attribute unsigned long color;
+    attribute long dst_x;
+    attribute long dst_y;
+    attribute ASS_Image next;
+};
+
+[NoDelete]
+interface ASS_Style {
+    attribute DOMString Name;
+    attribute DOMString FontName;
+    attribute double FontSize;
+    attribute unsigned long PrimaryColour;
+    attribute unsigned long SecondaryColour;
+    attribute unsigned long OutlineColour;
+    attribute unsigned long BackColour;
+    attribute long Bold;
+    attribute long Italic;
+    attribute long Underline;
+    attribute long StrikeOut;
+    attribute double ScaleX;
+    attribute double ScaleY;
+    attribute double Spacing;
+    attribute double Angle;
+    attribute long BorderStyle;
+    attribute double Outline;
+    attribute double Shadow;
+    attribute long Alignment;
+    attribute long MarginL;
+    attribute long MarginR;
+    attribute long MarginV;
+    attribute long Encoding;
+    attribute long treat_fontname_as_pattern;
+    attribute double Blur;
+    attribute long Justify;
+};
+
+[NoDelete]
+interface ASS_Event {
+    attribute long long Start;
+    attribute long long Duration;
+    attribute long ReadOrder;
+    attribute long Layer;
+    attribute long Style;
+    attribute DOMString Name;
+    attribute long MarginL;
+    attribute long MarginR;
+    attribute long MarginV;
+    attribute DOMString Effect;
+    attribute DOMString Text;
+};
+
+[NoDelete]
+interface ASS_Track {
+    attribute long n_styles;
+    attribute long max_styles;
+    attribute long n_events;
+    attribute long max_events;
+    [Value] attribute ASS_Style[] styles;
+    [Value] attribute ASS_Event[] events;
+    attribute DOMString style_format;
+    attribute DOMString event_format;
+    attribute long PlayResX;
+    attribute long PlayResY;
+    attribute double Timer;
+    attribute long WrapStyle;
+    attribute long ScaledBorderAndShadow;
+    attribute long Kerning;
+    attribute DOMString Language;
+    attribute long default_style;
+    attribute DOMString name;
+};
+
+enum ASS_Hinting {
+    "ASS_HINTING_NONE",
+    "ASS_HINTING_LIGHT",
+    "ASS_HINTING_NORMAL",
+    "ASS_HINTING_NATIVE"
+};
+
+enum ASS_ShapingLevel {
+    "ASS_SHAPING_SIMPLE",
+    "ASS_SHAPING_COMPLEX",
+};
+
+enum ASS_OverrideBits {
+    "ASS_OVERRIDE_DEFAULT",
+    "ASS_OVERRIDE_BIT_STYLE",
+    "ASS_OVERRIDE_BIT_SELECTIVE_FONT_SCALE",
+    "ASS_OVERRIDE_BIT_FONT_SIZE",
+    "ASS_OVERRIDE_BIT_FONT_SIZE_FIELDS",
+    "ASS_OVERRIDE_BIT_FONT_NAME",
+    "ASS_OVERRIDE_BIT_COLORS",
+    "ASS_OVERRIDE_BIT_ATTRIBUTES",
+    "ASS_OVERRIDE_BIT_BORDER",
+    "ASS_OVERRIDE_BIT_ALIGNMENT",
+    "ASS_OVERRIDE_BIT_MARGINS",
+    "ASS_OVERRIDE_FULL_STYLE",
+    "ASS_OVERRIDE_BIT_JUSTIFY"
+};
+
+[NoDelete]
+interface ASS_Library {};
+[NoDelete]
+interface ASS_RenderPriv {};
+[NoDelete]
+interface ASS_ParserPriv {};
+[NoDelete]
+interface ASS_Renderer {};
+
+[NoDelete]
+interface libass {
+    void libass();
+    long oct_library_version();
+    ASS_Library oct_library_init();
+    void oct_library_done(ASS_Library priv);
+    void oct_set_fonts_dir(ASS_Library priv, [Const] DOMString fonts_dir);
+    void oct_set_extract_fonts(ASS_Library priv, long extract);
+    void oct_set_style_overrides(ASS_Library priv, DOMString[] list);
+    void oct_process_force_style(ASS_Track track);
+    ASS_Renderer oct_renderer_init(ASS_Library priv);
+    void oct_renderer_done(ASS_Renderer priv);
+    void oct_set_frame_size(ASS_Renderer priv, long w, long h);
+    void oct_set_storage_size(ASS_Renderer priv, long w, long h);
+    void oct_set_shaper(ASS_Renderer priv, ASS_ShapingLevel level);
+    void oct_set_margins(ASS_Renderer priv, long t, long b, long l, long r);
+    void oct_set_use_margins(ASS_Renderer priv, long use);
+    void oct_set_pixel_aspect(ASS_Renderer priv, double par);
+    void oct_set_aspect_ratio(ASS_Renderer priv, double dar, double sar);
+    void oct_set_font_scale(ASS_Renderer priv, double font_scale);
+    void oct_set_hinting(ASS_Renderer priv, ASS_Hinting ht);
+    void oct_set_line_spacing(ASS_Renderer priv, double line_spacing);
+    void oct_set_line_position(ASS_Renderer priv, double line_position);
+    void oct_set_fonts(ASS_Renderer priv, DOMString default_font, DOMString default_family, long dfp, DOMString config, long update);
+    void oct_set_selective_style_override_enabled(ASS_Renderer priv, long bits);
+    void oct_set_selective_style_override(ASS_Renderer priv, ASS_Style style);
+    void oct_set_cache_limits(ASS_Renderer priv, long glyph_max, long bitmap_max_size);
+    ASS_Image oct_render_frame(ASS_Renderer priv, ASS_Track track, long long now, IntPtr detect_change);
+    ASS_Track oct_new_track(ASS_Library priv);
+    void oct_free_track(ASS_Track track);
+    long oct_alloc_style(ASS_Track track);
+    long oct_alloc_event(ASS_Track track);
+    void oct_free_style(ASS_Track track, long sid);
+    void oct_free_event(ASS_Track track, long eid);
+    void oct_flush_events(ASS_Track track);
+    ASS_Track oct_read_file(ASS_Library library, DOMString fname, DOMString codepage);
+    void oct_add_font(ASS_Library library, DOMString name, DOMString data, long data_size);
+    void oct_clear_fonts(ASS_Library library);
+    long long oct_step_sub(ASS_Track track, long long now, long movement);
+};
+
+interface SubtitleOctopus {
+    void SubtitleOctopus();
+    attribute ASS_Track track;
+    attribute ASS_Renderer ass_renderer;
+    attribute ASS_Library ass_library;
+    void setLogLevel(long level);
+    void initLibrary(long frame_w, long frame_h);
+    void createTrack(DOMString subfile);
+    void createTrackMem(DOMString buf, unsigned long bufsize);
+    void removeTrack();
+    void resizeCanvas(long frame_w, long frame_h);
+    ASS_Image renderImage(double time, IntPtr changed);
+    void quitLibrary();
+    void reloadLibrary();
+    void reloadFonts();
+    void setMargin(long top, long bottom, long left, long right);
+    long getEventCount();
+    long allocEvent();
+    long allocStyle();
+    void removeEvent(long eid);
+    long getStyleCount();
+    long getStyleByName([Const] DOMString name);
+    void removeStyle(long eid);
+    void removeAllEvents();
+};

@@ -3,6 +3,8 @@ a.out.wasm
 a.out.js.mem
 a.out
 src/.deps/
+src/WebIDLGrammar.pkl
+src/parser.out
 src/Makefile
 src/Makefile.in
 src/aclocal.m4
@@ -21,5 +23,6 @@ dist/libraries/
 *.lo
 *.la
 *.o
+*.pyc
 venv/
 node_modules/
