@@ -16,7 +16,7 @@ var SubtitlesOctopus = function (options) {
     self.renderMode = options.renderMode || (options.lossyRender ? 'fast' : (options.blendRender ? 'blend' : 'normal'));
     self.libassMemoryLimit = options.libassMemoryLimit || 0; // set libass bitmap cache memory limit in MiB (approximate)
     self.libassGlyphLimit = options.libassGlyphLimit || 0; // set libass glyph cache memory limit in MiB (approximate)
-    self.targetFps = options.targetFps || undefined;
+    self.targetFps = options.targetFps || 30;
     self.renderAhead = options.renderAhead || 0; // how many MiB to render ahead and store; 0 to disable (approximate)
     self.isOurCanvas = false; // (internal) we created canvas and manage it
     self.video = options.video; // HTML video element (optional if canvas specified)
@@ -570,11 +570,9 @@ var SubtitlesOctopus = function (options) {
                             size += item.buffer.byteLength;
                         }
                         if ((data.emptyFinish > 0 && data.emptyFinish - data.eventStart < 1.0 / self.targetFps) || data.animated) {
-                            newFinish = data.eventStart + 1.0 / self.targetFps;
-                            if (newFinish < data.emptyFinish) {
-                                data.emptyFinish = newFinish;
-                                data.eventFinish = (data.eventFinish > newFinish) ? newFinish : data.eventFinish;
-                            }
+                            var newFinish = data.eventStart + 1.0 / self.targetFps;
+                            data.emptyFinish = newFinish;
+                            data.eventFinish = (data.eventFinish > newFinish) ? newFinish : data.eventFinish;
                         }
                         self.renderedItems.push({
                             eventStart: data.eventStart,

@@ -208,7 +208,7 @@ self.blendRenderTiming = function (timing, force) {
     var renderResult = self.octObj.renderBlend(self.getCurrentTime() + self.delay, force);
     var blendTime = renderResult.blend_time;
     var canvases = [], buffers = [];
-    if (renderResult && (renderResult.changed != 0 || force)) {
+    if (renderResult.ptr != 0 && (renderResult.changed != 0 || force)) {
         // make a copy, as we should free the memory so subsequent calls can utilize it
         var result = new Uint8Array(HEAPU8.subarray(renderResult.image, renderResult.image + renderResult.dest_width * renderResult.dest_height * 4));
 
