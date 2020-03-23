@@ -383,6 +383,28 @@ SubtitleOctopus.prototype['renderImage'] = SubtitleOctopus.prototype.renderImage
   return wrapPointer(_emscripten_bind_SubtitleOctopus_renderImage_2(self, time, changed), ASS_Image);
 };;
 
+SubtitleOctopus.prototype['setMemoryLimits'] = SubtitleOctopus.prototype.setMemoryLimits = /** @suppress {undefinedVars, duplicate} */function(glyph_limit, bitmap_cache_limit) {
+  var self = this.ptr;
+  if (glyph_limit && typeof glyph_limit === 'object') glyph_limit = glyph_limit.ptr;
+  if (bitmap_cache_limit && typeof bitmap_cache_limit === 'object') bitmap_cache_limit = bitmap_cache_limit.ptr;
+  emscripten_bind_SubtitleOctopus_setMemoryLimits_2(self, glyph_limit, bitmap_cache_limit);
+};;
+
+SubtitleOctopus.prototype['renderBlend'] = SubtitleOctopus.prototype.renderBlend = /** @suppress {undefinedVars, duplicate} */function(tm, force, changed, blend_time,
+    dest_x, dest_y, dest_width, dest_height) {
+  var self = this.ptr;
+  if (tm && typeof tm === 'object') tm = tm.ptr;
+  if (force && typeof force === 'object') force = force.ptr;
+  if (changed && typeof changed === 'object') changed = changed.ptr;
+  if (blend_time && typeof blend_time === 'object') blend_time = blend_time.ptr;
+  if (dest_x && typeof dest_x === 'object') dest_x = dest_x.ptr;
+  if (dest_y && typeof dest_y === 'object') dest_y = dest_y.ptr;
+  if (dest_width && typeof dest_width === 'object') dest_width = dest_width.ptr;
+  if (dest_height && typeof dest_height === 'object') dest_height = dest_height.ptr;
+  return wrapPointer(emscripten_bind_SubtitleOctopus_renderBlend_8(self, tm, force, changed, blend_time,
+    dest_x, dest_y, dest_width, dest_height), undefined);
+};;
+
 SubtitleOctopus.prototype['quitLibrary'] = SubtitleOctopus.prototype.quitLibrary = /** @suppress {undefinedVars, duplicate} */function() {
   var self = this.ptr;
   _emscripten_bind_SubtitleOctopus_quitLibrary_0(self);

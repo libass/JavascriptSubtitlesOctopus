@@ -197,7 +197,7 @@ void EMSCRIPTEN_KEEPALIVE emscripten_bind_SubtitleOctopus_setMemoryLimits_2(Subt
   self->setMemoryLimits(glyph_limit, bitmap_cache_limit);
 }
 
-void* EMSCRIPTEN_KEEPALIVE emscripten_bind_SubtitleOctopus_renderBlend_8(SubtitleOctopus* self, double tm, int force, int *changed, double *blend_time,
+unsigned char* EMSCRIPTEN_KEEPALIVE emscripten_bind_SubtitleOctopus_renderBlend_8(SubtitleOctopus* self, double tm, int force, int *changed, double *blend_time,
     int *dest_x, int *dest_y, int *dest_width, int *dest_height) {
   return self->renderBlend(tm, force, changed, blend_time, dest_x, dest_y, dest_width, dest_height);
 }

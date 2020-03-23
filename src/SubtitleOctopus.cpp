@@ -223,7 +223,7 @@ public:
         ass_set_cache_limits(ass_renderer, glyph_limit, bitmap_cache_limit);
     }
 
-    void* renderBlend(double tm, int force, int *changed, double *blend_time,
+    unsigned char* renderBlend(double tm, int force, int *changed, double *blend_time,
         int *dest_x, int *dest_y, int *dest_width, int *dest_height) {
         *blend_time = 0.0;
 
@@ -324,7 +324,7 @@ public:
         *dest_width = width;
         *dest_height = height;
         *blend_time = emscripten_get_now() - start_blend_time;
-        return result;
+        return (unsigned char*)result;
     }
 
 private:
