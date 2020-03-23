@@ -254,6 +254,14 @@ RenderBlendResult* EMSCRIPTEN_KEEPALIVE emscripten_bind_SubtitleOctopus_renderBl
   return self->renderBlend(tm, force);
 }
 
+double EMSCRIPTEN_KEEPALIVE emscripten_bind_SubtitleOctopus_findNextEventStart_1(SubtitleOctopus* self, double tm) {
+  return self->findNextEventStart(tm);
+}
+
+EventStopTimesResult* EMSCRIPTEN_KEEPALIVE emscripten_bind_SubtitleOctopus_findEventStopTimes_1(SubtitleOctopus* self, double tm) {
+  return self->findEventStopTimes(tm);
+}
+
 ASS_Track* EMSCRIPTEN_KEEPALIVE emscripten_bind_SubtitleOctopus_get_track_0(SubtitleOctopus* self) {
   return self->track;
 }
@@ -630,6 +638,32 @@ int EMSCRIPTEN_KEEPALIVE emscripten_bind_ASS_Style_get_Justify_0(ASS_Style* self
 
 void EMSCRIPTEN_KEEPALIVE emscripten_bind_ASS_Style_set_Justify_1(ASS_Style* self, int arg0) {
   self->Justify = arg0;
+}
+
+// EventStopTimesResult
+
+double EMSCRIPTEN_KEEPALIVE emscripten_bind_EventStopTimesResult_get_eventFinish_0(EventStopTimesResult* self) {
+  return self->eventFinish;
+}
+
+void EMSCRIPTEN_KEEPALIVE emscripten_bind_EventStopTimesResult_set_eventFinish_1(EventStopTimesResult* self, double arg0) {
+  self->eventFinish = arg0;
+}
+
+double EMSCRIPTEN_KEEPALIVE emscripten_bind_EventStopTimesResult_get_emptyFinish_0(EventStopTimesResult* self) {
+  return self->emptyFinish;
+}
+
+void EMSCRIPTEN_KEEPALIVE emscripten_bind_EventStopTimesResult_set_emptyFinish_1(EventStopTimesResult* self, double arg0) {
+  self->emptyFinish = arg0;
+}
+
+int EMSCRIPTEN_KEEPALIVE emscripten_bind_EventStopTimesResult_get_is_animated_0(EventStopTimesResult* self) {
+  return self->is_animated;
+}
+
+void EMSCRIPTEN_KEEPALIVE emscripten_bind_EventStopTimesResult_set_is_animated_1(EventStopTimesResult* self, int arg0) {
+  self->is_animated = arg0;
 }
 
 // ASS_Image

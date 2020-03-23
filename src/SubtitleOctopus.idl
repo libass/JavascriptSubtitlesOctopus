@@ -165,6 +165,13 @@ interface RenderBlendResult {
     attribute ByteString image;
 };
 
+[NoDelete]
+interface EventStopTimesResult {
+    attribute double eventFinish;
+    attribute double emptyFinish;
+    attribute long is_animated;
+};
+
 interface SubtitleOctopus {
     void SubtitleOctopus();
     attribute ASS_Track track;
@@ -191,4 +198,6 @@ interface SubtitleOctopus {
     void removeAllEvents();
     void setMemoryLimits(long glyph_limit, long bitmap_cache_limit);
     RenderBlendResult renderBlend(double tm, long force);
+    double findNextEventStart(double tm);
+    EventStopTimesResult findEventStopTimes(double tm);
 };
