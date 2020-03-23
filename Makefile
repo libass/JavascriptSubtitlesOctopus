@@ -275,7 +275,7 @@ OCTP_DEPS = \
 	$(DIST_DIR)/lib/libass.a
 
 # Require a patch to fix some errors
-src/SubOctpInterface.cpp:
+src/SubOctpInterface.cpp: src/SubtitleOctopus.idl
 	cd src && \
 	python ../build/webidl_binder.py SubtitleOctopus.idl SubOctpInterface
 

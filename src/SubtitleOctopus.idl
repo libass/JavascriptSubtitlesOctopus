@@ -178,4 +178,7 @@ interface SubtitleOctopus {
     long getStyleByName([Const] DOMString name);
     void removeStyle(long eid);
     void removeAllEvents();
+    void setMemoryLimits(int glyph_limit, int bitmap_cache_limit);
+    unsigned char* renderBlend(double tm, int force, int *changed, double *blend_time,
+        int *dest_x, int *dest_y, int *dest_width, int *dest_height);
 };
