@@ -572,7 +572,7 @@ var SubtitlesOctopus = function (options) {
                         if ((data.emptyFinish > 0 && data.emptyFinish - data.eventStart < 1.0 / self.targetFps) || data.animated) {
                             var newFinish = data.eventStart + 1.0 / self.targetFps;
                             data.emptyFinish = newFinish;
-                            data.eventFinish = (data.eventFinish > newFinish) ? newFinish : data.eventFinish;
+                            data.eventFinish = newFinish;
                         }
                         self.renderedItems.push({
                             eventStart: data.eventStart,
