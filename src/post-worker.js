@@ -205,7 +205,7 @@ self.render = function (force) {
 self.blendRenderTiming = function (timing, force) {
     var startTime = performance.now();
 
-    var renderResult = self.octObj.renderBlend(self.getCurrentTime() + self.delay, force);
+    var renderResult = self.octObj.renderBlend(timing, force);
     var blendTime = renderResult.blend_time;
     var canvases = [], buffers = [];
     if (renderResult.ptr != 0 && (renderResult.changed != 0 || force)) {
