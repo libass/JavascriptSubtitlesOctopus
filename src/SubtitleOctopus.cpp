@@ -77,6 +77,14 @@ const float MAX_UINT8_CAST = 255.9 / 255;
 
 #define CLAMP_UINT8(value) ((value > MIN_UINT8_CAST) ? ((value < MAX_UINT8_CAST) ? (int)(value * 255) : 255) : 0)
 
+typedef struct {
+public:
+    int changed;
+    double blend_time;
+    int dest_x, dest_y, dest_width, dest_height;
+    unsigned char* image;
+} RenderBlendResult;
+
 class SubtitleOctopus {
 public:
     ASS_Library* ass_library;
@@ -223,12 +231,11 @@ public:
         ass_set_cache_limits(ass_renderer, glyph_limit, bitmap_cache_limit);
     }
 
-    unsigned char* renderBlend(double tm, int force, int *changed, double *blend_time,
-        int *dest_x, int *dest_y, int *dest_width, int *dest_height) {
-        *blend_time = 0.0;
+    RenderBlendResult* renderBlend(double tm, int force) {
+        m_blendResult.blend_time = 0.0;
 
-        ASS_Image *img = ass_render_frame(ass_renderer, track, (int)(tm * 1000), changed);
-        if (img == NULL || (*changed == 0 && !force)) {
+        ASS_Image *img = ass_render_frame(ass_renderer, track, (int)(tm * 1000), &m_blendResult.changed);
+        if (img == NULL || (m_blendResult.changed == 0 && !force)) {
             return NULL;
         }
 
@@ -319,16 +326,18 @@ public:
         }
         
         // return the thing
-        *dest_x = min_x;
-        *dest_y = min_y;
-        *dest_width = width;
-        *dest_height = height;
-        *blend_time = emscripten_get_now() - start_blend_time;
-        return (unsigned char*)result;
+        m_blendResult.dest_x = min_x;
+        m_blendResult.dest_y = min_y;
+        m_blendResult.dest_width = width;
+        m_blendResult.dest_height = height;
+        m_blendResult.blend_time = emscripten_get_now() - start_blend_time;
+        m_blendResult.image = (unsigned char*)result;
+        return &m_blendResult;
     }
 
 private:
     buffer_t m_blend;
+    RenderBlendResult m_blendResult;
 };
 
 int main(int argc, char *argv[]) { return 0; }
