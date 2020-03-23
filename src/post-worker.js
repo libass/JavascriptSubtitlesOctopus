@@ -206,7 +206,7 @@ self.blendRenderTiming = function (timing, force) {
     var startTime = performance.now();
 
     var renderResult = self.octObj.renderBlend(self.getCurrentTime() + self.delay, force);
-    var blendTime = Module.getValue(self.blendTime, 'double');
+    var blendTime = renderResult.blend_time;
     var canvases = [], buffers = [];
     if (renderResult && (renderResult.changed != 0 || force)) {
         // make a copy, as we should free the memory so subsequent calls can utilize it
@@ -247,14 +247,14 @@ self.blendRender = function (force) {
 };
 
 self.oneshotRender = function (lastRenderedTime, renderNow, iteration) {
-    var eventStart = renderNow ? lastRenderedTime : self._find_next_event_start(lastRenderedTime);
+    var eventStart = renderNow ? lastRenderedTime : self.octObj.findNextEventStart(lastRenderedTime);
     var eventFinish = -1.0, emptyFinish = -1.0, animated = false;
     var rendered = {};
     if (eventStart >= 0) {
-        self._find_event_stop_times(eventStart, self.eventFinish, self.emptyFinish, self.isAnimated);
-        eventFinish = Module.getValue(self.eventFinish, 'double');
-        emptyFinish = Module.getValue(self.emptyFinish, 'double');
-        animated = Module.getValue(self.isAnimated, 'i32') != 0;
+        eventTimes = self.findNextEventStart(eventStart);
+        eventFinish = eventTimes.eventFinish;
+        emptyFinish = eventTimes.emptyFinish;
+        animated = eventTimes.is_animated;
 
         rendered = self.blendRenderTiming(eventStart, true);
     }
