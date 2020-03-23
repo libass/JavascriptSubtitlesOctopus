@@ -355,4 +355,6 @@ private:
 
 int main(int argc, char *argv[]) { return 0; }
 
+#ifdef __EMSCRIPTEN__
 #include "./SubOctpInterface.cpp"
+#endif
