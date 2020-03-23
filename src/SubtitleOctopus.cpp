@@ -80,29 +80,16 @@ const float MAX_UINT8_CAST = 255.9 / 255;
 #define CLAMP_UINT8(value) ((value > MIN_UINT8_CAST) ? ((value < MAX_UINT8_CAST) ? (int)(value * 255) : 255) : 0)
 
 typedef struct {
-public:
     int changed;
     double blend_time;
     int dest_x, dest_y, dest_width, dest_height;
     unsigned char* image;
 } RenderBlendResult;
 
-double libassjs_find_next_event_start(double tm) {
-    if (!track || track->n_events == 0) return -1;
-
-    ASS_Event *cur = track->events;
-    long long now = (long long)(tm * 1000);
-    long long closest = -1;
-
-    for (int i = 0; i < track->n_events; i++, cur++) {
-        long long start = cur->Start;
-        if (start >= now && (start < closest || closest == -1)) {
-            closest = start;
-        }
-    }
-
-    return closest / 1000.0;
-}
+typedef struct {
+    double eventFinish, emptyFinish;
+    int is_animated;
+} EventStopTimesResult;
 
 static int _is_move_tag_animated(char *begin, char *end) {
     int params[6];
@@ -201,63 +188,6 @@ static int _is_event_animated(ASS_Event *event) {
     return 0;
 }
 
-static void detect_animated_events() {
-    ASS_Event *cur = track->events;
-    int *animated = is_animated_events;
-    for (int i = 0; i < track->n_events; i++, cur++, animated++) {
-        *animated = _is_event_animated(cur);
-    }
-}
-
-void libassjs_find_event_stop_times(double tm, double *eventFinish, double *emptyFinish, int *is_animated) {
-    if (!track || track->n_events == 0) {
-        *eventFinish = *emptyFinish = -1;
-        return;
-    }
-
-    ASS_Event *cur = track->events;
-    long long now = (long long)(tm * 1000);
-
-    long long minFinish = -1, maxFinish = -1, minStart = -1;
-    int current_animated = 0;
-
-    for (int i = 0; i < track->n_events; i++, cur++) {
-        long long start = cur->Start;
-        long long finish = start + cur->Duration;
-        if (start <= now) {
-            if (finish > now) {
-                if (finish < minFinish || minFinish == -1) {
-                    minFinish = finish;
-                }
-                if (finish > maxFinish) {
-                    maxFinish = finish;
-                }
-                if (!current_animated) current_animated = m_is_event_animated[i];
-            }
-        } else if (start < minStart || minStart == -1) {
-            minStart = start;
-        }
-    }
-    *is_animated = current_animated;
-
-    if (minFinish != -1) {
-        // some event is going on, so we need to re-draw either when it stops
-        // or when some other event starts
-        *eventFinish = ((minFinish < minStart) ? minFinish : minStart) / 1000.0;
-    } else {
-        // there's no current event, so no need to draw anything
-        *eventFinish = -1;
-    }
-
-    if (minFinish == maxFinish && (minStart == -1 || minStart > maxFinish)) {
-        // there's empty space after this event ends
-        *emptyFinish = minStart / 1000.0;
-    } else {
-        // there's no empty space after eventFinish happens
-        *emptyFinish = *eventFinish;
-    }
-}
-
 class SubtitleOctopus {
 public:
     ASS_Library* ass_library;
@@ -319,7 +249,7 @@ public:
             printf("cannot parse animated events\n");
             exit(5);
         }
-        detect_animated_events();
+        detectAnimatedEvents();
     }
 
     void createTrackMem(char *buf, unsigned long bufsize) {
@@ -522,7 +452,84 @@ public:
         return &m_blendResult;
     }
 
+    double findNextEventStart(double tm) {
+        if (!track || track->n_events == 0) return -1;
+
+        ASS_Event *cur = track->events;
+        long long now = (long long)(tm * 1000);
+        long long closest = -1;
+
+        for (int i = 0; i < track->n_events; i++, cur++) {
+            long long start = cur->Start;
+            if (start >= now && (start < closest || closest == -1)) {
+                closest = start;
+            }
+        }
+
+        return closest / 1000.0;
+    }
+
+    EventStopTimesResult findEventStopTimes(double tm) {
+        EventStopTimesResult result;
+        if (!track || track->n_events == 0) {
+            result.eventFinish = result.emptyFinish = -1;
+            return result;
+        }
+
+        ASS_Event *cur = track->events;
+        long long now = (long long)(tm * 1000);
+
+        long long minFinish = -1, maxFinish = -1, minStart = -1;
+        int current_animated = 0;
+
+        for (int i = 0; i < track->n_events; i++, cur++) {
+            long long start = cur->Start;
+            long long finish = start + cur->Duration;
+            if (start <= now) {
+                if (finish > now) {
+                    if (finish < minFinish || minFinish == -1) {
+                        minFinish = finish;
+                    }
+                    if (finish > maxFinish) {
+                        maxFinish = finish;
+                    }
+                    if (!current_animated) current_animated = m_is_event_animated[i];
+                }
+            } else if (start < minStart || minStart == -1) {
+                minStart = start;
+            }
+        }
+        result.is_animated = current_animated;
+
+        if (minFinish != -1) {
+            // some event is going on, so we need to re-draw either when it stops
+            // or when some other event starts
+            result.eventFinish = ((minFinish < minStart) ? minFinish : minStart) / 1000.0;
+        } else {
+            // there's no current event, so no need to draw anything
+            result.eventFinish = -1;
+        }
+
+        if (minFinish == maxFinish && (minStart == -1 || minStart > maxFinish)) {
+            // there's empty space after this event ends
+            result.emptyFinish = minStart / 1000.0;
+        } else {
+            // there's no empty space after eventFinish happens
+            result.emptyFinish = result.eventFinish;
+        }
+
+        return result;
+    }
+
 private:
+    void detectAnimatedEvents() {
+        ASS_Event *cur = track->events;
+        int *animated = m_is_event_animated;
+        for (int i = 0; i < track->n_events; i++, cur++, animated++) {
+            *animated = _is_event_animated(cur);
+        }
+    }
+
     ReusableBuffer m_blend;
     RenderBlendResult m_blendResult;
     int *m_is_event_animated;
