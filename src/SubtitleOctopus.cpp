@@ -469,11 +469,11 @@ public:
         return closest / 1000.0;
     }
 
-    EventStopTimesResult findEventStopTimes(double tm) {
-        EventStopTimesResult result;
+    EventStopTimesResult* findEventStopTimes(double tm) {
+        static EventStopTimesResult result;
         if (!track || track->n_events == 0) {
             result.eventFinish = result.emptyFinish = -1;
-            return result;
+            return &result;
         }
 
         ASS_Event *cur = track->events;
@@ -518,7 +518,7 @@ public:
             result.emptyFinish = result.eventFinish;
         }
 
-        return result;
+        return &result;
     }
 
 private:
