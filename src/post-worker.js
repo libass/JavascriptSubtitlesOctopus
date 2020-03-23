@@ -250,14 +250,14 @@ self.blendRender = function (force) {
 };
 
 self.oneshotRender = function (lastRenderedTime, renderNow, iteration) {
-    var eventStart = renderNow ? lastRenderedTime : self._find_next_event_start(lastRenderedTime);
+    var eventStart = renderNow ? lastRenderedTime : self.octObj.findNextEventStart(lastRenderedTime);
     var eventFinish = -1.0, emptyFinish = -1.0, animated = false;
     var rendered = {};
     if (eventStart >= 0) {
-        self._find_event_stop_times(eventStart, self.eventFinish, self.emptyFinish, self.isAnimated);
-        eventFinish = Module.getValue(self.eventFinish, 'double');
-        emptyFinish = Module.getValue(self.emptyFinish, 'double');
-        animated = Module.getValue(self.isAnimated, 'i32') != 0;
+        eventTimes = self.findNextEventStart(eventStart);
+        eventFinish = eventTimes.eventFinish;
+        emptyFinish = eventTimes.emptyFinish;
+        animated = eventTimes.is_animated;
 
         rendered = self.blendRenderTiming(eventStart, true);
     }
