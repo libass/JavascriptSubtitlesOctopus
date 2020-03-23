@@ -100,8 +100,8 @@ Module["preRun"].push(function () {
 Module['onRuntimeInitialized'] = function () {
     self.octObj = new Module.SubtitleOctopus();
 
-    self._find_next_event_start = Module['cwrap']('_libassjs_find_next_event_start', 'number', ['number']);
-    self._find_event_stop_times = Module['cwrap']('_libassjs_find_event_stop_times', null, ['number', 'number', 'number']);
+    self._find_next_event_start = Module['cwrap']('libassjs_find_next_event_start', 'number', ['number']);
+    self._find_event_stop_times = Module['cwrap']('libassjs_find_event_stop_times', null, ['number', 'number', 'number']);
 
     self.changed = Module._malloc(4);
     self.blendTime = Module._malloc(8);

@@ -92,7 +92,7 @@ double libassjs_find_next_event_start(double tm) {
     long long now = (long long)(tm * 1000);
     long long closest = -1;
 
-    for (int i = 0; i < tracks->n_events; i++, cur++) {
+    for (int i = 0; i < track->n_events; i++, cur++) {
         long long start = cur->Start;
         if (start >= now && (start < closest || closest == -1)) {
             closest = start;

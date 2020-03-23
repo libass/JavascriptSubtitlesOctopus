@@ -22,11 +22,11 @@ self.fontId = 0;
  */
 self.writeFontToFS = function(font) {
     font = font.trim().toLowerCase();
-    
+
     if (font.startsWith("@")) {
         font = font.substr(1);
     }
-    
+
     if (self.fontMap_.hasOwnProperty(font)) return;
 
     self.fontMap_[font] = true;
@@ -34,7 +34,7 @@ self.writeFontToFS = function(font) {
     if (!self.availableFonts.hasOwnProperty(font)) return;
     var content = readBinary(self.availableFonts[font]);
 
-    Module["FS"].writeFile('/fonts/font' + (self.fontId++) + '-' + self.availableFonts[font].split('/').pop(), content, { 
+    Module["FS"].writeFile('/fonts/font' + (self.fontId++) + '-' + self.availableFonts[font].split('/').pop(), content, {
         encoding: 'binary'
     });
 };
@@ -55,7 +55,7 @@ self.writeAvailableFontsToFS = function(content) {
             }
         }
     }
-    
+
     var regex = /\\fn([^\\}]*?)[\\}]/g;
     var matches;
     while (matches = regex.exec(self.subContent)) {
@@ -148,7 +148,7 @@ self.setCurrentTime = function (currentTime) {
             if (!self.renderOnDemand) {
                 self.getRenderMethod()();
             }
-            
+
             // Give onmessage chance to receive all queued messages
             setTimeout(function () {
                 self.nextIsRaf = false;
@@ -202,7 +202,7 @@ self.render = function (force) {
     }
 };
 
-self.blendRenderTiming(timing, force) {
+self.blendRenderTiming = function (timing, force) {
     var startTime = performance.now();
 
     var renderResult = self.octObj.renderBlend(self.getCurrentTime() + self.delay, force);
@@ -249,7 +249,7 @@ self.blendRender = function (force) {
     }
 };
 
-self.oneshotRender = function (lastRenderedTime, renderNow) {
+self.oneshotRender = function (lastRenderedTime, renderNow, iteration) {
     var eventStart = renderNow ? lastRenderedTime : self._find_next_event_start(lastRenderedTime);
     var eventFinish = -1.0, emptyFinish = -1.0;
     var rendered = {};
@@ -264,6 +264,7 @@ self.oneshotRender = function (lastRenderedTime, renderNow) {
     postMessage({
         target: 'canvas',
         op: 'oneshot-result',
+        iteration: iteration,
         eventStart: eventStart,
         eventFinish: eventFinish,
         emptyFinish: emptyFinish,
@@ -610,8 +611,10 @@ function onMessageFromMainEmscriptenThread(message) {
             });
             break;
         }
-        case 'oneshot':
-            self.oneshotRender(message.data.lastRendered, message.data.renderNow || false);
+        case 'oneshot-render':
+            self.oneshotRender(message.data.lastRendered,
+                    message.data.renderNow || false,
+                    message.data.iteration);
             break;
         case 'destroy':
             self.octObj.quitLibrary();
