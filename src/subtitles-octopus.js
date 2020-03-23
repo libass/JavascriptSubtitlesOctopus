@@ -14,10 +14,10 @@ var SubtitlesOctopus = function (options) {
     var self = this;
     self.canvas = options.canvas; // HTML canvas element (optional if video specified)
     self.renderMode = options.renderMode || (options.lossyRender ? 'fast' : (options.blendRender ? 'blend' : 'normal'));
-    self.libassMemoryLimit = options.libassMemoryLimit || 0;
-    self.libassGlyphLimit = options.libassGlyphLimit || 0;
+    self.libassMemoryLimit = options.libassMemoryLimit || 0; // set libass bitmap cache memory limit in MiB (approximate)
+    self.libassGlyphLimit = options.libassGlyphLimit || 0; // set libass glyph cache memory limit in MiB (approximate)
     self.targetFps = options.targetFps || undefined;
-    self.renderAhead = options.renderAhead || 0; // how many frames to render ahead and store; 0 to disable
+    self.renderAhead = options.renderAhead || 0; // how many MiB to render ahead and store; 0 to disable (approximate)
     self.isOurCanvas = false; // (internal) we created canvas and manage it
     self.video = options.video; // HTML video element (optional if canvas specified)
     self.canvasParent = null; // (internal) HTML canvas parent element
@@ -37,6 +37,14 @@ var SubtitlesOctopus = function (options) {
     self.pixelRatio = window.devicePixelRatio || 1; // (internal) Device pixel ratio (for high dpi devices)
 
     self.timeOffset = options.timeOffset || 0; // Time offset would be applied to currentTime from video (option)
+
+    self.renderedItems = []; // used to store items rendered ahead when renderAhead > 0
+    self.renderAhead = self.renderAhead * 1024 * 1024 * 0.9 /* try to eat less than requested */;
+    self.oneshotState = {
+        eventStart: null,
+        eventOver: false,
+        iteration: 0
+    }
 
     self.hasAlphaBug = false;
 
@@ -112,7 +120,7 @@ var SubtitlesOctopus = function (options) {
             targetFps: self.targetFps,
             libassMemoryLimit: self.libassMemoryLimit,
             libassGlyphLimit: self.libassGlyphLimit,
-            renderOnDemand: renderAhead > 0
+            renderOnDemand: self.renderAhead > 0
         });
     };
 
@@ -166,6 +174,11 @@ var SubtitlesOctopus = function (options) {
     self.setVideo = function (video) {
         self.video = video;
         if (self.video) {
+            // hack, for testing
+            if (self.renderAhead > 0) {
+                window.requestAnimationFrame(oneshotRender);
+                tryRequestOneshot();
+            }
             var timeupdate = function () {
                 self.setCurrentTime(video.currentTime + self.timeOffset);
             }
@@ -239,6 +252,99 @@ var SubtitlesOctopus = function (options) {
     self.setSubUrl = function (subUrl) {
         self.subUrl = subUrl;
     };
+
+    function _cleanPastRendered(currentTime) {
+        var retainedItems = [];
+        for (var i = 0, len = self.renderedItems.length; i < len; i++) {
+            var item = self.renderedItems[i];
+            if (item.emptyFinish < 0 || item.emptyFinish >= currentTime) {
+                // item is not yet finished, retain it
+                retainedItems.push(item);
+            }
+        }
+        var removed = retainedItems.length != self.renderedItems.length;
+        self.renderedItems = retainedItems;
+        return removed;
+    }
+
+    function tryRequestOneshot(currentTime) {
+        if (typeof currentTime === 'undefined') {
+            if (!self.video) return;
+            currentTime = self.video.currentTime + self.timeOffset;
+        }
+
+        var size = 0;
+        for (var i = 0, len = self.renderedItems.length; i < len; i++) {
+            var item = self.renderedItems[i];
+            if ((item.eventStart < 0 || currentTime >= item.eventStart) &&
+                (item.emptyFinish < 0 || currentTime < item.emptyFinish)) {
+                // an event for requested time already exists
+                return;
+            }
+            size += item.size;
+        }
+
+        if (size <= self.renderAhead) {
+            self.worker.postMessage({
+                target: 'oneshot-render',
+                lastRendered: currentTime - 0.001,
+                renderNow: false,
+                iteration: self.oneshotState.iteration
+            });
+        }
+    }
+
+    function _renderSubtitleEvent(event, currentTime) {
+        var eventOver = event.eventFinish < currentTime;
+        if (self.oneshotState.eventStart == event.eventStart && self.oneshotState.eventOver == eventOver) return;
+        self.oneshotState = {
+            eventStart: event.eventStart,
+            eventOver: eventOver
+        };
+
+        var beforeDrawTime = performance.now();
+        self.ctx.clearRect(0, 0, self.canvas.width, self.canvas.height);
+        if (!eventOver) {
+            for (var i = 0; i < event.items.length; i++) {
+                var image = event.items[i];
+                self.bufferCanvas.width = image.w;
+                self.bufferCanvas.height = image.h;
+                self.bufferCanvasCtx.putImageData(image.image, 0, 0);
+                self.ctx.drawImage(self.bufferCanvas, image.x, image.y);
+            }
+        }
+        if (self.debug) {
+            var drawTime = Math.round(performance.now() - beforeDrawTime);
+            console.log('render: ' + Math.round(event.spentTime - event.blendTime) + ' ms, blend: ' + Math.round(event.blendTime) + ' ms, draw: ' + drawTime + ' ms');
+        }
+    }
+
+    function oneshotRender() {
+        window.requestAnimationFrame(oneshotRender);
+        if (!self.video) return;
+
+        var currentTime = self.video.currentTime + self.timeOffset;
+        var finishTime = -1;
+        for (var i = 0, len = self.renderedItems.length; i < len; i++) {
+            var item = self.renderedItems[i];
+            if (item.eventStart <= currentTime && (item.emptyFinish < 0 || item.emptyFinish >= currentTime)) {
+                _renderSubtitleEvent(item, currentTime);
+                finishTime = item.emptyFinish;
+                break;
+            }
+        }
+
+        if (_cleanPastRendered(currentTime) && finishTime >= 0) {
+            tryRequestOneshot(finishTime);
+        }
+    }
+
+    function resetRenderAheadCache() {
+        self.renderedItems = [];
+        self.oneshotState.eventStart = null;
+        self.oneshotState.iteration++;
+        tryRequestOneshot();
+    }
 
     self.renderFrameData = null;
     function renderFrames() {
@@ -362,6 +468,39 @@ var SubtitlesOctopus = function (options) {
                     }
                     case 'setObjectProperty': {
                         self.canvas[data.object][data.property] = data.value;
+                        break;
+                    }
+                    case 'oneshot-result': {
+                        if (data.iteration != self.oneshotState.iteration) {
+                            // stale render, ignore
+                            return;
+                        }
+                        var items = [];
+                        var size = 0;
+                        for (var i = 0, len = data.canvases.length; i < len; i++) {
+                            var item = data.canvases[i];
+                            items.push({
+                                w: item.w,
+                                h: item.h,
+                                x: item.x,
+                                y: item.y,
+                                image: new ImageData(new Uint8ClampedArray(item.buffer), item.w, item.h)
+                            });
+                            size += item.buffer.byteLength;
+                        }
+                        self.renderedItems.push({
+                            eventStart: data.eventStart,
+                            eventFinish: data.eventFinish,
+                            emptyFinish: data.emptyFinish,
+                            spentTime: data.spentTime,
+                            blendTime: data.blendTime,
+                            items: items,
+                            size: size
+                        });
+                        if (data.emptyFinish >= 0) {
+                            // there's some more event to render, try doing so
+                            tryRequestOneshot(data.emptyFinish);
+                        }
                         break;
                     }
                     default:
