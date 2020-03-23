@@ -1,10 +1,5 @@
-#ifdef __EMSCRIPTEN__
+
 #include <emscripten.h>
-#else
-// just make error checks in IDE go away
-#define EM_ASM(...)
-#define EMSCRIPTEN_KEEPALIVE
-#endif
 
 extern "C" {
 
@@ -111,6 +106,64 @@ void EMSCRIPTEN_KEEPALIVE emscripten_bind_ASS_Event_set_Text_1(ASS_Event* self, 
 
 // ASS_Renderer
 
+// RenderBlendResult
+
+int EMSCRIPTEN_KEEPALIVE emscripten_bind_RenderBlendResult_get_changed_0(RenderBlendResult* self) {
+  return self->changed;
+}
+
+void EMSCRIPTEN_KEEPALIVE emscripten_bind_RenderBlendResult_set_changed_1(RenderBlendResult* self, int arg0) {
+  self->changed = arg0;
+}
+
+double EMSCRIPTEN_KEEPALIVE emscripten_bind_RenderBlendResult_get_blend_time_0(RenderBlendResult* self) {
+  return self->blend_time;
+}
+
+void EMSCRIPTEN_KEEPALIVE emscripten_bind_RenderBlendResult_set_blend_time_1(RenderBlendResult* self, double arg0) {
+  self->blend_time = arg0;
+}
+
+int EMSCRIPTEN_KEEPALIVE emscripten_bind_RenderBlendResult_get_dest_x_0(RenderBlendResult* self) {
+  return self->dest_x;
+}
+
+void EMSCRIPTEN_KEEPALIVE emscripten_bind_RenderBlendResult_set_dest_x_1(RenderBlendResult* self, int arg0) {
+  self->dest_x = arg0;
+}
+
+int EMSCRIPTEN_KEEPALIVE emscripten_bind_RenderBlendResult_get_dest_y_0(RenderBlendResult* self) {
+  return self->dest_y;
+}
+
+void EMSCRIPTEN_KEEPALIVE emscripten_bind_RenderBlendResult_set_dest_y_1(RenderBlendResult* self, int arg0) {
+  self->dest_y = arg0;
+}
+
+int EMSCRIPTEN_KEEPALIVE emscripten_bind_RenderBlendResult_get_dest_width_0(RenderBlendResult* self) {
+  return self->dest_width;
+}
+
+void EMSCRIPTEN_KEEPALIVE emscripten_bind_RenderBlendResult_set_dest_width_1(RenderBlendResult* self, int arg0) {
+  self->dest_width = arg0;
+}
+
+int EMSCRIPTEN_KEEPALIVE emscripten_bind_RenderBlendResult_get_dest_height_0(RenderBlendResult* self) {
+  return self->dest_height;
+}
+
+void EMSCRIPTEN_KEEPALIVE emscripten_bind_RenderBlendResult_set_dest_height_1(RenderBlendResult* self, int arg0) {
+  self->dest_height = arg0;
+}
+
+unsigned char* EMSCRIPTEN_KEEPALIVE emscripten_bind_RenderBlendResult_get_image_0(RenderBlendResult* self) {
+  return self->image;
+}
+
+void EMSCRIPTEN_KEEPALIVE emscripten_bind_RenderBlendResult_set_image_1(RenderBlendResult* self, unsigned char* arg0) {
+  self->image = arg0;
+}
+
 // SubtitleOctopus
 
 SubtitleOctopus* EMSCRIPTEN_KEEPALIVE emscripten_bind_SubtitleOctopus_SubtitleOctopus_0() {
@@ -197,9 +250,8 @@ void EMSCRIPTEN_KEEPALIVE emscripten_bind_SubtitleOctopus_setMemoryLimits_2(Subt
   self->setMemoryLimits(glyph_limit, bitmap_cache_limit);
 }
 
-unsigned char* EMSCRIPTEN_KEEPALIVE emscripten_bind_SubtitleOctopus_renderBlend_8(SubtitleOctopus* self, double tm, int force, int *changed, double *blend_time,
-    int *dest_x, int *dest_y, int *dest_width, int *dest_height) {
-  return self->renderBlend(tm, force, changed, blend_time, dest_x, dest_y, dest_width, dest_height);
+RenderBlendResult* EMSCRIPTEN_KEEPALIVE emscripten_bind_SubtitleOctopus_renderBlend_2(SubtitleOctopus* self, double tm, int force) {
+  return self->renderBlend(tm, force);
 }
 
 ASS_Track* EMSCRIPTEN_KEEPALIVE emscripten_bind_SubtitleOctopus_get_track_0(SubtitleOctopus* self) {

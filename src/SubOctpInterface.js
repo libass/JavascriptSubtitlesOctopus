@@ -323,6 +323,86 @@ ASS_Renderer.prototype.__class__ = ASS_Renderer;
 ASS_Renderer.__cache__ = {};
 Module['ASS_Renderer'] = ASS_Renderer;
 
+// RenderBlendResult
+/** @suppress {undefinedVars, duplicate} */function RenderBlendResult() { throw "cannot construct a RenderBlendResult, no constructor in IDL" }
+RenderBlendResult.prototype = Object.create(WrapperObject.prototype);
+RenderBlendResult.prototype.constructor = RenderBlendResult;
+RenderBlendResult.prototype.__class__ = RenderBlendResult;
+RenderBlendResult.__cache__ = {};
+Module['RenderBlendResult'] = RenderBlendResult;
+
+  RenderBlendResult.prototype['get_changed'] = RenderBlendResult.prototype.get_changed = /** @suppress {undefinedVars, duplicate} */function() {
+  var self = this.ptr;
+  return _emscripten_bind_RenderBlendResult_get_changed_0(self);
+};
+    RenderBlendResult.prototype['set_changed'] = RenderBlendResult.prototype.set_changed = /** @suppress {undefinedVars, duplicate} */function(arg0) {
+  var self = this.ptr;
+  if (arg0 && typeof arg0 === 'object') arg0 = arg0.ptr;
+  _emscripten_bind_RenderBlendResult_set_changed_1(self, arg0);
+};
+    Object.defineProperty(RenderBlendResult.prototype, 'changed', { get: RenderBlendResult.prototype.get_changed, set: RenderBlendResult.prototype.set_changed });
+  RenderBlendResult.prototype['get_blend_time'] = RenderBlendResult.prototype.get_blend_time = /** @suppress {undefinedVars, duplicate} */function() {
+  var self = this.ptr;
+  return _emscripten_bind_RenderBlendResult_get_blend_time_0(self);
+};
+    RenderBlendResult.prototype['set_blend_time'] = RenderBlendResult.prototype.set_blend_time = /** @suppress {undefinedVars, duplicate} */function(arg0) {
+  var self = this.ptr;
+  if (arg0 && typeof arg0 === 'object') arg0 = arg0.ptr;
+  _emscripten_bind_RenderBlendResult_set_blend_time_1(self, arg0);
+};
+    Object.defineProperty(RenderBlendResult.prototype, 'blend_time', { get: RenderBlendResult.prototype.get_blend_time, set: RenderBlendResult.prototype.set_blend_time });
+  RenderBlendResult.prototype['get_dest_x'] = RenderBlendResult.prototype.get_dest_x = /** @suppress {undefinedVars, duplicate} */function() {
+  var self = this.ptr;
+  return _emscripten_bind_RenderBlendResult_get_dest_x_0(self);
+};
+    RenderBlendResult.prototype['set_dest_x'] = RenderBlendResult.prototype.set_dest_x = /** @suppress {undefinedVars, duplicate} */function(arg0) {
+  var self = this.ptr;
+  if (arg0 && typeof arg0 === 'object') arg0 = arg0.ptr;
+  _emscripten_bind_RenderBlendResult_set_dest_x_1(self, arg0);
+};
+    Object.defineProperty(RenderBlendResult.prototype, 'dest_x', { get: RenderBlendResult.prototype.get_dest_x, set: RenderBlendResult.prototype.set_dest_x });
+  RenderBlendResult.prototype['get_dest_y'] = RenderBlendResult.prototype.get_dest_y = /** @suppress {undefinedVars, duplicate} */function() {
+  var self = this.ptr;
+  return _emscripten_bind_RenderBlendResult_get_dest_y_0(self);
+};
+    RenderBlendResult.prototype['set_dest_y'] = RenderBlendResult.prototype.set_dest_y = /** @suppress {undefinedVars, duplicate} */function(arg0) {
+  var self = this.ptr;
+  if (arg0 && typeof arg0 === 'object') arg0 = arg0.ptr;
+  _emscripten_bind_RenderBlendResult_set_dest_y_1(self, arg0);
+};
+    Object.defineProperty(RenderBlendResult.prototype, 'dest_y', { get: RenderBlendResult.prototype.get_dest_y, set: RenderBlendResult.prototype.set_dest_y });
+  RenderBlendResult.prototype['get_dest_width'] = RenderBlendResult.prototype.get_dest_width = /** @suppress {undefinedVars, duplicate} */function() {
+  var self = this.ptr;
+  return _emscripten_bind_RenderBlendResult_get_dest_width_0(self);
+};
+    RenderBlendResult.prototype['set_dest_width'] = RenderBlendResult.prototype.set_dest_width = /** @suppress {undefinedVars, duplicate} */function(arg0) {
+  var self = this.ptr;
+  if (arg0 && typeof arg0 === 'object') arg0 = arg0.ptr;
+  _emscripten_bind_RenderBlendResult_set_dest_width_1(self, arg0);
+};
+    Object.defineProperty(RenderBlendResult.prototype, 'dest_width', { get: RenderBlendResult.prototype.get_dest_width, set: RenderBlendResult.prototype.set_dest_width });
+  RenderBlendResult.prototype['get_dest_height'] = RenderBlendResult.prototype.get_dest_height = /** @suppress {undefinedVars, duplicate} */function() {
+  var self = this.ptr;
+  return _emscripten_bind_RenderBlendResult_get_dest_height_0(self);
+};
+    RenderBlendResult.prototype['set_dest_height'] = RenderBlendResult.prototype.set_dest_height = /** @suppress {undefinedVars, duplicate} */function(arg0) {
+  var self = this.ptr;
+  if (arg0 && typeof arg0 === 'object') arg0 = arg0.ptr;
+  _emscripten_bind_RenderBlendResult_set_dest_height_1(self, arg0);
+};
+    Object.defineProperty(RenderBlendResult.prototype, 'dest_height', { get: RenderBlendResult.prototype.get_dest_height, set: RenderBlendResult.prototype.set_dest_height });
+  RenderBlendResult.prototype['get_image'] = RenderBlendResult.prototype.get_image = /** @suppress {undefinedVars, duplicate} */function() {
+  var self = this.ptr;
+  return _emscripten_bind_RenderBlendResult_get_image_0(self);
+};
+    RenderBlendResult.prototype['set_image'] = RenderBlendResult.prototype.set_image = /** @suppress {undefinedVars, duplicate} */function(arg0) {
+  var self = this.ptr;
+  ensureCache.prepare();
+  if (arg0 && typeof arg0 === 'object') arg0 = arg0.ptr;
+  else arg0 = ensureString(arg0);
+  _emscripten_bind_RenderBlendResult_set_image_1(self, arg0);
+};
+    Object.defineProperty(RenderBlendResult.prototype, 'image', { get: RenderBlendResult.prototype.get_image, set: RenderBlendResult.prototype.set_image });
 // SubtitleOctopus
 /** @suppress {undefinedVars, duplicate} */function SubtitleOctopus() {
   this.ptr = _emscripten_bind_SubtitleOctopus_SubtitleOctopus_0();
@@ -381,28 +461,6 @@ SubtitleOctopus.prototype['renderImage'] = SubtitleOctopus.prototype.renderImage
   if (time && typeof time === 'object') time = time.ptr;
   if (changed && typeof changed === 'object') changed = changed.ptr;
   return wrapPointer(_emscripten_bind_SubtitleOctopus_renderImage_2(self, time, changed), ASS_Image);
-};;
-
-SubtitleOctopus.prototype['setMemoryLimits'] = SubtitleOctopus.prototype.setMemoryLimits = /** @suppress {undefinedVars, duplicate} */function(glyph_limit, bitmap_cache_limit) {
-  var self = this.ptr;
-  if (glyph_limit && typeof glyph_limit === 'object') glyph_limit = glyph_limit.ptr;
-  if (bitmap_cache_limit && typeof bitmap_cache_limit === 'object') bitmap_cache_limit = bitmap_cache_limit.ptr;
-  emscripten_bind_SubtitleOctopus_setMemoryLimits_2(self, glyph_limit, bitmap_cache_limit);
-};;
-
-SubtitleOctopus.prototype['renderBlend'] = SubtitleOctopus.prototype.renderBlend = /** @suppress {undefinedVars, duplicate} */function(tm, force, changed, blend_time,
-    dest_x, dest_y, dest_width, dest_height) {
-  var self = this.ptr;
-  if (tm && typeof tm === 'object') tm = tm.ptr;
-  if (force && typeof force === 'object') force = force.ptr;
-  if (changed && typeof changed === 'object') changed = changed.ptr;
-  if (blend_time && typeof blend_time === 'object') blend_time = blend_time.ptr;
-  if (dest_x && typeof dest_x === 'object') dest_x = dest_x.ptr;
-  if (dest_y && typeof dest_y === 'object') dest_y = dest_y.ptr;
-  if (dest_width && typeof dest_width === 'object') dest_width = dest_width.ptr;
-  if (dest_height && typeof dest_height === 'object') dest_height = dest_height.ptr;
-  return wrapPointer(emscripten_bind_SubtitleOctopus_renderBlend_8(self, tm, force, changed, blend_time,
-    dest_x, dest_y, dest_width, dest_height), undefined);
 };;
 
 SubtitleOctopus.prototype['quitLibrary'] = SubtitleOctopus.prototype.quitLibrary = /** @suppress {undefinedVars, duplicate} */function() {
@@ -472,6 +530,20 @@ SubtitleOctopus.prototype['removeStyle'] = SubtitleOctopus.prototype.removeStyle
 SubtitleOctopus.prototype['removeAllEvents'] = SubtitleOctopus.prototype.removeAllEvents = /** @suppress {undefinedVars, duplicate} */function() {
   var self = this.ptr;
   _emscripten_bind_SubtitleOctopus_removeAllEvents_0(self);
+};;
+
+SubtitleOctopus.prototype['setMemoryLimits'] = SubtitleOctopus.prototype.setMemoryLimits = /** @suppress {undefinedVars, duplicate} */function(glyph_limit, bitmap_cache_limit) {
+  var self = this.ptr;
+  if (glyph_limit && typeof glyph_limit === 'object') glyph_limit = glyph_limit.ptr;
+  if (bitmap_cache_limit && typeof bitmap_cache_limit === 'object') bitmap_cache_limit = bitmap_cache_limit.ptr;
+  _emscripten_bind_SubtitleOctopus_setMemoryLimits_2(self, glyph_limit, bitmap_cache_limit);
+};;
+
+SubtitleOctopus.prototype['renderBlend'] = SubtitleOctopus.prototype.renderBlend = /** @suppress {undefinedVars, duplicate} */function(tm, force) {
+  var self = this.ptr;
+  if (tm && typeof tm === 'object') tm = tm.ptr;
+  if (force && typeof force === 'object') force = force.ptr;
+  return wrapPointer(_emscripten_bind_SubtitleOctopus_renderBlend_2(self, tm, force), RenderBlendResult);
 };;
 
   SubtitleOctopus.prototype['get_track'] = SubtitleOctopus.prototype.get_track = /** @suppress {undefinedVars, duplicate} */function() {
