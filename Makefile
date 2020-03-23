@@ -293,7 +293,7 @@ src/subtitles-octopus-worker.bc: $(OCTP_DEPS) src/Makefile src/SubtitleOctopus.c
 # Dist Files
 EMCC_COMMON_ARGS = \
 	$(GLOBAL_CFLAGS) \
-	-s EXPORTED_FUNCTIONS="['_main', '_malloc', '_libassjs_find_next_event_start', '_libassjs_find_event_stop_times']" \
+	-s EXPORTED_FUNCTIONS="['_main', '_malloc']" \
 	-s EXTRA_EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'getValue', 'FS_createPreloadedFile', 'FS_createFolder']" \
 	-s NO_EXIT_RUNTIME=1 \
 	--use-preload-plugins \
