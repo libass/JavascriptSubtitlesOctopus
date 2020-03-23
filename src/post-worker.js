@@ -196,7 +196,7 @@ self.blendRender = function (force) {
     self.renderPending = false;
     var startTime = performance.now();
 
-    var renderResult = self._render_blend(self.getCurrentTime() + self.delay, force ? 1 : 0,
+    var renderResult = self.octObj.renderBlend(self.getCurrentTime() + self.delay, force ? 1 : 0,
                                           self.changed, self.blendTime,
                                           self.blendX, self.blendY, self.blendW, self.blendH);
     var changed = Module.getValue(self.changed, 'i32');

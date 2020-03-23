@@ -285,7 +285,7 @@ src/Makefile: src/SubOctpInterface.cpp
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
 	emconfigure ./configure --host=x86-none-linux --build=x86_64 CFLAGS="$(GLOBAL_CFLAGS)"
 
-src/subtitles-octopus-worker.bc: dist/libraries/lib/libass.a src/Makefile src/subtitles-octopus-worker.c
+src/subtitles-octopus-worker.bc: $(OCTP_DEPS) src/Makefile src/SubtitleOctopus.cpp src/SubOctpInterface.cpp
 	cd src && \
 	emmake make -j8 && \
 	mv subtitlesoctopus subtitles-octopus-worker.bc
@@ -293,7 +293,7 @@ src/subtitles-octopus-worker.bc: dist/libraries/lib/libass.a src/Makefile src/su
 # Dist Files
 EMCC_COMMON_ARGS = \
 	$(GLOBAL_CFLAGS) \
-	-s EXPORTED_FUNCTIONS="['_main', '_malloc', '_libassjs_render_blend', '_libassjs_set_memory_limits']" \
+	-s EXPORTED_FUNCTIONS="['_main', '_malloc']" \
 	-s EXTRA_EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'getValue', 'FS_createPreloadedFile', 'FS_createFolder']" \
 	-s NO_EXIT_RUNTIME=1 \
 	--use-preload-plugins \

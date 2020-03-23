@@ -1,5 +1,10 @@
-
+#ifdef __EMSCRIPTEN__
 #include <emscripten.h>
+#else
+// just make error checks in IDE go away
+#define EM_ASM(...)
+#define EMSCRIPTEN_KEEPALIVE
+#endif
 
 extern "C" {
 
@@ -186,6 +191,15 @@ void EMSCRIPTEN_KEEPALIVE emscripten_bind_SubtitleOctopus_removeStyle_1(Subtitle
 
 void EMSCRIPTEN_KEEPALIVE emscripten_bind_SubtitleOctopus_removeAllEvents_0(SubtitleOctopus* self) {
   self->removeAllEvents();
+}
+
+void EMSCRIPTEN_KEEPALIVE emscripten_bind_SubtitleOctopus_setMemoryLimits_2(SubtitleOctopus* self, int glyph_limit, int bitmap_cache_limit) {
+  self->setMemoryLimits(glyph_limit, bitmap_cache_limit);
+}
+
+void* EMSCRIPTEN_KEEPALIVE emscripten_bind_SubtitleOctopus_renderBlend_8(SubtitleOctopus* self, double tm, int force, int *changed, double *blend_time,
+    int *dest_x, int *dest_y, int *dest_width, int *dest_height) {
+  return self->renderBlend(tm, force, changed, blend_time, dest_x, dest_y, dest_width, dest_height);
 }
 
 ASS_Track* EMSCRIPTEN_KEEPALIVE emscripten_bind_SubtitleOctopus_get_track_0(SubtitleOctopus* self) {
