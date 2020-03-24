@@ -155,14 +155,20 @@ interface libass {
 };
 
 [NoDelete]
-interface RenderBlendResult {
-    attribute long changed;
-    attribute double blend_time;
+interface RenderBlendPart {
     attribute long dest_x;
     attribute long dest_y;
     attribute long dest_width;
     attribute long dest_height;
     attribute ByteString image;
+    attribute RenderBlendPart next;
+};
+
+[NoDelete]
+interface RenderBlendResult {
+    attribute long changed;
+    attribute double blend_time;
+    attribute RenderBlendPart part;
 };
 
 [NoDelete]
