@@ -154,11 +154,19 @@ static int _is_animated_tag(char *begin, char *end) {
     return 0;
 }
 
-static int _is_event_animated(ASS_Event *event) {
+static void _remove_tag(char *begin, char *end) {
+    // overwrite the tag with whitespace so libass won't see it
+    for (; begin < end; begin++) *begin = ' ';
+}
+
+static int _is_event_animated(ASS_Event *event, bool drop_animations) {
     // event is complex if it's animated in any way,
     // either by having non-empty Effect or
     // by having tags (enclosed in '{}' in Text)
-    if (event->Effect && event->Effect[0] != '\0') return 1;
+    if (event->Effect && event->Effect[0] != '\0') {
+        if (!drop_animations) return 1;
+        event->Effect[0] = '\0';
+    }
 
     int escaped = 0;
     char *tagStart = NULL;
@@ -172,13 +180,19 @@ static int _is_event_animated(ASS_Event *event) {
                 break;
             case '}':
                 if (!escaped && tagStart != NULL) {
-                    if (_is_animated_tag(tagStart, p)) return 1;
+                    if (_is_animated_tag(tagStart, p)) {
+                        if (!drop_animations) return 1;
+                        _remove_tag(tagStart, p);
+                    }
                     tagStart = NULL;
                 }
                 break;
             case ';':
                 if (tagStart != NULL) {
-                    if (_is_animated_tag(tagStart, p)) return 1;
+                    if (_is_animated_tag(tagStart, p)) {
+                        if (!drop_animations) return 1;
+                        _remove_tag(tagStart, p + 1 /* +1 is because we want to drop ';' as well */);
+                    }
                 }
                 tagStart = p + 1;
                 break;
@@ -537,7 +551,7 @@ public:
         ASS_Event *cur = track->events;
         int *animated = m_is_event_animated;
         for (int i = 0; i < track->n_events; i++, cur++, animated++) {
-            *animated = _is_event_animated(cur);
+            *animated = _is_event_animated(cur, m_drop_animations);
         }
     }
 
