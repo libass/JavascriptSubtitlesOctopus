@@ -94,7 +94,8 @@ typedef struct {
     RenderBlendPart *part;
 } RenderBlendResult;
 
-#define MAX_BLEND_STORAGES 9
+// maximum regions - a grid of 3x3
+#define MAX_BLEND_STORAGES (3 * 3)
 typedef struct {
     RenderBlendPart part;
     ReusableBuffer buf;
@@ -105,6 +106,46 @@ typedef struct {
     double eventFinish, emptyFinish;
     int is_animated;
 } EventStopTimesResult;
+
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+
+class BoundingBox {
+public:
+    int min_x, max_x, min_y, max_y;
+
+    BoundingBox(): min_x(-1), max_x(-1), min_y(-1), max_y(-1) {}
+
+    bool empty() const {
+        return min_x == -1;
+    }
+
+    void add(int x1, int y1, int w, int h) {
+        int x2 = x1 + w - 1, y2 = y1 + h - 1;
+        min_x = (min_x < 0) ? x1 : MIN(min_x, x1);
+        min_y = (min_y < 0) ? y1 : MIN(min_y, y1);
+        max_x = (max_x < 0) ? x2 : MAX(max_x, x2);
+        max_y = (max_y < 0) ? y2 : MAX(max_y, y2);
+    }
+
+    bool intersets(const BoundingBox& other) const {
+        return !(other.min_x > max_x ||
+                 other.max_x < min_x ||
+                 other.min_y > max_y ||
+                 other.max_y < min_y);
+    }
+
+    bool tryMerge(BoundingBox& other) {
+        if (!intersets(other)) return false;
+
+        min_x = MIN(min_x, other.min_x);
+        min_y = MIN(min_y, other.min_y);
+        max_x = MAX(max_x, other.max_x);
+        max_y = MAX(max_y, other.max_y);
+        other.min_x = other.max_x = other.min_y = other.max_y = -1;
+        return true;
+    }
+};
 
 static int _is_move_tag_animated(char *begin, char *end) {
     int params[6];
@@ -395,22 +436,46 @@ public:
             m_blendParts[i].taken = false;
         }
 
-        // find bounding rect first
-        int min_x = img->dst_x, min_y = img->dst_y;
-        int max_x = img->dst_x + img->w - 1, max_y = img->dst_y + img->h - 1;
-        ASS_Image *cur;
-        for (cur = img->next; cur != NULL; cur = cur->next) {
-            if (cur->dst_x < min_x) min_x = cur->dst_x;
-            if (cur->dst_y < min_y) min_y = cur->dst_y;
-            int right = cur->dst_x + cur->w - 1;
-            int bottom = cur->dst_y + cur->h - 1;
-            if (right > max_x) max_x = right;
-            if (bottom > max_y) max_y = bottom;
+        // split rendering region in 9 pieces (as on 3x3 grid)
+        int split_x_low = canvas_w / 3, split_x_high = 2 * canvas_w / 3;
+        int split_y_low = canvas_h / 3, split_y_high = 2 * canvas_h / 3;
+        BoundingBox boxes[MAX_BLEND_STORAGES];
+        for (ASS_Image *cur = img; cur != NULL; cur = cur->next) {
+            int index = 0;
+            int middle_x = cur->dst_x + (cur->w >> 1), middle_y = cur->dst_y + (cur->h >> 1);
+            if (middle_y > split_y_high) {
+                index += 2 * 3;
+            } else if (middle_y > split_y_low) {
+                index += 1 * 3;
+            }
+            if (middle_x > split_x_high) {
+                index += 2;
+            } else if (middle_y > split_x_low) {
+                index += 1;
+            }
+            boxes[index].add(cur->dst_x, cur->dst_y, cur->w, cur->h);
         }
 
-        RenderBlendPart *part = renderBlendPart(min_x, min_y, max_x, max_y, img);
-        part->next = NULL;
-        m_blendResult.part = part;
+        // now merge regions as long as there are intersecting regions
+        for (;;) {
+            bool merged = false;
+            for (int box1 = 0; box1 < MAX_BLEND_STORAGES - 1; box1++) {
+                if (boxes[box1].empty()) continue;
+                for (int box2 = box1 + 1; box2 < MAX_BLEND_STORAGES; box2++) {
+                    if (boxes[box2].empty()) continue;
+                    if (boxes[box1].tryMerge(boxes[box2])) merged = true;
+                }
+            }
+            if (!merged) break;
+        }
+
+        m_blendResult.part = NULL;
+        for (int box = 0; box < MAX_BLEND_STORAGES; box++) {
+            if (boxes[box].empty()) continue;
+            RenderBlendPart *part = renderBlendPart(boxes[box], img);
+            part->next = m_blendResult.part;
+            m_blendResult.part = part;
+        }
         m_blendResult.blend_time = emscripten_get_now() - start_blend_time;
 
         return &m_blendResult;
@@ -507,9 +572,9 @@ public:
     }
 
 private:
-    RenderBlendPart* renderBlendPart(int min_x, int min_y, int max_x, int max_y, ASS_Image* img) {
+    RenderBlendPart* renderBlendPart(const BoundingBox& rect, ASS_Image* img) {
         // make float buffer for blending
-        int width = max_x - min_x + 1, height = max_y - min_y + 1;
+        int width = rect.max_x - rect.min_x + 1, height = rect.max_y - rect.min_y + 1;
         float* buf = (float*)m_blend.take(sizeof(float) * width * height * 4, 0);
         if (buf == NULL) {
             printf("libass: error: cannot allocate buffer for blending");
@@ -519,14 +584,14 @@ private:
 
         // blend things in
         for (ASS_Image *cur = img; cur != NULL; cur = cur->next) {
-            if (cur->dst_x < min_x || cur->dst_y < min_y) continue; // skip images not fully within render region
+            if (cur->dst_x < rect.min_x || cur->dst_y < rect.min_y) continue; // skip images not fully within render region
             int curw = cur->w, curh = cur->h;
-            if (curw == 0 || curh == 0 || cur->dst_x + curw - 1> max_x || cur->dst_y + curh - 1 > max_y) continue; // skip empty images or images outside render region
+            if (curw == 0 || curh == 0 || cur->dst_x + curw - 1> rect.max_x || cur->dst_y + curh - 1 > rect.max_y) continue; // skip empty images or images outside render region
             int a = (255 - (cur->color & 0xFF));
             if (a == 0) continue; // skip transparent images
 
             int curs = (cur->stride >= curw) ? cur->stride : curw;
-            int curx = cur->dst_x - min_x, cury = cur->dst_y - min_y;
+            int curx = cur->dst_x - rect.min_x, cury = cur->dst_y - rect.min_y;
 
             unsigned char *bitmap = cur->bitmap;
             float normalized_a = a / 255.0;
@@ -606,8 +671,8 @@ private:
         }
         
         // return the thing
-        storage->part.dest_x = min_x;
-        storage->part.dest_y = min_y;
+        storage->part.dest_x = rect.min_x;
+        storage->part.dest_y = rect.min_y;
         storage->part.dest_width = width;
         storage->part.dest_height = height;
         storage->part.image = (unsigned char*)result;
