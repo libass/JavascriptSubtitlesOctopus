@@ -420,6 +420,17 @@ SubtitleOctopus.prototype['setLogLevel'] = SubtitleOctopus.prototype.setLogLevel
   _emscripten_bind_SubtitleOctopus_setLogLevel_1(self, level);
 };;
 
+SubtitleOctopus.prototype['setDropAnimations'] = SubtitleOctopus.prototype.setDropAnimations = /** @suppress {undefinedVars, duplicate} */function(value) {
+  var self = this.ptr;
+  if (value && typeof value === 'object') value = value.ptr;
+  _emscripten_bind_SubtitleOctopus_setDropAnimations_1(self, value);
+};;
+
+SubtitleOctopus.prototype['getDropAnimations'] = SubtitleOctopus.prototype.getDropAnimations = /** @suppress {undefinedVars, duplicate} */function() {
+  var self = this.ptr;
+  return _emscripten_bind_SubtitleOctopus_getDropAnimations_0(self);
+};;
+
 SubtitleOctopus.prototype['initLibrary'] = SubtitleOctopus.prototype.initLibrary = /** @suppress {undefinedVars, duplicate} */function(frame_w, frame_h) {
   var self = this.ptr;
   if (frame_w && typeof frame_w === 'object') frame_w = frame_w.ptr;
@@ -556,6 +567,11 @@ SubtitleOctopus.prototype['findEventStopTimes'] = SubtitleOctopus.prototype.find
   var self = this.ptr;
   if (tm && typeof tm === 'object') tm = tm.ptr;
   return wrapPointer(_emscripten_bind_SubtitleOctopus_findEventStopTimes_1(self, tm), EventStopTimesResult);
+};;
+
+SubtitleOctopus.prototype['rescanAllAnimations'] = SubtitleOctopus.prototype.rescanAllAnimations = /** @suppress {undefinedVars, duplicate} */function() {
+  var self = this.ptr;
+  _emscripten_bind_SubtitleOctopus_rescanAllAnimations_0(self);
 };;
 
   SubtitleOctopus.prototype['get_track'] = SubtitleOctopus.prototype.get_track = /** @suppress {undefinedVars, duplicate} */function() {

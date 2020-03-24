@@ -199,20 +199,20 @@ public:
 
     int status;
 
-    SubtitleOctopus(): status(0), ass_library(NULL), ass_renderer(NULL), track(NULL), canvas_w(0), canvas_h(0), m_is_event_animated(NULL), m_drop_animations(false) {
+    SubtitleOctopus(): ass_library(NULL), ass_renderer(NULL), track(NULL), canvas_w(0), canvas_h(0), status(0), m_is_event_animated(NULL), m_drop_animations(false) {
     }
 
     void setLogLevel(int level) {
         log_level = level;
     }
 
-    void setDropAnimations(bool value) {
-        bool rescan = m_drop_animations != value && track != NULL;
-        m_drop_animations = value;
+    void setDropAnimations(int value) {
+        bool rescan = m_drop_animations != bool(value) && track != NULL;
+        m_drop_animations = bool(value);
         if (rescan) rescanAllAnimations();
     }
 
-    bool getDropAnimations() const {
+    int getDropAnimations() const {
         return m_drop_animations;
     }
 
