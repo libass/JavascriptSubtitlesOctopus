@@ -19,7 +19,7 @@ lib/fribidi/configure:
 	patch -d "$(BASE_DIR)lib/fribidi" -Np1 -i $(file);) \
 	NOCONFIGURE=1 ./autogen.sh
 
-dist/libraries/lib/libfribidi.a: lib/fribidi/configure
+$(DIST_DIR)/lib/libfribidi.a: lib/fribidi/configure
 	cd lib/fribidi && \
 	emconfigure ./configure \
 		CFLAGS=" \
@@ -49,7 +49,7 @@ lib/expat/expat/configured:
 	patch -d "$(BASE_DIR)lib/expat" -Np1 -i $(file);) \
 	touch configured && mkdir build
 
-dist/libraries/lib/libexpat.a: lib/expat/expat/configured
+$(DIST_DIR)/lib/libexpat.a: lib/expat/expat/configured
 	cd lib/expat/expat/build && \
 	emcmake cmake \
 		-DCMAKE_C_FLAGS=" \
@@ -79,7 +79,7 @@ lib/brotli/configured:
 	patch -d "$(BASE_DIR)lib/brotli" -Np1 -i $(file);) \
 	touch configured && mkdir build
 
-dist/libraries/lib/libbrotlidec.a: lib/brotli/configured
+lib/brotli/build/libbrotlidec.pc: lib/brotli/configured
 	cd lib/brotli/build && \
 	emcmake cmake \
 		-DCMAKE_C_FLAGS=" \
@@ -89,15 +89,22 @@ dist/libraries/lib/libbrotlidec.a: lib/brotli/configured
 		.. \
 	&& \
 	emmake make -j8 && \
-	mkdir -p ../../../dist/libraries/lib/pkgconfig && \
-	mv libbrotlidec.pc ../../../dist/libraries/lib/pkgconfig && \
-	mv libbrotlicommon.pc ../../../dist/libraries/lib/pkgconfig && \
-	mv libbrotlidec-static.a ../../../dist/libraries/lib/libbrotlidec.a && \
-	mv libbrotlicommon-static.a ../../../dist/libraries/lib/libbrotlicommon.a && \
-	cp -r ../c/include ../../../dist/libraries/
+	cp -r ../c/include $(DIST_DIR)
+
+$(DIST_DIR)/lib/libbrotlicommon.a: lib/brotli/build/libbrotlidec.pc
+	cd lib/brotli/build && \
+	mkdir -p $(DIST_DIR)/lib/pkgconfig && \
+	cp libbrotlicommon.pc $(DIST_DIR)/lib/pkgconfig && \
+	cp libbrotlicommon-static.a $(DIST_DIR)/lib/libbrotlicommon.a
+
+$(DIST_DIR)/lib/libbrotlidec.a: lib/brotli/build/libbrotlidec.pc $(DIST_DIR)/lib/libbrotlicommon.a
+	cd lib/brotli/build && \
+	mkdir -p $(DIST_DIR)/lib/pkgconfig && \
+	cp libbrotlidec.pc $(DIST_DIR)/lib/pkgconfig && \
+	cp libbrotlidec-static.a $(DIST_DIR)/lib/libbrotlidec.a
 
 # Freetype without Harfbuzz
-lib/freetype/build_hb/dist_hb/lib/libfreetype.a: dist/libraries/lib/libbrotlidec.a
+lib/freetype/build_hb/dist_hb/lib/libfreetype.a: $(DIST_DIR)/lib/libbrotlidec.a
 	cd "lib/freetype" && \
 	NOCONFIGURE=1 ./autogen.sh && \
 	mkdir -p build_hb && \
@@ -135,7 +142,7 @@ lib/harfbuzz/configure:
 	patch -d "$(BASE_DIR)lib/harfbuzz" -Np1 -i $(file);) \
 	NOCONFIGURE=1 ./autogen.sh
 
-dist/libraries/lib/libharfbuzz.a: lib/freetype/build_hb/dist_hb/lib/libfreetype.a lib/harfbuzz/configure
+$(DIST_DIR)/lib/libharfbuzz.a: lib/freetype/build_hb/dist_hb/lib/libfreetype.a lib/harfbuzz/configure
 	cd lib/harfbuzz && \
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig:$(BASE_DIR)lib/freetype/build_hb/dist_hb/lib/pkgconfig \
 	emconfigure ./configure \
@@ -165,7 +172,7 @@ dist/libraries/lib/libharfbuzz.a: lib/freetype/build_hb/dist_hb/lib/libfreetype.
 	emmake make install
 
 # Freetype with Harfbuzz
-dist/libraries/lib/libfreetype.a: dist/libraries/lib/libharfbuzz.a dist/libraries/lib/libbrotlidec.a
+$(DIST_DIR)/lib/libfreetype.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/libbrotlidec.a
 	cd "lib/freetype" && \
 	git reset --hard && \
 	$(foreach file, \
@@ -206,7 +213,7 @@ lib/fontconfig/configure:
 	patch -d "$(BASE_DIR)lib/fontconfig" -Np1 -i $(file);) \
 	NOCONFIGURE=1 ./autogen.sh
 
-dist/libraries/lib/libfontconfig.a: dist/libraries/lib/libharfbuzz.a dist/libraries/lib/libexpat.a dist/libraries/lib/libfribidi.a dist/libraries/lib/libfreetype.a lib/fontconfig/configure
+$(DIST_DIR)/lib/libfontconfig.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/libexpat.a $(DIST_DIR)/lib/libfribidi.a $(DIST_DIR)/lib/libfreetype.a lib/fontconfig/configure
 	cd lib/fontconfig && \
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
 	emconfigure ./configure \
@@ -239,7 +246,7 @@ lib/libass/configure:
 	patch -d "$(BASE_DIR)lib/libass" -Np1 -i $(file);) \
 	NOCONFIGURE=1 ./autogen.sh
 
-dist/libraries/lib/libass.a: dist/libraries/lib/libfontconfig.a dist/libraries/lib/libharfbuzz.a dist/libraries/lib/libexpat.a dist/libraries/lib/libfribidi.a dist/libraries/lib/libfreetype.a dist/libraries/lib/libbrotlidec.a lib/libass/configure
+$(DIST_DIR)/lib/libass.a: $(DIST_DIR)/lib/libfontconfig.a $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/libexpat.a $(DIST_DIR)/lib/libfribidi.a $(DIST_DIR)/lib/libfreetype.a $(DIST_DIR)/lib/libbrotlidec.a lib/libass/configure
 	cd lib/libass && \
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
 	emconfigure ./configure \
