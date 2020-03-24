@@ -239,7 +239,7 @@ lib/libass/configure:
 	patch -d "$(BASE_DIR)lib/libass" -Np1 -i $(file);) \
 	NOCONFIGURE=1 ./autogen.sh
 
-dist/libraries/lib/libass.a: dist/libraries/lib/libfontconfig.a dist/libraries/lib/libharfbuzz.a dist/libraries/lib/libexpat.a dist/libraries/lib/libfribidi.a dist/libraries/lib/libfreetype.a dist/libraries/lib/libbrotlidec.a lib/libass/configure
+$(DIST_DIR)/lib/libass.a: dist/libraries/lib/libfontconfig.a dist/libraries/lib/libharfbuzz.a dist/libraries/lib/libexpat.a dist/libraries/lib/libfribidi.a dist/libraries/lib/libfreetype.a dist/libraries/lib/libbrotlidec.a lib/libass/configure
 	cd lib/libass && \
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
 	emconfigure ./configure \

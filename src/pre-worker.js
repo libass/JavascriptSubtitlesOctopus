@@ -93,11 +93,6 @@ Module['onRuntimeInitialized'] = function () {
     self.octObj = new Module.SubtitleOctopus();
 
     self.changed = Module._malloc(4);
-    self.blendTime = Module._malloc(8);
-    self.blendX = Module._malloc(4);
-    self.blendY = Module._malloc(4);
-    self.blendW = Module._malloc(4);
-    self.blendH = Module._malloc(4);
 
     self.octObj.initLibrary(screen.width, screen.height);
     self.octObj.createTrack("/sub.ass");

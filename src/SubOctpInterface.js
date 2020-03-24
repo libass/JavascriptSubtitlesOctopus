@@ -546,6 +546,18 @@ SubtitleOctopus.prototype['renderBlend'] = SubtitleOctopus.prototype.renderBlend
   return wrapPointer(_emscripten_bind_SubtitleOctopus_renderBlend_2(self, tm, force), RenderBlendResult);
 };;
 
+SubtitleOctopus.prototype['findNextEventStart'] = SubtitleOctopus.prototype.findNextEventStart = /** @suppress {undefinedVars, duplicate} */function(tm) {
+  var self = this.ptr;
+  if (tm && typeof tm === 'object') tm = tm.ptr;
+  return _emscripten_bind_SubtitleOctopus_findNextEventStart_1(self, tm);
+};;
+
+SubtitleOctopus.prototype['findEventStopTimes'] = SubtitleOctopus.prototype.findEventStopTimes = /** @suppress {undefinedVars, duplicate} */function(tm) {
+  var self = this.ptr;
+  if (tm && typeof tm === 'object') tm = tm.ptr;
+  return wrapPointer(_emscripten_bind_SubtitleOctopus_findEventStopTimes_1(self, tm), EventStopTimesResult);
+};;
+
   SubtitleOctopus.prototype['get_track'] = SubtitleOctopus.prototype.get_track = /** @suppress {undefinedVars, duplicate} */function() {
   var self = this.ptr;
   return wrapPointer(_emscripten_bind_SubtitleOctopus_get_track_0(self), ASS_Track);
@@ -1052,6 +1064,44 @@ Module['ASS_Style'] = ASS_Style;
   _emscripten_bind_ASS_Style_set_Justify_1(self, arg0);
 };
     Object.defineProperty(ASS_Style.prototype, 'Justify', { get: ASS_Style.prototype.get_Justify, set: ASS_Style.prototype.set_Justify });
+// EventStopTimesResult
+/** @suppress {undefinedVars, duplicate} */function EventStopTimesResult() { throw "cannot construct a EventStopTimesResult, no constructor in IDL" }
+EventStopTimesResult.prototype = Object.create(WrapperObject.prototype);
+EventStopTimesResult.prototype.constructor = EventStopTimesResult;
+EventStopTimesResult.prototype.__class__ = EventStopTimesResult;
+EventStopTimesResult.__cache__ = {};
+Module['EventStopTimesResult'] = EventStopTimesResult;
+
+  EventStopTimesResult.prototype['get_eventFinish'] = EventStopTimesResult.prototype.get_eventFinish = /** @suppress {undefinedVars, duplicate} */function() {
+  var self = this.ptr;
+  return _emscripten_bind_EventStopTimesResult_get_eventFinish_0(self);
+};
+    EventStopTimesResult.prototype['set_eventFinish'] = EventStopTimesResult.prototype.set_eventFinish = /** @suppress {undefinedVars, duplicate} */function(arg0) {
+  var self = this.ptr;
+  if (arg0 && typeof arg0 === 'object') arg0 = arg0.ptr;
+  _emscripten_bind_EventStopTimesResult_set_eventFinish_1(self, arg0);
+};
+    Object.defineProperty(EventStopTimesResult.prototype, 'eventFinish', { get: EventStopTimesResult.prototype.get_eventFinish, set: EventStopTimesResult.prototype.set_eventFinish });
+  EventStopTimesResult.prototype['get_emptyFinish'] = EventStopTimesResult.prototype.get_emptyFinish = /** @suppress {undefinedVars, duplicate} */function() {
+  var self = this.ptr;
+  return _emscripten_bind_EventStopTimesResult_get_emptyFinish_0(self);
+};
+    EventStopTimesResult.prototype['set_emptyFinish'] = EventStopTimesResult.prototype.set_emptyFinish = /** @suppress {undefinedVars, duplicate} */function(arg0) {
+  var self = this.ptr;
+  if (arg0 && typeof arg0 === 'object') arg0 = arg0.ptr;
+  _emscripten_bind_EventStopTimesResult_set_emptyFinish_1(self, arg0);
+};
+    Object.defineProperty(EventStopTimesResult.prototype, 'emptyFinish', { get: EventStopTimesResult.prototype.get_emptyFinish, set: EventStopTimesResult.prototype.set_emptyFinish });
+  EventStopTimesResult.prototype['get_is_animated'] = EventStopTimesResult.prototype.get_is_animated = /** @suppress {undefinedVars, duplicate} */function() {
+  var self = this.ptr;
+  return _emscripten_bind_EventStopTimesResult_get_is_animated_0(self);
+};
+    EventStopTimesResult.prototype['set_is_animated'] = EventStopTimesResult.prototype.set_is_animated = /** @suppress {undefinedVars, duplicate} */function(arg0) {
+  var self = this.ptr;
+  if (arg0 && typeof arg0 === 'object') arg0 = arg0.ptr;
+  _emscripten_bind_EventStopTimesResult_set_is_animated_1(self, arg0);
+};
+    Object.defineProperty(EventStopTimesResult.prototype, 'is_animated', { get: EventStopTimesResult.prototype.get_is_animated, set: EventStopTimesResult.prototype.set_is_animated });
 // ASS_Image
 /** @suppress {undefinedVars, duplicate} */function ASS_Image() { throw "cannot construct a ASS_Image, no constructor in IDL" }
 ASS_Image.prototype = Object.create(WrapperObject.prototype);
