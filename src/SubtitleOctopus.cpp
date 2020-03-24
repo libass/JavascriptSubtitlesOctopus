@@ -521,7 +521,7 @@ private:
         for (ASS_Image *cur = img; cur != NULL; cur = cur->next) {
             if (cur->dst_x < min_x || cur->dst_y < min_y) continue; // skip images not fully within render region
             int curw = cur->w, curh = cur->h;
-            if (curw == 0 || curh == 0 || cur->dst_x + curw > max_x || cur->dst_y + curh > max_y) continue; // skip empty images or images outside render region
+            if (curw == 0 || curh == 0 || cur->dst_x + curw - 1> max_x || cur->dst_y + curh - 1 > max_y) continue; // skip empty images or images outside render region
             int a = (255 - (cur->color & 0xFF));
             if (a == 0) continue; // skip transparent images
 
