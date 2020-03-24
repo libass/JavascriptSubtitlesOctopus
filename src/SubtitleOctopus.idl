@@ -154,6 +154,17 @@ interface libass {
     long long oct_step_sub(ASS_Track track, long long now, long movement);
 };
 
+[NoDelete]
+interface RenderBlendResult {
+    attribute long changed;
+    attribute double blend_time;
+    attribute long dest_x;
+    attribute long dest_y;
+    attribute long dest_width;
+    attribute long dest_height;
+    attribute ByteString image;
+};
+
 interface SubtitleOctopus {
     void SubtitleOctopus();
     attribute ASS_Track track;
@@ -178,4 +189,6 @@ interface SubtitleOctopus {
     long getStyleByName([Const] DOMString name);
     void removeStyle(long eid);
     void removeAllEvents();
+    void setMemoryLimits(long glyph_limit, long bitmap_cache_limit);
+    RenderBlendResult renderBlend(double tm, long force);
 };

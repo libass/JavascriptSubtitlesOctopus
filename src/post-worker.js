@@ -7,6 +7,7 @@ self.rafId = null;
 self.nextIsRaf = false;
 self.lastCurrentTimeReceivedAt = Date.now();
 self.targetFps = 30;
+self.libassMemoryLimit = 0; // in MiB
 
 self.width = 0;
 self.height = 0;
@@ -61,6 +62,16 @@ self.writeAvailableFontsToFS = function(content) {
     }
 };
 
+self.getRenderMethod = function () {
+    if (self.renderMode == 'fast') {
+        return self.fastRender;
+    } else if (self.renderMode == 'blend') {
+        return self.blendRender;
+    } else {
+        return self.render;
+    }
+}
+
 /**
  * Set the subtitle track.
  * @param {!string} content the content of the subtitle file.
@@ -75,11 +86,7 @@ self.setTrack = function (content) {
     // Tell libass to render the new track
     self.octObj.createTrack("/sub.ass");
     self.ass_track = self.octObj.track;
-    if (self.fastRenderMode) {
-        self.fastRender();
-    } else {
-        self.render();
-    }
+    self.getRenderMethod()();
 };
 
 /**
@@ -87,11 +94,7 @@ self.setTrack = function (content) {
  */
 self.freeTrack = function () {
     self.octObj.removeTrack();
-    if (self.fastRenderMode) {
-        self.fastRender();
-    } else {
-        self.render();
-    }
+    self.getRenderMethod()();
 };
 
 /**
@@ -132,18 +135,10 @@ self.setCurrentTime = function (currentTime) {
     self.lastCurrentTimeReceivedAt = Date.now();
     if (!self.rafId) {
         if (self.nextIsRaf) {
-            if (self.fastRenderMode) {
-                self.rafId = self.requestAnimationFrame(self.fastRender);
-            } else {
-                self.rafId = self.requestAnimationFrame(self.render);
-            }
+            self.rafId = self.requestAnimationFrame(self.getRenderMethod());
         }
         else {
-            if (self.fastRenderMode) {
-                self.fastRender();
-            } else {
-                self.render();
-            }
+            self.getRenderMethod()();
             
             // Give onmessage chance to receive all queued messages
             setTimeout(function () {
@@ -168,12 +163,7 @@ self.setIsPaused = function (isPaused) {
         }
         else {
             self.lastCurrentTimeReceivedAt = Date.now();
-            if (self.fastRenderMode) {
-                self.rafId = self.requestAnimationFrame(self.fastRender);
-            } else {
-                self.rafId = self.requestAnimationFrame(self.render);
-            }
-            
+            self.rafId = self.requestAnimationFrame(self.getRenderMethod());
         }
     }
 };
@@ -198,6 +188,35 @@ self.render = function (force) {
 
     if (!self._isPaused) {
         self.rafId = self.requestAnimationFrame(self.render);
+    }
+};
+
+self.blendRender = function (force) {
+    self.rafId = 0;
+    self.renderPending = false;
+    var startTime = performance.now();
+
+    var renderResult = self.octObj.renderBlend(self.getCurrentTime() + self.delay, force);
+    var blendTime = Module.getValue(self.blendTime, 'double');
+    if (renderResult && (renderResult.changed != 0 || force)) {
+        // make a copy, as we should free the memory so subsequent calls can utilize it
+        var result = new Uint8Array(HEAPU8.subarray(renderResult.image, renderResult.image + renderResult.dest_width * renderResult.dest_height * 4));
+
+        var canvases = [{w: renderResult.dest_width, h: renderResult.dest_height, x: renderResult.dest_x, y: renderResult.dest_y, buffer: result.buffer}];
+        var buffers = [result.buffer];
+
+        postMessage({
+            target: 'canvas',
+            op: 'renderCanvas',
+            time: Date.now(),
+            spentTime: performance.now() - startTime,
+            blendTime: blendTime,
+            canvases: canvases
+        }, buffers);
+    }
+
+    if (!self._isPaused) {
+        self.rafId = self.requestAnimationFrame(self.blendRender);
     }
 };
 
@@ -477,11 +496,7 @@ function onMessageFromMainEmscriptenThread(message) {
                     Module.canvas.boundingClientRect = message.data.boundingClientRect;
                 }
                 self.resize(message.data.width, message.data.height);
-                if (self.fastRenderMode) {
-                    self.fastRender();
-                } else {
-                    self.render();
-                }
+                self.getRenderMethod()();
             } else throw 'ey?';
             break;
         }
@@ -508,7 +523,7 @@ function onMessageFromMainEmscriptenThread(message) {
             self.subUrl = message.data.subUrl;
             self.subContent = message.data.subContent;
             self.fontFiles = message.data.fonts;
-            self.fastRenderMode = message.data.fastRender;
+            self.renderMode = message.data.renderMode;
             self.availableFonts = message.data.availableFonts;
             self.debug = message.data.debug;
             if (!hasNativeConsole && self.debug) {
@@ -522,6 +537,9 @@ function onMessageFromMainEmscriptenThread(message) {
                     Module.canvas.boundingClientRect = message.data.boundingClientRect;
                 }
             }
+            self.targetFps = message.data.targetFps || self.targetFps;
+            self.libassMemoryLimit = message.data.libassMemoryLimit || self.libassMemoryLimit;
+            self.libassGlyphLimit = message.data.libassGlyphLimit || 0;
             removeRunDependency('worker-init');
             break;
         }
