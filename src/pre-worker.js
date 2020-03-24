@@ -103,6 +103,7 @@ Module['onRuntimeInitialized'] = function () {
     self.changed = Module._malloc(4);
 
     self.octObj.initLibrary(screen.width, screen.height);
+    self.octObj.setDropAnimations(!!self.dropAllAnimations);
     self.octObj.createTrack("/sub.ass");
     self.ass_track = self.octObj.track;
     self.ass_library = self.octObj.ass_library;
