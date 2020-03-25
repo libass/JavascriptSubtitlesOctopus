@@ -406,6 +406,8 @@ var SubtitlesOctopus = function (options) {
         if (self.renderAhead > 0) {
             var newCache = [];
             if (isResizing && self.oneshotState.prevHeight && self.oneshotState.prevWidth) {
+                if (self.oneshotState.prevHeight == self.canvas.height &&
+                    self.oneshotState.prevWidth == self.canvas.width) return;
                 var timeLimit = 10, sizeLimit = self.renderAhead * 0.3;
                 if (self.canvas.height >= self.oneshotState.prevHeight * (1.0 - self.resizeVariation) &&
                     self.canvas.height <= self.oneshotState.prevHeight * (1.0 + self.resizeVariation) &&
