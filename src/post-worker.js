@@ -272,6 +272,10 @@ self.oneshotRender = function (lastRenderedTime, renderNow, iteration) {
         eventFinish: eventFinish,
         emptyFinish: emptyFinish,
         animated: animated,
+        viewport: {
+            width: self.width,
+            height: self.height
+        },
         spentTime: rendered.spentTime || 0,
         blendTime: rendered.blendTime || 0,
         canvases: rendered.canvases || []
