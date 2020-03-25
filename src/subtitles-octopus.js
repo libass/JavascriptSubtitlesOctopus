@@ -351,6 +351,10 @@ var SubtitlesOctopus = function (options) {
         self.oneshotState.eventOver = eventOver;
 
         var beforeDrawTime = performance.now();
+        if (event.viewport.width != self.canvas.width || event.viewport.height != self.canvas.height) {
+            self.canvas.width = event.viewport.width;
+            self.canvas.height = event.viewport.height;
+        }
         self.ctx.clearRect(0, 0, self.canvas.width, self.canvas.height);
         if (!eventOver) {
             for (var i = 0; i < event.items.length; i++) {
@@ -401,24 +405,34 @@ var SubtitlesOctopus = function (options) {
         }
     }
 
-    function resetRenderAheadCache() {
+    function resetRenderAheadCache(isResizing) {
         if (self.renderAhead > 0) {
-            if (self.oneshotState.prevHeight && self.oneshotState.prevWidth) {
+            var newCache = [];
+            if (isResizing && self.oneshotState.prevHeight && self.oneshotState.prevWidth) {
+                if (self.oneshotState.prevHeight == self.canvas.height &&
+                    self.oneshotState.prevWidth == self.canvas.width) return;
+                var timeLimit = 10, sizeLimit = self.renderAhead * 0.3;
                 if (self.canvas.height >= self.oneshotState.prevHeight * (1.0 - self.resizeVariation) &&
                     self.canvas.height <= self.oneshotState.prevHeight * (1.0 + self.resizeVariation) &&
                     self.canvas.width >= self.oneshotState.prevWidth * (1.0 - self.resizeVariation) &&
                     self.canvas.width <= self.oneshotState.prevWidth * (1.0 + self.resizeVariation)) {
-                    console.debug('not resetting prerender cache - keep using current');
-                    // keep rendering canvas size the same,
-                    // otherwise subtitles got placed incorrectly
-                    self.canvas.width = self.oneshotState.prevWidth;
-                    self.canvas.height = self.oneshotState.prevHeight;
-                    return;
+                    console.debug('viewport changes are small, leaving more of prerendered buffer');
+                    timeLimit = 30;
+                    sizeLimit = self.renderAhead * 0.5;
+                }
+                var stopTime = self.video.currentTime + self.timeOffset + timeLimit;
+                var size = 0;
+                for (var i = 0; i < self.renderedItems.length; i++) {
+                    var item = self.renderedItems[i];
+                    if (item.emptyFinish < 0 || item.emptyFinish >= stopTime) break;
+                    size += item.size;
+                    if (size >= sizeLimit) break;
+                    newCache.push(item);
                 }
             }
 
             console.info('resetting prerender cache');
-            self.renderedItems = [];
+            self.renderedItems = newCache;
             self.oneshotState.eventStart = null;
             self.oneshotState.iteration++;
             self.oneshotState.renderRequested = false;
@@ -575,6 +589,7 @@ var SubtitlesOctopus = function (options) {
                                 eventStart: data.lastRenderedTime,
                                 eventFinish: data.lastRenderedTime - 0.001,
                                 emptyFinish: data.eventStart,
+                                viewport: data.viewport,
                                 spentTime: 0,
                                 blendTime: 0,
                                 items: [],
@@ -610,6 +625,7 @@ var SubtitlesOctopus = function (options) {
                             emptyFinish: data.emptyFinish,
                             spentTime: data.spentTime,
                             blendTime: data.blendTime,
+                            viewport: data.viewport,
                             items: items,
                             animated: data.animated,
                             size: size
@@ -753,7 +769,7 @@ var SubtitlesOctopus = function (options) {
                 width: self.canvas.width,
                 height: self.canvas.height
             });
-            resetRenderAheadCache();
+            resetRenderAheadCache(true);
         }
     };
 
@@ -789,7 +805,7 @@ var SubtitlesOctopus = function (options) {
             target: 'set-track-by-url',
             url: url
         });
-        resetRenderAheadCache();
+        resetRenderAheadCache(false);
     };
 
     self.setTrack = function (content) {
@@ -797,14 +813,14 @@ var SubtitlesOctopus = function (options) {
             target: 'set-track',
             content: content
         });
-        resetRenderAheadCache();
+        resetRenderAheadCache(false);
     };
 
     self.freeTrack = function (content) {
         self.worker.postMessage({
             target: 'free-track'
         });
-        resetRenderAheadCache();
+        resetRenderAheadCache(false);
     };
 
 
