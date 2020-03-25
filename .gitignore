@@ -26,3 +26,5 @@ dist/libraries/
 *.pyc
 venv/
 node_modules/
+src/SubOctpInterface.cpp
+src/SubOctpInterface.js
