@@ -142,8 +142,11 @@ public:
         min_y = MIN(min_y, other.min_y);
         max_x = MAX(max_x, other.max_x);
         max_y = MAX(max_y, other.max_y);
-        other.min_x = other.max_x = other.min_y = other.max_y = -1;
         return true;
+    }
+
+    void clear() {
+        min_x = max_x = min_y = max_y = -1;
     }
 };
 
@@ -463,7 +466,10 @@ public:
                 if (boxes[box1].empty()) continue;
                 for (int box2 = box1 + 1; box2 < MAX_BLEND_STORAGES; box2++) {
                     if (boxes[box2].empty()) continue;
-                    if (boxes[box1].tryMerge(boxes[box2])) merged = true;
+                    if (boxes[box1].tryMerge(boxes[box2])) {
+                        boxes[box2].clear();
+                        merged = true;
+                    }
                 }
             }
             if (!merged) break;
@@ -473,6 +479,7 @@ public:
         for (int box = 0; box < MAX_BLEND_STORAGES; box++) {
             if (boxes[box].empty()) continue;
             RenderBlendPart *part = renderBlendPart(boxes[box], img);
+            if (part == NULL) return NULL;
             part->next = m_blendResult.part;
             m_blendResult.part = part;
         }
