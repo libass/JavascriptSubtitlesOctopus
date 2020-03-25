@@ -14,10 +14,17 @@ var SubtitlesOctopus = function (options) {
     var self = this;
     self.canvas = options.canvas; // HTML canvas element (optional if video specified)
     self.renderMode = options.renderMode || (options.lossyRender ? 'fast' : (options.blendRender ? 'blend' : 'normal'));
+
+    // play with those when you need some speed, e.g. for slow devices
     self.dropAllAnimations = options.dropAllAnimations || false;
     self.libassMemoryLimit = options.libassMemoryLimit || 0; // set libass bitmap cache memory limit in MiB (approximate)
     self.libassGlyphLimit = options.libassGlyphLimit || 0; // set libass glyph cache memory limit in MiB (approximate)
     self.targetFps = options.targetFps || 30;
+    self.prescaleTradeoff = options.prescaleTradeoff || null; // render subtitles less than viewport when less than 1.0 to improve speed, render to more than 1.0 to improve quality; set to null to disable scaling
+    self.softHeightLimit = options.softHeightLimit || 1080; // don't apply prescaleTradeoff < 1 when viewport height is less that this limit
+    self.hardHeightLimit = options.hardHeightLimit || 2160; // don't ever go above this limit
+    self.resizeVariation = options.resizeVariation || 0.2; // by how many a size can vary before it would cause clearance of prerendered buffer
+
     self.renderAhead = options.renderAhead || 0; // how many MiB to render ahead and store; 0 to disable (approximate)
     self.isOurCanvas = false; // (internal) we created canvas and manage it
     self.video = options.video; // HTML video element (optional if canvas specified)
@@ -46,7 +53,9 @@ var SubtitlesOctopus = function (options) {
         eventOver: false,
         iteration: 0,
         renderRequested: false,
-        requestNextTimestamp: -1
+        requestNextTimestamp: -1,
+        prevWidth: null,
+        prevHeight: null
     }
 
     self.hasAlphaBug = false;
@@ -394,11 +403,27 @@ var SubtitlesOctopus = function (options) {
 
     function resetRenderAheadCache() {
         if (self.renderAhead > 0) {
+            if (self.oneshotState.prevHeight && self.oneshotState.prevWidth) {
+                if (self.canvas.height >= self.oneshotState.prevHeight * (1.0 - self.resizeVariation) &&
+                    self.canvas.height <= self.oneshotState.prevHeight * (1.0 + self.resizeVariation) &&
+                    self.canvas.width >= self.oneshotState.prevWidth * (1.0 - self.resizeVariation) &&
+                    self.canvas.width <= self.oneshotState.prevWidth * (1.0 + self.resizeVariation)) {
+                    console.debug('not resetting prerender cache - keep using current');
+                    // keep rendering canvas size the same,
+                    // otherwise subtitles got placed incorrectly
+                    self.canvas.width = self.oneshotState.prevWidth;
+                    self.canvas.height = self.oneshotState.prevHeight;
+                    return;
+                }
+            }
+
             console.info('resetting prerender cache');
             self.renderedItems = [];
             self.oneshotState.eventStart = null;
             self.oneshotState.iteration++;
             self.oneshotState.renderRequested = false;
+            self.oneshotState.prevHeight = self.canvas.height;
+            self.oneshotState.prevWidth = self.canvas.width;
 
             window.requestAnimationFrame(oneshotRender);
             tryRequestOneshot(undefined, true);
@@ -649,14 +674,48 @@ var SubtitlesOctopus = function (options) {
         }
     };
 
+    function _computeCanvasSize(width, height) {
+        if (self.prescaleTradeoff === null) {
+            if (height > self.hardHeightLimit) {
+                width = width * self.hardHeightLimit / height;
+                height = self.hardHeightLimit;
+            }
+        } else if (self.prescaleTradeoff > 1) {
+            if (height * self.prescaleTradeoff <= self.softHeightLimit) {
+                width *= self.prescaleTradeoff;
+                height *= self.prescaleTradeoff;
+            } else if (height < self.softHeightLimit) {
+                width = width * self.softHeightLimit / height;
+                height = self.softHeightLimit;
+            } else if (height >= self.hardHeightLimit) {
+                width = width * self.hardHeightLimit / height;
+                height = self.hardHeightLimit;
+            }
+        } else if (height >= self.softHeightLimit) {
+            if (height * self.prescaleTradeoff <= self.softHeightLimit) {
+                width = width * self.softHeightLimit / height;
+                height = self.softHeightLimit;
+            } else if (height * self.prescaleTradeoff <= self.hardHeightLimit) {
+                width *= self.prescaleTradeoff;
+                height *= self.prescaleTradeoff;
+            } else {
+                width = width * self.hardHeightLimit / height;
+                height = self.hardHeightLimit;
+            }
+        }
+
+        return {'width': width, 'height': height};
+    }
+
     self.resize = function (width, height, top, left) {
         var videoSize = null;
         top = top || 0;
         left = left || 0;
         if ((!width || !height) && self.video) {
             videoSize = self.getVideoPosition();
-            width = videoSize.width * self.pixelRatio;
-            height = videoSize.height * self.pixelRatio;
+            var newsize = _computeCanvasSize(videoSize.width * self.pixelRatio, videoSize.height * self.pixelRatio);
+            width = newsize.width;
+            height = newsize.height;
             var offset = self.canvasParent.getBoundingClientRect().top - self.video.getBoundingClientRect().top;
             top = videoSize.y - offset;
             left = videoSize.x;
