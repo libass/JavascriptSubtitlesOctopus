@@ -14,9 +14,15 @@ var SubtitlesOctopus = function (options) {
     var self = this;
     self.canvas = options.canvas; // HTML canvas element (optional if video specified)
     self.renderMode = options.lossyRender ? 'fast' : (options.blendRender ? 'blend' : 'normal');
+
+    // play with those when you need some speed, e.g. for slow devices
     self.libassMemoryLimit = options.libassMemoryLimit || 0;
     self.libassGlyphLimit = options.libassGlyphLimit || 0;
     self.targetFps = options.targetFps || undefined;
+    self.prescaleFactor = options.prescaleFactor || 1.0;  // render subtitles less than viewport when less than 1.0 to improve speed, render to more than 1.0 to improve quality
+    self.prescaleHeight = options.prescaleHeight || 1080; // don't apply prescaleFactor < 1 when viewport height is less than this limit; don't apply prescaleFactor > 1 when viewport height is greater than this limit
+    self.maxHeight = options.maxHeight || 2160;           // don't ever go above this limit
+
     self.isOurCanvas = false; // (internal) we created canvas and manage it
     self.video = options.video; // HTML video element (optional if canvas specified)
     self.canvasParent = null; // (internal) HTML canvas parent element
@@ -404,14 +410,43 @@ var SubtitlesOctopus = function (options) {
         }
     };
 
+    function _computeCanvasSize(width, height) {
+        if (self.prescaleFactor > 1) {
+            if (height * self.prescaleFactor <= self.prescaleHeight) {
+                width *= self.prescaleFactor;
+                height *= self.prescaleFactor;
+            } else if (height < self.prescaleHeight) {
+                width = width * self.prescaleHeight / height;
+                height = self.prescaleHeight;
+            } else if (height >= self.maxHeight) {
+                width = width * self.maxHeight / height;
+                height = self.maxHeight;
+            }
+        } else if (height >= self.prescaleHeight) {
+            if (height * self.prescaleFactor <= self.prescaleHeight) {
+                width = width * self.prescaleHeight / height;
+                height = self.prescaleHeight;
+            } else if (height * self.prescaleFactor <= self.maxHeight) {
+                width *= self.prescaleFactor;
+                height *= self.prescaleFactor;
+            } else {
+                width = width * self.maxHeight / height;
+                height = self.maxHeight;
+            }
+        }
+
+        return {'width': width, 'height': height};
+    }
+
     self.resize = function (width, height, top, left) {
         var videoSize = null;
         top = top || 0;
         left = left || 0;
         if ((!width || !height) && self.video) {
             videoSize = self.getVideoPosition();
-            width = videoSize.width * self.pixelRatio;
-            height = videoSize.height * self.pixelRatio;
+            var newsize = _computeCanvasSize(videoSize.width * self.pixelRatio, videoSize.height * self.pixelRatio);
+            width = newsize.width;
+            height = newsize.height;
             var offset = self.canvasParent.getBoundingClientRect().top - self.video.getBoundingClientRect().top;
             top = videoSize.y - offset;
             left = videoSize.x;
