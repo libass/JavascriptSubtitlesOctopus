@@ -14,6 +14,7 @@ var SubtitlesOctopus = function (options) {
     var self = this;
     self.canvas = options.canvas; // HTML canvas element (optional if video specified)
     self.renderMode = options.renderMode || (options.lossyRender ? 'fast' : (options.blendRender ? 'blend' : 'normal'));
+    self.dropAllAnimations = options.dropAllAnimations || false;
     self.libassMemoryLimit = options.libassMemoryLimit || 0; // set libass bitmap cache memory limit in MiB (approximate)
     self.libassGlyphLimit = options.libassGlyphLimit || 0; // set libass glyph cache memory limit in MiB (approximate)
     self.targetFps = options.targetFps || 30;
@@ -122,7 +123,8 @@ var SubtitlesOctopus = function (options) {
             targetFps: self.targetFps,
             libassMemoryLimit: self.libassMemoryLimit,
             libassGlyphLimit: self.libassGlyphLimit,
-            renderOnDemand: self.renderAhead > 0
+            renderOnDemand: self.renderAhead > 0,
+            dropAllAnimations: self.dropAllAnimations
         });
     };
 
@@ -252,7 +254,7 @@ var SubtitlesOctopus = function (options) {
     self.setSubUrl = function (subUrl) {
         self.subUrl = subUrl;
     };
-    
+
     function _cleanPastRendered(currentTime, seekClean) {
         var retainedItems = [];
         for (var i = 0, len = self.renderedItems.length; i < len; i++) {
@@ -364,7 +366,7 @@ var SubtitlesOctopus = function (options) {
         var finishTime = -1, eventShown = false, animated = false;
         for (var i = 0, len = self.renderedItems.length; i < len; i++) {
             var item = self.renderedItems[i];
-            if (!eventShown && item.eventStart <= currentTime && (item.emptyFinish < 0 || item.emptyFinish >= currentTime)) {
+            if (!eventShown && item.eventStart <= currentTime && (item.emptyFinish < 0 || item.emptyFinish > currentTime)) {
                 _renderSubtitleEvent(item, currentTime);
                 eventShown = true;
                 finishTime = item.emptyFinish;
@@ -569,10 +571,13 @@ var SubtitlesOctopus = function (options) {
                             });
                             size += item.buffer.byteLength;
                         }
+
+                        var eventSplitted = false;
                         if ((data.emptyFinish > 0 && data.emptyFinish - data.eventStart < 1.0 / self.targetFps) || data.animated) {
                             var newFinish = data.eventStart + 1.0 / self.targetFps;
                             data.emptyFinish = newFinish;
                             data.eventFinish = newFinish;
+                            eventSplitted = true;
                         }
                         self.renderedItems.push({
                             eventStart: data.eventStart,
@@ -584,7 +589,7 @@ var SubtitlesOctopus = function (options) {
                             animated: data.animated,
                             size: size
                         });
-                        
+
                         self.renderedItems.sort(function (a, b) {
                             return a.eventStart - b.eventStart;
                         });
@@ -596,7 +601,7 @@ var SubtitlesOctopus = function (options) {
                             console.info('oneshot received "end of frames" event');
                         } else if (data.emptyFinish >= 0) {
                             // there's some more event to render, try requesting next event
-                            tryRequestOneshot(data.emptyFinish, data.animated);
+                            tryRequestOneshot(data.emptyFinish, eventSplitted);
                         } else {
                             console.info('there are no more events to prerender');
                         }

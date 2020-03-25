@@ -154,11 +154,19 @@ static int _is_animated_tag(char *begin, char *end) {
     return 0;
 }
 
-static int _is_event_animated(ASS_Event *event) {
+static void _remove_tag(char *begin, char *end) {
+    // overwrite the tag with whitespace so libass won't see it
+    for (; begin < end; begin++) *begin = ' ';
+}
+
+static int _is_event_animated(ASS_Event *event, bool drop_animations) {
     // event is complex if it's animated in any way,
     // either by having non-empty Effect or
     // by having tags (enclosed in '{}' in Text)
-    if (event->Effect && event->Effect[0] != '\0') return 1;
+    if (event->Effect && event->Effect[0] != '\0') {
+        if (!drop_animations) return 1;
+        event->Effect[0] = '\0';
+    }
 
     int escaped = 0;
     char *tagStart = NULL;
@@ -172,13 +180,19 @@ static int _is_event_animated(ASS_Event *event) {
                 break;
             case '}':
                 if (!escaped && tagStart != NULL) {
-                    if (_is_animated_tag(tagStart, p)) return 1;
+                    if (_is_animated_tag(tagStart, p)) {
+                        if (!drop_animations) return 1;
+                        _remove_tag(tagStart, p);
+                    }
                     tagStart = NULL;
                 }
                 break;
             case ';':
                 if (tagStart != NULL) {
-                    if (_is_animated_tag(tagStart, p)) return 1;
+                    if (_is_animated_tag(tagStart, p)) {
+                        if (!drop_animations) return 1;
+                        _remove_tag(tagStart, p + 1 /* +1 is because we want to drop ';' as well */);
+                    }
                 }
                 tagStart = p + 1;
                 break;
@@ -199,17 +213,21 @@ public:
 
     int status;
 
-    SubtitleOctopus() {
-        status = 0;
-        ass_library = NULL;
-        ass_renderer = NULL;
-        track = NULL;
-        canvas_w = 0;
-        canvas_h = 0;
+    SubtitleOctopus(): ass_library(NULL), ass_renderer(NULL), track(NULL), canvas_w(0), canvas_h(0), status(0), m_is_event_animated(NULL), m_drop_animations(false) {
     }
 
     void setLogLevel(int level) {
         log_level = level;
+    }
+
+    void setDropAnimations(int value) {
+        bool rescan = m_drop_animations != bool(value) && track != NULL;
+        m_drop_animations = bool(value);
+        if (rescan) rescanAllAnimations();
+    }
+
+    int getDropAnimations() const {
+        return m_drop_animations;
     }
 
     void initLibrary(int frame_w, int frame_h) {
@@ -242,14 +260,7 @@ public:
             printf("Failed to start a track\n");
             exit(4);
         }
-
-        free(m_is_event_animated);
-        m_is_event_animated = (int*)malloc(sizeof(int) * track->n_events);
-        if (m_is_event_animated == NULL) {
-            printf("cannot parse animated events\n");
-            exit(5);
-        }
-        detectAnimatedEvents();
+        rescanAllAnimations();
     }
 
     void createTrackMem(char *buf, unsigned long bufsize) {
@@ -259,6 +270,7 @@ public:
             printf("Failed to start a track\n");
             exit(4);
         }
+        rescanAllAnimations();
     }
 
     void removeTrack() {
@@ -277,6 +289,7 @@ public:
         canvas_h = frame_h;
         canvas_w = frame_w;
     }
+
     ASS_Image* renderImage(double time, int* changed) {
         ASS_Image *img = ass_render_frame(ass_renderer, track, (int) (time * 1000), changed);
         return img;
@@ -291,6 +304,7 @@ public:
         free(m_is_event_animated);
         m_is_event_animated = NULL;
     }
+
     void reloadLibrary() {
         quitLibrary();
 
@@ -305,23 +319,27 @@ public:
         ass_set_margins(ass_renderer, top, bottom, left, right);
     }
 
-    int getEventCount() {
+    int getEventCount() const {
         return track->n_events;
     }
 
     int allocEvent() {
+        free(m_is_event_animated);
+        m_is_event_animated = NULL;
         return ass_alloc_event(track);
     }
 
     void removeEvent(int eid) {
+        free(m_is_event_animated);
+        m_is_event_animated = NULL;
         ass_free_event(track, eid);
     }
 
-    int getStyleCount() {
+    int getStyleCount() const {
         return track->n_styles;
     }
 
-    int getStyleByName(const char* name) {
+    int getStyleByName(const char* name) const {
         for (int n = 0; n < track->n_styles; n++) {
             if (track->styles[n].Name && strcmp(track->styles[n].Name, name) == 0)
                 return n;
@@ -338,6 +356,8 @@ public:
     }
 
     void removeAllEvents() {
+        free(m_is_event_animated);
+        m_is_event_animated = NULL;
         ass_flush_events(track);
     }
 
@@ -451,7 +471,7 @@ public:
         return &m_blendResult;
     }
 
-    double findNextEventStart(double tm) {
+    double findNextEventStart(double tm) const {
         if (!track || track->n_events == 0) return -1;
 
         ASS_Event *cur = track->events;
@@ -460,7 +480,13 @@ public:
 
         for (int i = 0; i < track->n_events; i++, cur++) {
             long long start = cur->Start;
-            if (start >= now && (start < closest || closest == -1)) {
+            if (start < now) {
+                if (start + cur->Duration >= now) {
+                    // there's currently an event being displayed, we should render it
+                    closest = now;
+                    break;
+                }
+            } else if (start < closest || closest == -1) {
                 closest = start;
             }
         }
@@ -468,7 +494,7 @@ public:
         return closest / 1000.0;
     }
 
-    EventStopTimesResult* findEventStopTimes(double tm) {
+    EventStopTimesResult* findEventStopTimes(double tm) const {
         static EventStopTimesResult result;
         if (!track || track->n_events == 0) {
             result.eventFinish = result.emptyFinish = -1;
@@ -492,7 +518,7 @@ public:
                     if (finish > maxFinish) {
                         maxFinish = finish;
                     }
-                    if (!current_animated) current_animated = m_is_event_animated[i];
+                    if (!current_animated && m_is_event_animated) current_animated = m_is_event_animated[i];
                 }
             } else if (start < minStart || minStart == -1) {
                 minStart = start;
@@ -520,18 +546,26 @@ public:
         return &result;
     }
 
-private:
-    void detectAnimatedEvents() {
+    void rescanAllAnimations() {
+        free(m_is_event_animated);
+        m_is_event_animated = (int*)malloc(sizeof(int) * track->n_events);
+        if (m_is_event_animated == NULL) {
+            printf("cannot parse animated events\n");
+            exit(5);
+        }
+
         ASS_Event *cur = track->events;
         int *animated = m_is_event_animated;
         for (int i = 0; i < track->n_events; i++, cur++, animated++) {
-            *animated = _is_event_animated(cur);
+            *animated = _is_event_animated(cur, m_drop_animations);
         }
     }
 
+private:
     ReusableBuffer m_blend;
     RenderBlendResult m_blendResult;
     int *m_is_event_animated;
+    bool m_drop_animations;
 };
 
 int main(int argc, char *argv[]) { return 0; }

@@ -174,6 +174,14 @@ void EMSCRIPTEN_KEEPALIVE emscripten_bind_SubtitleOctopus_setLogLevel_1(Subtitle
   self->setLogLevel(level);
 }
 
+void EMSCRIPTEN_KEEPALIVE emscripten_bind_SubtitleOctopus_setDropAnimations_1(SubtitleOctopus* self, int value) {
+  self->setDropAnimations(value);
+}
+
+int EMSCRIPTEN_KEEPALIVE emscripten_bind_SubtitleOctopus_getDropAnimations_0(SubtitleOctopus* self) {
+  return self->getDropAnimations();
+}
+
 void EMSCRIPTEN_KEEPALIVE emscripten_bind_SubtitleOctopus_initLibrary_2(SubtitleOctopus* self, int frame_w, int frame_h) {
   self->initLibrary(frame_w, frame_h);
 }
@@ -260,6 +268,10 @@ double EMSCRIPTEN_KEEPALIVE emscripten_bind_SubtitleOctopus_findNextEventStart_1
 
 EventStopTimesResult* EMSCRIPTEN_KEEPALIVE emscripten_bind_SubtitleOctopus_findEventStopTimes_1(SubtitleOctopus* self, double tm) {
   return self->findEventStopTimes(tm);
+}
+
+void EMSCRIPTEN_KEEPALIVE emscripten_bind_SubtitleOctopus_rescanAllAnimations_0(SubtitleOctopus* self) {
+  self->rescanAllAnimations();
 }
 
 ASS_Track* EMSCRIPTEN_KEEPALIVE emscripten_bind_SubtitleOctopus_get_track_0(SubtitleOctopus* self) {

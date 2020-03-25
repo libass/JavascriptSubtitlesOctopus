@@ -178,6 +178,8 @@ interface SubtitleOctopus {
     attribute ASS_Renderer ass_renderer;
     attribute ASS_Library ass_library;
     void setLogLevel(long level);
+    void setDropAnimations(long value);
+    long getDropAnimations();
     void initLibrary(long frame_w, long frame_h);
     void createTrack(DOMString subfile);
     void createTrackMem(DOMString buf, unsigned long bufsize);
@@ -200,4 +202,5 @@ interface SubtitleOctopus {
     RenderBlendResult renderBlend(double tm, long force);
     double findNextEventStart(double tm);
     EventStopTimesResult findEventStopTimes(double tm);
+    void rescanAllAnimations();
 };
