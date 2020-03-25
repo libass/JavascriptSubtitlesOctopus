@@ -14,10 +14,16 @@ var SubtitlesOctopus = function (options) {
     var self = this;
     self.canvas = options.canvas; // HTML canvas element (optional if video specified)
     self.renderMode = options.renderMode || (options.lossyRender ? 'fast' : (options.blendRender ? 'blend' : 'normal'));
+
+    // play with those when you need some speed, e.g. for slow devices
     self.dropAllAnimations = options.dropAllAnimations || false;
     self.libassMemoryLimit = options.libassMemoryLimit || 0; // set libass bitmap cache memory limit in MiB (approximate)
     self.libassGlyphLimit = options.libassGlyphLimit || 0; // set libass glyph cache memory limit in MiB (approximate)
     self.targetFps = options.targetFps || 30;
+    self.prescaleTradeoff = options.prescaleTradeoff || 1.0; // render subtitles less than viewport when less than 1.0 to improve speed, render to more than 1.0 to improve quality
+    self.softHeightLimit = options.softHeightLimit || 1080; // don't apply prescaleTradeoff < 1 when viewport height is less that this limit
+    self.hardHeightLimit = options.hardHeightLimit || 1600; // don't ever go above this limit
+
     self.renderAhead = options.renderAhead || 0; // how many MiB to render ahead and store; 0 to disable (approximate)
     self.isOurCanvas = false; // (internal) we created canvas and manage it
     self.video = options.video; // HTML video element (optional if canvas specified)
@@ -667,14 +673,43 @@ var SubtitlesOctopus = function (options) {
         }
     };
 
+    function _computeCanvasSize(width, height) {
+        if (self.prescaleTradeoff > 1) {
+            if (height * self.prescaleTradeoff <= self.softHeightLimit) {
+                width *= self.prescaleTradeoff;
+                height *= self.prescaleTradeoff;
+            } else if (height < self.softHeightLimit) {
+                width = width * self.softHeightLimit / height;
+                height = self.softHeightLimit;
+            } else if (height >= self.hardHeightLimit) {
+                width = width * self.hardHeightLimit / height;
+                height = self.hardHeightLimit;
+            }
+        } else if (height >= self.softHeightLimit) {
+            if (height * self.prescaleTradeoff <= self.softHeightLimit) {
+                width = width * self.softHeightLimit / height;
+                height = self.softHeightLimit;
+            } else if (height * self.prescaleTradeoff <= self.hardHeightLimit) {
+                width *= self.prescaleTradeoff;
+                height *= self.prescaleTradeoff;
+            } else {
+                width = width * self.hardHeightLimit / height;
+                height = self.hardHeightLimit;
+            }
+        }
+
+        return {'width': width, 'height': height};
+    }
+
     self.resize = function (width, height, top, left) {
         var videoSize = null;
         top = top || 0;
         left = left || 0;
         if ((!width || !height) && self.video) {
             videoSize = self.getVideoPosition();
-            width = videoSize.width * self.pixelRatio;
-            height = videoSize.height * self.pixelRatio;
+            var newsize = _computeCanvasSize(videoSize.width * self.pixelRatio, videoSize.height * self.pixelRatio);
+            width = newsize.width;
+            height = newsize.height;
             var offset = self.canvasParent.getBoundingClientRect().top - self.video.getBoundingClientRect().top;
             top = videoSize.y - offset;
             left = videoSize.x;
