@@ -46,7 +46,9 @@ var SubtitlesOctopus = function (options) {
         eventOver: false,
         iteration: 0,
         renderRequested: false,
-        requestNextTimestamp: -1
+        requestNextTimestamp: -1,
+        prevWidth: null,
+        prevHeight: null
     }
 
     self.hasAlphaBug = false;
@@ -391,11 +393,27 @@ var SubtitlesOctopus = function (options) {
 
     function resetRenderAheadCache() {
         if (self.renderAhead > 0) {
+            if (self.oneshotState.prevHeight && self.oneshotState.prevWidth) {
+                if (self.canvas.height >= self.oneshotState.prevHeight * 0.8 &&
+                    self.canvas.height <= self.oneshotState.prevHeight * 1.2 &&
+                    self.canvas.width >= self.oneshotState.prevWidth * 0.8 &&
+                    self.canvas.width <= self.oneshotState.prevWidth * 1.2) {
+                    console.debug('not resetting prerender cache - keep using current');
+                    // keep rendering canvas size the same,
+                    // otherwise subtitles got placed incorrectly
+                    self.canvas.width = self.oneshotState.prevWidth;
+                    self.canvas.height = self.oneshotState.prevHeight;
+                    return;
+                }
+            }
+
             console.info('resetting prerender cache');
             self.renderedItems = [];
             self.oneshotState.eventStart = null;
             self.oneshotState.iteration++;
             self.oneshotState.renderRequested = false;
+            self.oneshotState.prevHeight = self.canvas.height;
+            self.oneshotState.prevWidth = self.canvas.width;
 
             window.requestAnimationFrame(oneshotRender);
             tryRequestOneshot(undefined, true);
