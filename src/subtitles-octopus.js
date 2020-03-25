@@ -23,6 +23,7 @@ var SubtitlesOctopus = function (options) {
     self.prescaleTradeoff = options.prescaleTradeoff || null; // render subtitles less than viewport when less than 1.0 to improve speed, render to more than 1.0 to improve quality; set to null to disable scaling
     self.softHeightLimit = options.softHeightLimit || 1080; // don't apply prescaleTradeoff < 1 when viewport height is less that this limit
     self.hardHeightLimit = options.hardHeightLimit || 2160; // don't ever go above this limit
+    self.resizeVariation = options.resizeVariation || 0.2; // by how many a size can vary before it would cause clearance of prerendered buffer
 
     self.renderAhead = options.renderAhead || 0; // how many MiB to render ahead and store; 0 to disable (approximate)
     self.isOurCanvas = false; // (internal) we created canvas and manage it
@@ -403,10 +404,10 @@ var SubtitlesOctopus = function (options) {
     function resetRenderAheadCache() {
         if (self.renderAhead > 0) {
             if (self.oneshotState.prevHeight && self.oneshotState.prevWidth) {
-                if (self.canvas.height >= self.oneshotState.prevHeight * 0.8 &&
-                    self.canvas.height <= self.oneshotState.prevHeight * 1.2 &&
-                    self.canvas.width >= self.oneshotState.prevWidth * 0.8 &&
-                    self.canvas.width <= self.oneshotState.prevWidth * 1.2) {
+                if (self.canvas.height >= self.oneshotState.prevHeight * (1.0 - self.resizeVariation) &&
+                    self.canvas.height <= self.oneshotState.prevHeight * (1.0 + self.resizeVariation) &&
+                    self.canvas.width >= self.oneshotState.prevWidth * (1.0 - self.resizeVariation) &&
+                    self.canvas.width <= self.oneshotState.prevWidth * (1.0 + self.resizeVariation)) {
                     console.debug('not resetting prerender cache - keep using current');
                     // keep rendering canvas size the same,
                     // otherwise subtitles got placed incorrectly
