@@ -404,22 +404,30 @@ var SubtitlesOctopus = function (options) {
 
     function resetRenderAheadCache(isResizing) {
         if (self.renderAhead > 0) {
+            var newCache = [];
             if (isResizing && self.oneshotState.prevHeight && self.oneshotState.prevWidth) {
+                var timeLimit = 10, sizeLimit = self.renderAhead * 0.3;
                 if (self.canvas.height >= self.oneshotState.prevHeight * (1.0 - self.resizeVariation) &&
                     self.canvas.height <= self.oneshotState.prevHeight * (1.0 + self.resizeVariation) &&
                     self.canvas.width >= self.oneshotState.prevWidth * (1.0 - self.resizeVariation) &&
                     self.canvas.width <= self.oneshotState.prevWidth * (1.0 + self.resizeVariation)) {
-                    console.debug('not resetting prerender cache - keep using current');
-                    // keep rendering canvas size the same,
-                    // otherwise subtitles got placed incorrectly
-                    self.canvas.width = self.oneshotState.prevWidth;
-                    self.canvas.height = self.oneshotState.prevHeight;
-                    return;
+                    console.debug('viewport changes are small, leaving more of prerendered buffer');
+                    timeLimit = 30;
+                    sizeLimit = self.renderAhead * 0.5;
+                }
+                var stopTime = self.video.currentTime + self.timeOffset + timeLimit;
+                var size = 0;
+                for (var i = 0; i < self.renderedItems.length; i++) {
+                    var item = self.renderedItems[i];
+                    if (item.emptyFinish < 0 || item.emptyFinish >= stopTime) break;
+                    size += item.size;
+                    if (size >= sizeLimit) break;
+                    newCache.push(item);
                 }
             }
 
             console.info('resetting prerender cache');
-            self.renderedItems = [];
+            self.renderedItems = newCache;
             self.oneshotState.eventStart = null;
             self.oneshotState.iteration++;
             self.oneshotState.renderRequested = false;
