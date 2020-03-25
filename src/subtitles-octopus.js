@@ -19,7 +19,7 @@ var SubtitlesOctopus = function (options) {
     self.libassMemoryLimit = options.libassMemoryLimit || 0;
     self.libassGlyphLimit = options.libassGlyphLimit || 0;
     self.targetFps = options.targetFps || undefined;
-    self.prescaleFactor = options.prescaleFactor || 1.0;  // render subtitles less than viewport when less than 1.0 to improve speed, render to more than 1.0 to improve quality
+    self.prescaleFactor = options.prescaleFactor || null; // render subtitles less than viewport when less than 1.0 to improve speed, render to more than 1.0 to improve quality; set to null to disable scaling
     self.prescaleHeight = options.prescaleHeight || 1080; // don't apply prescaleFactor < 1 when viewport height is less than this limit; don't apply prescaleFactor > 1 when viewport height is greater than this limit
     self.maxHeight = options.maxHeight || 2160;           // don't ever go above this limit
 
@@ -411,7 +411,12 @@ var SubtitlesOctopus = function (options) {
     };
 
     function _computeCanvasSize(width, height) {
-        if (self.prescaleFactor > 1) {
+        if (self.prescaleFactor === null) {
+            if (height > self.maxHeight) {
+                width = width * self.maxHeight / height;
+                height = self.maxHeight;
+            }
+        } else if (self.prescaleFactor > 1) {
             if (height * self.prescaleFactor <= self.prescaleHeight) {
                 width *= self.prescaleFactor;
                 height *= self.prescaleFactor;
