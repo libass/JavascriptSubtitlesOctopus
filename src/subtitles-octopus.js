@@ -22,7 +22,7 @@ var SubtitlesOctopus = function (options) {
     self.targetFps = options.targetFps || 30;
     self.prescaleTradeoff = options.prescaleTradeoff || 1.0; // render subtitles less than viewport when less than 1.0 to improve speed, render to more than 1.0 to improve quality
     self.softHeightLimit = options.softHeightLimit || 1080; // don't apply prescaleTradeoff < 1 when viewport height is less that this limit
-    self.hardHeightLimit = options.hardHeightLimit || 1600; // don't ever go above this limit
+    self.hardHeightLimit = options.hardHeightLimit || 2160; // don't ever go above this limit
 
     self.renderAhead = options.renderAhead || 0; // how many MiB to render ahead and store; 0 to disable (approximate)
     self.isOurCanvas = false; // (internal) we created canvas and manage it
