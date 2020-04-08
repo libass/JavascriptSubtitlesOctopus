@@ -24,8 +24,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         m4 \
         gperf \
         wget && \
-    pip install ply && \
     rm -rf /var/lib/apt/lists/*
+
+RUN pip install ply
 
 RUN git clone https://github.com/emscripten-core/emsdk.git && \
     cd emsdk && \
