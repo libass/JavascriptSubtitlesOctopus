@@ -7,6 +7,16 @@ if (!String.prototype.endsWith) {
 	};
 }
 
+if (!Uint8Array.prototype.slice) {
+    Object.defineProperty(Uint8Array.prototype, 'slice', {
+        value: function (begin, end)
+            {
+                return new Uint8Array(this.subarray(begin, end));
+            }
+    });
+}
+
+
 var hasNativeConsole = typeof console !== "undefined";
 
 // implement console methods if they're missing
