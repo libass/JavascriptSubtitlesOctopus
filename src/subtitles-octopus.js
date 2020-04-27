@@ -335,7 +335,9 @@ var SubtitlesOctopus = function (options) {
                     iteration: self.oneshotState.iteration
                 });
             } else {
-                console.info('worker busy, requesting to seek');
+                if (self.workerActive) {
+                    console.info('worker busy, requesting to seek');
+                }
                 self.oneshotState.requestNextTimestamp = lastRendered;
             }
         }
