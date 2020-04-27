@@ -338,7 +338,9 @@ var SubtitlesOctopus = function (options) {
                     iteration: self.oneshotState.iteration
                 });
             } else {
-                console.info('worker busy, requesting to seek');
+                if (self.workerActive) {
+                    console.info('worker busy, requesting to seek');
+                }
                 self.oneshotState.requestNextTimestamp = lastRendered;
             }
         }
@@ -398,6 +400,7 @@ var SubtitlesOctopus = function (options) {
 
         if (!eventShown) {
             if (Math.abs(self.oneshotState.requestNextTimestamp - currentTime) > 0.01) {
+                _cleanPastRendered(currentTime);
                 tryRequestOneshot(currentTime, true);
             }
         } else if (_cleanPastRendered(currentTime) && finishTime >= 0) {
@@ -405,7 +408,7 @@ var SubtitlesOctopus = function (options) {
         }
     }
 
-    function resetRenderAheadCache(isResizing) {
+    self.resetRenderAheadCache = function (isResizing) {
         if (self.renderAhead > 0) {
             var newCache = [];
             if (isResizing && self.oneshotState.prevHeight && self.oneshotState.prevWidth) {
@@ -769,7 +772,7 @@ var SubtitlesOctopus = function (options) {
                 width: self.canvas.width,
                 height: self.canvas.height
             });
-            resetRenderAheadCache(true);
+            self.resetRenderAheadCache(true);
         }
     };
 
@@ -805,7 +808,7 @@ var SubtitlesOctopus = function (options) {
             target: 'set-track-by-url',
             url: url
         });
-        resetRenderAheadCache(false);
+        self.resetRenderAheadCache(false);
     };
 
     self.setTrack = function (content) {
@@ -813,14 +816,14 @@ var SubtitlesOctopus = function (options) {
             target: 'set-track',
             content: content
         });
-        resetRenderAheadCache(false);
+        self.resetRenderAheadCache(false);
     };
 
     self.freeTrack = function (content) {
         self.worker.postMessage({
             target: 'free-track'
         });
-        resetRenderAheadCache(false);
+        self.resetRenderAheadCache(false);
     };
 
 
