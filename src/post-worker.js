@@ -469,6 +469,14 @@ function messageResender() {
     }
 }
 
+function _applyKeys(input, output) {
+    var vargs = Object.keys(input);
+
+    for (var i = 0; i < vargs.length; i++) {
+        output[vargs[i]] = input[vargs[i]];
+    }
+}
+
 function onMessageFromMainEmscriptenThread(message) {
     if (!calledMain && !message.data.preMain) {
         if (!messageBuffer) {
@@ -562,11 +570,7 @@ function onMessageFromMainEmscriptenThread(message) {
             var event = message.data.event;
             var i = self.octObj.allocEvent();
             var evnt_ptr = self.octObj.track.get_events(i);
-            var vargs = Object.keys(event);
-
-            for (const varg of vargs) {
-                evnt_ptr[varg] = event[varg];
-            }
+            _applyKeys(event, evnt_ptr);
             break;
         case 'get-events':
             var events = [];
@@ -598,12 +602,7 @@ function onMessageFromMainEmscriptenThread(message) {
             var event = message.data.event;
             var i = message.data.index;
             var evnt_ptr = self.octObj.track.get_events(i);
-            
-            var vargs = Object.keys(event);
-
-            for (const varg of vargs) {
-                evnt_ptr[varg] = event[varg];
-            }
+            _applyKeys(event, evnt_ptr);
             break;
         case 'remove-event':
             var i = message.data.index;
@@ -613,11 +612,7 @@ function onMessageFromMainEmscriptenThread(message) {
             var style = message.data.style;
             var i = self.octObj.allocStyle();
             var styl_ptr = self.octObj.track.get_styles(i);
-            var vargs = Object.keys(style);
-
-            for (const varg of vargs) {
-                styl_ptr[varg] = style[varg];
-            }
+            _applyKeys(style, styl_ptr);
             break;
         case 'get-styles':
             var styles = [];
@@ -663,11 +658,7 @@ function onMessageFromMainEmscriptenThread(message) {
             var style = message.data.style;
             var i = message.data.index;
             var styl_ptr = self.octObj.track.get_styles(i);
-            var vargs = Object.keys(style);
-
-            for (const varg of vargs) {
-                styl_ptr[varg] = style[varg];
-            }
+            _applyKeys(style, styl_ptr);
             break;
         case 'remove-style':
             var i = message.data.index;
