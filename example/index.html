@@ -1,0 +1,24 @@
+<html>
+<header>
+  <script src="../dist/js/subtitles-octopus.js"></script>
+</header>
+
+<body>
+  <video id="video-player" src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4" autoplay
+    controls muted></video>
+  <script>
+    var videoEle = document.getElementById('video-player');
+    var options = {
+      video: videoEle,
+      subUrl: 'test.ass',
+      workerUrl: '../dist/js/subtitles-octopus-worker.js',
+      legacyWorkerUrl: '../dist/js/subtitles-octopus-worker-legacy.js'
+    };
+    var instance = new SubtitlesOctopus(options);
+    videoEle.onplay = () => {
+      videoEle.muted = false;
+    }
+  </script>
+</body>
+
+</html>
