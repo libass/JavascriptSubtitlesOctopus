@@ -325,7 +325,7 @@ var SubtitlesOctopus = function (options) {
         }
 
         if (size <= self.renderAhead) {
-            lastRendered = currentTime - (renderNow ? 0 : 0.001);
+            var lastRendered = currentTime - (renderNow ? 0 : 0.001);
             if (!self.oneshotState.renderRequested) {
                 self.oneshotState.renderRequested = true;
                 self.worker.postMessage({
