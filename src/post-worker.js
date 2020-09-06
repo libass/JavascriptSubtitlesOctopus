@@ -594,6 +594,9 @@ function onMessageFromMainEmscriptenThread(message) {
             self.subContent = message.data.subContent;
             self.fontFiles = message.data.fonts;
             self.renderMode = message.data.renderMode;
+            if(self.renderMode == "fast" && typeof createImageBitmap === 'undefined'){
+                self.renderMode = "normal";
+            }
             self.availableFonts = message.data.availableFonts;
             self.debug = message.data.debug;
             if (!hasNativeConsole && self.debug) {

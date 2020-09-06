@@ -14,6 +14,9 @@ var SubtitlesOctopus = function (options) {
     var self = this;
     self.canvas = options.canvas; // HTML canvas element (optional if video specified)
     self.renderMode = options.renderMode || (options.lossyRender ? 'fast' : (options.blendRender ? 'blend' : 'normal'));
+    if(self.renderMode == "fast" && typeof createImageBitmap === 'undefined'){
+        self.renderMode = "normal";
+    }
 
     // play with those when you need some speed, e.g. for slow devices
     self.dropAllAnimations = options.dropAllAnimations || false;
