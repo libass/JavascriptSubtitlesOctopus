@@ -18,6 +18,27 @@ self.fontMap_ = {};
 self.fontId = 0;
 
 /**
+ * Required as only Chromium decodes data URI from XHR
+ * @param dataURI
+ * @returns {Uint8Array}
+ */
+self.readDataUri = function (dataURI) {
+    if(typeof dataURI !== 'string'){
+        throw new Error('Invalid argument: dataURI must be a string');
+    }
+    dataURI = dataURI.split(',');
+    var type = dataURI[0].split(':')[1].split(';')[0],
+        byteString = atob(dataURI[1]),
+        byteStringLength = byteString.length,
+        arrayBuffer = new ArrayBuffer(byteStringLength),
+        intArray = new Uint8Array(arrayBuffer);
+    for (var i = 0; i < byteStringLength; i++) {
+        intArray[i] = byteString.charCodeAt(i);
+    }
+    return intArray;
+}
+
+/**
  * Make the font accessible by libass by writing it to the virtual FS.
  * @param {!string} font the font name.
  */
@@ -33,7 +54,7 @@ self.writeFontToFS = function(font) {
     self.fontMap_[font] = true;
 
     if (!self.availableFonts.hasOwnProperty(font)) return;
-    var content = readBinary(self.availableFonts[font]);
+    var content = self.availableFonts[font].match(/^data:/) !== null ? self.readDataUri(self.availableFonts[font]): readBinary(self.availableFonts[font]);
 
     Module["FS"].writeFile('/fonts/font' + (self.fontId++) + '-' + self.availableFonts[font].split('/').pop(), content, {
         encoding: 'binary'
