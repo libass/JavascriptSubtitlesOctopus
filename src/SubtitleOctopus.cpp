@@ -371,7 +371,7 @@ public:
     }
 
     void reloadFonts() {
-        ass_set_fonts(ass_renderer, "/assets/default.woff2", NULL, ASS_FONTPROVIDER_FONTCONFIG, "/assets/fonts.conf", 1);
+        ass_set_fonts(ass_renderer, "/assets/default.ttc", NULL, ASS_FONTPROVIDER_FONTCONFIG, "/assets/fonts.conf", 1);
     }
 
     void setMargin(int top, int bottom, int left, int right) {
