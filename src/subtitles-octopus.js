@@ -207,8 +207,8 @@ var SubtitlesOctopus = function (options) {
                 self.resize();
             }
             else {
-                self.video.addEventListener("loadedmetadata", function (e) {
-                    e.target.removeEventListener(e.type, arguments.callee);
+                self.video.addEventListener("loadedmetadata", function listener(e) {
+                    e.target.removeEventListener(e.type, listener);
                     self.resize();
                 }, false);
             }
