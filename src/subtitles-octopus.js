@@ -170,6 +170,7 @@ var SubtitlesOctopus = function (options) {
             self.video.addEventListener("timeupdate", timeupdate, false);
             self.video.addEventListener("playing", function () {
                 self.setIsPaused(false, video.currentTime + self.timeOffset);
+                self.resizeWithTimeout();
             }, false);
             self.video.addEventListener("pause", function () {
                 self.setIsPaused(true, video.currentTime + self.timeOffset);
