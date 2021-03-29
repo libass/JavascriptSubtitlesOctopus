@@ -104,6 +104,7 @@ var SubtitlesOctopus = function (options) {
             subContent: self.subContent,
             fonts: self.fonts,
             availableFonts: self.availableFonts,
+            defaultFont: self.defaultFont,
             debug: self.debug
         });
     };
@@ -386,6 +387,9 @@ var SubtitlesOctopus = function (options) {
             case 'get-styles': {
                 console.log(data.target);
                 console.log(data.styles);
+                break;
+            }
+            case 'ready': {
                 break;
             }
             default:

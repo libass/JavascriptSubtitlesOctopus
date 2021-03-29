@@ -159,11 +159,6 @@ Module.expectedDataFileDownloads++;
  };
  loadPackage({
   "files": [ {
-   "start": 0,
-   "audio": 0,
-   "end": 145972,
-   "filename": "/assets/default.woff2"
-  }, {
    "start": 145972,
    "audio": 0,
    "end": 146775,
@@ -251,6 +246,8 @@ Module["preRun"].push(function() {
  for (i = 0; i < fontFiles.length; i++) {
   Module["FS_createPreloadedFile"]("/fonts", "font" + i + "-" + fontFiles[i].split("/").pop(), fontFiles[i], true, true);
  }
+ console.warn(`nicktest; defualt.woff2 download start; ${self.defaultFont}`)
+ Module["FS_createPreloadedFile"]("/assets/default.woff2", null, self.defaultFont, true, true);
 });
 
 Module["onRuntimeInitialized"] = function() {
@@ -2437,6 +2434,10 @@ function createWasm() {
      err("falling back to ArrayBuffer instantiation");
      instantiateArrayBuffer(receiveInstantiatedSource);
     });
+   }).catch(function(error) {
+     err("Could not download wasm file");
+     err("falling back to ArrayBuffer instantiation");
+     return instantiateArrayBuffer(receiveInstantiatedSource);
    });
   } else {
    return instantiateArrayBuffer(receiveInstantiatedSource);
@@ -10036,6 +10037,7 @@ function onMessageFromMainEmscriptenThread(message) {
    self.subUrl = message.data.subUrl;
    self.subContent = message.data.subContent;
    self.fontFiles = message.data.fonts;
+   self.defaultFont = message.data.defaultFont;
    self.fastRenderMode = message.data.fastRender;
    self.availableFonts = message.data.availableFonts;
    self.debug = message.data.debug;
@@ -10051,6 +10053,9 @@ function onMessageFromMainEmscriptenThread(message) {
     }
    }
    removeRunDependency("worker-init");
+   postMessage({
+    target: "ready",
+   });
    break;
   }
 
