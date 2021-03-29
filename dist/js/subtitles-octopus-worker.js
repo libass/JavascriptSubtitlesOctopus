@@ -2435,7 +2435,7 @@ function createWasm() {
      instantiateArrayBuffer(receiveInstantiatedSource);
     });
    }).catch(function(error) {
-     err("Could not download wasm file");
+     err("Could not download wasm file: " + error);
      err("falling back to ArrayBuffer instantiation");
      return instantiateArrayBuffer(receiveInstantiatedSource);
    });
