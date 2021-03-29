@@ -22,6 +22,8 @@ var SubtitlesOctopus = function (options) {
     self.canvasParent = null; // (internal) HTML canvas parent element
     self.fonts = options.fonts || []; // Array with links to fonts used in sub (optional)
     self.availableFonts = options.availableFonts || []; // Object with all available fonts (optional). Key is font name in lower case, value is link: {"arial": "/font1.ttf"}
+    console.warn(`nicktest; vso; SubtitlesOctopus; other; ${options.defaultFont}`);
+    self.defaultFont = options.defaultFont;
     self.onReadyEvent = options.onReady; // Function called when SubtitlesOctopus is ready (optional)
     if (supportsWebAssembly) {
         self.workerUrl = options.workerUrl || 'subtitles-octopus-worker.js'; // Link to WebAssembly worker
@@ -95,6 +97,7 @@ var SubtitlesOctopus = function (options) {
         self.createCanvas();
         self.setVideo(options.video);
         self.setSubUrl(options.subUrl);
+        console.warn(`nicktest; vso; init; Other; ${self.defaultFont}`);
         self.worker.postMessage({
             target: 'worker-init',
             width: self.canvas.width,
@@ -107,6 +110,7 @@ var SubtitlesOctopus = function (options) {
             subContent: self.subContent,
             fonts: self.fonts,
             availableFonts: self.availableFonts,
+            defaultFont: self.defaultFont,
             debug: self.debug,
             targetFps: self.targetFps,
             libassMemoryLimit: self.libassMemoryLimit,
