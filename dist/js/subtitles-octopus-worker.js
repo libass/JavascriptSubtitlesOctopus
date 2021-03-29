@@ -246,7 +246,6 @@ Module["preRun"].push(function() {
  for (i = 0; i < fontFiles.length; i++) {
   Module["FS_createPreloadedFile"]("/fonts", "font" + i + "-" + fontFiles[i].split("/").pop(), fontFiles[i], true, true);
  }
- console.warn(`nicktest; cr; defualt.woff2 download start; ${self.defaultFont}`)
  Module["FS_createPreloadedFile"]("/assets/default.woff2", null, self.defaultFont, true, true);
 });
 
