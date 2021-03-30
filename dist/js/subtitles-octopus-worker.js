@@ -136,6 +136,7 @@ Module.expectedDataFileDownloads++;
     for (var i = 0; i < files.length; ++i) {
      DataRequest.prototype.requests[files[i].filename].onload();
     }
+    Module["FS_createPreloadedFile"]("/assets/default.woff2", null, self.defaultFont, true, true);
     Module["removeRunDependency"]("datafile_dist/js/subtitles-octopus-worker.data");
    }
    Module["addRunDependency"]("datafile_dist/js/subtitles-octopus-worker.data");
@@ -246,7 +247,6 @@ Module["preRun"].push(function() {
  for (i = 0; i < fontFiles.length; i++) {
   Module["FS_createPreloadedFile"]("/fonts", "font" + i + "-" + fontFiles[i].split("/").pop(), fontFiles[i], true, true);
  }
- Module["FS_createPreloadedFile"]("/assets/default.woff2", null, self.defaultFont, true, true);
 });
 
 Module["onRuntimeInitialized"] = function() {

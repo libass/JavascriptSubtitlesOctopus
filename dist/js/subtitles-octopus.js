@@ -37,7 +37,7 @@ var SubtitlesOctopus = function (options) {
 
     self.hasAlphaBug = false;
 
-    (function () {
+    (function() {
         if (typeof ImageData.prototype.constructor === 'function') {
             try {
                 // try actually calling ImageData, as on some browsers it's reported
@@ -63,7 +63,7 @@ var SubtitlesOctopus = function (options) {
             var imageData = ctx.createImageData(width, height);
             if (data) imageData.data.set(data);
             return imageData;
-        };
+        }
     })();
 
     self.workerError = function (error) {
@@ -162,7 +162,7 @@ var SubtitlesOctopus = function (options) {
         if (self.video) {
             var timeupdate = function () {
                 self.setCurrentTime(video.currentTime + self.timeOffset);
-            };
+            }
             self.video.addEventListener("timeupdate", timeupdate, false);
             self.video.addEventListener("playing", function () {
                 self.setIsPaused(false, video.currentTime + self.timeOffset);
@@ -419,10 +419,10 @@ var SubtitlesOctopus = function (options) {
 
 
         if (
-            self.canvas.width != width ||
-            self.canvas.height != height ||
-            self.canvas.style.top != top ||
-            self.canvas.style.left != left
+          self.canvas.width != width ||
+          self.canvas.height != height ||
+          self.canvas.style.top != top ||
+          self.canvas.style.left != left
         ) {
             self.canvas.width = width;
             self.canvas.height = height;
@@ -589,6 +589,6 @@ if (typeof SubtitlesOctopusOnLoad == 'function') {
 
 if (typeof exports !== 'undefined') {
     if (typeof module !== 'undefined' && module.exports) {
-        exports = module.exports = SubtitlesOctopus;
+        exports = module.exports = SubtitlesOctopus
     }
 }
