@@ -166,6 +166,7 @@ Module.expectedDataFileDownloads++;
     "end": 146775,
     "filename": "/assets/fonts.conf"
   }];
+  console.warn(`nicktest; worker; ${self.defaultFont}`)
  if (!self.defaultFont) {
    filesToLoad.unshift({
      "start": 0,
