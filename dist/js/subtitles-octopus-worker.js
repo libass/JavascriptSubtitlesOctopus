@@ -136,9 +136,9 @@ Module.expectedDataFileDownloads++;
     for (var i = 0; i < files.length; ++i) {
      DataRequest.prototype.requests[files[i].filename].onload();
     }
-    // if (self.defaultFont) {
+    if (self.defaultFont) {
       Module["FS_createPreloadedFile"]("/assets/default.woff2", null, self.defaultFont, true, true);
-    // }
+    }
     Module["removeRunDependency"]("datafile_dist/js/subtitles-octopus-worker.data");
    }
    Module["addRunDependency"]("datafile_dist/js/subtitles-octopus-worker.data");
