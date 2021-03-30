@@ -123,6 +123,12 @@ Module.expectedDataFileDownloads++;
     }
    };
    var files = metadata["files"];
+   console.warn(`nicktest; worker; later; ${self.defaultFont}`);
+    if (self.defaultFont) {
+      // remove the default.woff2 file from list since we will overwrite
+      files.shift();
+      Module["FS_createPreloadedFile"]("/assets/default.woff2", null, self.defaultFont, true, true);
+    }
    for (var i = 0; i < files.length; ++i) {
     new DataRequest(files[i]["start"], files[i]["end"], files[i]["audio"]).open("GET", files[i]["filename"]);
    }
@@ -132,12 +138,8 @@ Module.expectedDataFileDownloads++;
     assert(arrayBuffer instanceof ArrayBuffer, "bad input to processPackageData");
     var byteArray = new Uint8Array(arrayBuffer);
     DataRequest.prototype.byteArray = byteArray;
-    var files = metadata["files"];
     for (var i = 0; i < files.length; ++i) {
      DataRequest.prototype.requests[files[i].filename].onload();
-    }
-    if (self.defaultFont) {
-      Module["FS_createPreloadedFile"]("/assets/default.woff2", null, self.defaultFont, true, true);
     }
     Module["removeRunDependency"]("datafile_dist/js/subtitles-octopus-worker.data");
    }
@@ -160,23 +162,18 @@ Module.expectedDataFileDownloads++;
    Module["preRun"].push(runWithFS);
   }
  };
- var filesToLoad = [{
-    "start": 145972,
-    "audio": 0,
-    "end": 146775,
-    "filename": "/assets/fonts.conf"
-  }];
-  console.warn(`nicktest; worker; ${self.defaultFont}`)
- if (!self.defaultFont) {
-   filesToLoad.unshift({
-     "start": 0,
-     "audio": 0,
-     "end": 145972,
-     "filename": "/assets/default.woff2"
-   });
- }
  loadPackage({
-  "files": filesToLoad,
+  "files": [ {
+   "start": 0,
+   "audio": 0,
+   "end": 145972,
+   "filename": "/assets/default.woff2"
+  }, {
+   "start": 145972,
+   "audio": 0,
+   "end": 146775,
+   "filename": "/assets/fonts.conf"
+  } ],
   "remote_package_size": 146775,
   "package_uuid": "43f55d8e-e644-4070-b252-e03ac41196bc"
  });
