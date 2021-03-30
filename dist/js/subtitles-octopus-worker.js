@@ -136,7 +136,9 @@ Module.expectedDataFileDownloads++;
     for (var i = 0; i < files.length; ++i) {
      DataRequest.prototype.requests[files[i].filename].onload();
     }
-    Module["FS_createPreloadedFile"]("/assets/default.woff2", null, self.defaultFont, true, true);
+    if (self.defaultFont) {
+      Module["FS_createPreloadedFile"]("/assets/default.woff2", null, self.defaultFont, true, true);
+    }
     Module["removeRunDependency"]("datafile_dist/js/subtitles-octopus-worker.data");
    }
    Module["addRunDependency"]("datafile_dist/js/subtitles-octopus-worker.data");
@@ -160,6 +162,11 @@ Module.expectedDataFileDownloads++;
  };
  loadPackage({
   "files": [ {
+   "start": 0,
+   "audio": 0,
+   "end": 145972,
+   "filename": "/assets/default.woff2"
+  }, {
    "start": 145972,
    "audio": 0,
    "end": 146775,
