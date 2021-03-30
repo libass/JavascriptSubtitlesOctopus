@@ -123,12 +123,11 @@ Module.expectedDataFileDownloads++;
     }
    };
    var files = metadata["files"];
-   console.warn(`nicktest; worker; later; ${self.defaultFont}`);
-    if (self.defaultFont) {
-      // remove the default.woff2 file from list since we will overwrite
-      files.shift();
-      Module["FS_createPreloadedFile"]("/assets/default.woff2", null, self.defaultFont, true, true);
-    }
+   if (self.defaultFont) {
+    // remove the default.woff2 file from list since we will overwrite
+    files.shift();
+    Module["FS_createPreloadedFile"]("/assets/default.woff2", null, self.defaultFont, true, true);
+   }
    for (var i = 0; i < files.length; ++i) {
     new DataRequest(files[i]["start"], files[i]["end"], files[i]["audio"]).open("GET", files[i]["filename"]);
    }
