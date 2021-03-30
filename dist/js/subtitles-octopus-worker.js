@@ -166,14 +166,14 @@ Module.expectedDataFileDownloads++;
     "end": 146775,
     "filename": "/assets/fonts.conf"
   }];
-//  if (!self.defaultFont) {
-//    filesToLoad.shift({
-//      "start": 0,
-//      "audio": 0,
-//      "end": 145972,
-//      "filename": "/assets/default.woff2"
-//    });
-//  }
+ if (!self.defaultFont) {
+   filesToLoad.unshift({
+     "start": 0,
+     "audio": 0,
+     "end": 145972,
+     "filename": "/assets/default.woff2"
+   });
+ }
  loadPackage({
   "files": filesToLoad,
   "remote_package_size": 146775,
