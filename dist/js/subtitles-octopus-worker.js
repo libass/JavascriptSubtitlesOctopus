@@ -160,18 +160,22 @@ Module.expectedDataFileDownloads++;
    Module["preRun"].push(runWithFS);
   }
  };
+ var filesToLoad = [{
+    "start": 145972,
+    "audio": 0,
+    "end": 146775,
+    "filename": "/assets/fonts.conf"
+  }];
+ if (!self.defaultFont) {
+   filesToLoad.shift({
+     "start": 0,
+     "audio": 0,
+     "end": 145972,
+     "filename": "/assets/default.woff2"
+   });
+ }
  loadPackage({
-  "files": [ {
-   "start": 0,
-   "audio": 0,
-   "end": 145972,
-   "filename": "/assets/default.woff2"
-  }, {
-   "start": 145972,
-   "audio": 0,
-   "end": 146775,
-   "filename": "/assets/fonts.conf"
-  } ],
+  "files": filesToLoad,
   "remote_package_size": 146775,
   "package_uuid": "43f55d8e-e644-4070-b252-e03ac41196bc"
  });
