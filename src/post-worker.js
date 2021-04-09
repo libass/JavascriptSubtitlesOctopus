@@ -38,6 +38,41 @@ self.readDataUri = function (dataURI) {
     return intArray;
 }
 
+self.decodeASSFontEncoding = function (input){
+    let output = new Uint8Array(input.length);
+    let grouping = new Uint8Array(4);
+
+    let offset = 0;
+    let arrayOffset = 0;
+    let writeOffset = 0;
+    let charCode;
+    while (offset < input.length){
+        charCode = input.charCodeAt(offset++);
+        if(charCode >= 0x21 && charCode <= 0x60){
+            grouping[arrayOffset++] = charCode - 33;
+            if(arrayOffset === 4){
+                output[writeOffset++] = (grouping[0] << 2) | (grouping[1] >> 4);
+                output[writeOffset++] = ((grouping[1] & 0xf) << 4) | (grouping[2] >> 2);
+                output[writeOffset++] = ((grouping[2] & 0x3) << 6) | (grouping[3]);
+                arrayOffset = 0;
+            }
+        }
+    }
+
+    //Handle ASS special padding
+    if(arrayOffset > 0){
+        if(arrayOffset === 2){
+            output[writeOffset++] = ((grouping[0] << 6) | grouping[1]) >> 4;
+        }else if(arrayOffset === 3){
+            let ix = ((grouping[0] << 12) | (grouping[1] << 6) | grouping[2]) >> 2;
+            output[writeOffset++] = ix >> 8;
+            output[writeOffset++] = ix & 0xff;
+        }
+    }
+
+    return output.slice(0, writeOffset);
+}
+
 /**
  * Make the font accessible by libass by writing it to the virtual FS.
  * @param {!string} font the font name.
@@ -53,10 +88,16 @@ self.writeFontToFS = function(font) {
 
     self.fontMap_[font] = true;
 
-    if (!self.availableFonts.hasOwnProperty(font)) return;
-    var content = self.availableFonts[font].match(/^data:/) !== null ? self.readDataUri(self.availableFonts[font]): readBinary(self.availableFonts[font]);
+    var content;
+    var name;
+    if (self.availableFonts.hasOwnProperty(font)){
+        content = readBinary(self.availableFonts[font]);
+        name = self.availableFonts[font].split('/').pop();
+    } else {
+        return;
+    }
 
-    Module["FS"].writeFile('/fonts/font' + (self.fontId++) + '-' + self.availableFonts[font].split('/').pop(), content, {
+    Module["FS"].writeFile('/fonts/font' + (self.fontId++) + '-' + name, content, {
         encoding: 'binary'
     });
 };

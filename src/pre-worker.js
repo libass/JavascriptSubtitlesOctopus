@@ -69,22 +69,49 @@ Module["preRun"].push(function () {
         }
     }
 
-    if (self.availableFonts && self.availableFonts.length !== 0) {
-        var sections = parseAss(self.subContent);
-            for (var i = 0; i < sections.length; i++) {
-                for (var j = 0; j < sections[i].body.length; j++) {
-                    if (sections[i].body[j].key === 'Style') {
-                        self.writeFontToFS(sections[i].body[j].value['Fontname']);
-                    }
+    let result;
+    {
+        const regex = new RegExp('^fontname((v2:[ \t]*(?<fontName2>[^_]+)_(?<fontProperties2>[^,]*)\.(?<fontExtension2>[a-z0-9]{3,5}),[ \t]*(?<fontContent2>.+)$)|(:[ \t]*(?<fontName>[^_]+)_(?<fontProperties>[^$]*)\.(?<fontExtension>[a-z0-9]{3,5})(?<fontContent>(?:\r?\n[\x21-\x60]+)+)))', 'mg');
+        while((result = regex.exec(self.subContent)) !== null){
+            let font;
+            if("fontName2" in result.groups && result.groups.fontName2 !== undefined){
+                font = {
+                    content: self.readDataUri(result.groups.fontContent2),
+                    id: result.groups.fontName2,
+                    name: result.groups.fontName2 + "." + result.groups.fontExtension2
+                }
+            }else{
+                font = {
+                    content: self.decodeASSFontEncoding(result.groups.fontContent),
+                    id: result.groups.fontName2,
+                    name: result.groups.fontName + "." + result.groups.fontExtension
                 }
             }
 
-            var regex = /\\fn([^\\}]*?)[\\}]/g;
-            var matches;
-            while (matches = regex.exec(self.subContent)) {
-                self.writeFontToFS(matches[1]);
+            self.fontMap_[font.id] = true;
+            Module["FS"].writeFile('/fonts/font' + (self.fontId++) + '-' + font.name, font.content, {
+                encoding: 'binary'
+            });
+            console.log("libass: attaching embedded font " + font.name);
+        }
+    }
+
+    if ((self.availableFonts && self.availableFonts.length !== 0)) {
+        var sections = parseAss(self.subContent);
+        for (var i = 0; i < sections.length; i++) {
+            for (var j = 0; j < sections[i].body.length; j++) {
+                if (sections[i].body[j].key === 'Style') {
+                    self.writeFontToFS(sections[i].body[j].value['Fontname']);
+                }
             }
         }
+
+        var regex = /\\fn([^\\}]*?)[\\}]/g;
+        var matches;
+        while (matches = regex.exec(self.subContent)) {
+            self.writeFontToFS(matches[1]);
+        }
+    }
 
     if (self.subContent) {
         Module["FS"].writeFile("/sub.ass", self.subContent);
