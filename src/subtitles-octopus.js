@@ -927,7 +927,9 @@ if (typeof SubtitlesOctopusOnLoad == 'function') {
 }
 
 if (typeof exports !== 'undefined') {
-    if (typeof module !== 'undefined' && module.exports) {
-        exports = module.exports = SubtitlesOctopus
-    }
+    exports = SubtitlesOctopus;
+}
+
+if (typeof module !== 'undefined') {
+    module.exports = SubtitlesOctopus
 }
