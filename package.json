@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Dador/JavascriptSubtitlesOctopus.git"
+    "url": "git+https://github.com/WeebDataHoarder/JavascriptSubtitlesOctopus.git"
   },
   "keywords": [
     "libass",
@@ -19,10 +19,9 @@
     "wasm",
     "emscripten"
   ],
-  "author": "TFSThiagoBR98, Dador",
+  "author": "TFSThiagoBR98, Dador, WeebDataHoarder",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Dador/JavascriptSubtitlesOctopus/issues"
-  },
-  "homepage": "https://dador.github.io/JavascriptSubtitlesOctopus/"
+    "url": "https://github.com/WeebDataHoarder/JavascriptSubtitlesOctopus/issues"
+  }
 }
