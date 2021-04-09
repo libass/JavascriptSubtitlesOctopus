@@ -13,9 +13,9 @@ jobs:
         git submodule sync
         git submodule update --init --force
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag dador/javascriptsubtitlesoctopus:latest
+      run: docker build . --file Dockerfile --tag radio/javascriptsubtitlesoctopus:latest
     - name: Build All
-      run: docker run --rm -v ${PWD}:/code dador/javascriptsubtitlesoctopus:latest
+      run: docker run --rm -v ${PWD}:/code radio/javascriptsubtitlesoctopus:latest
     - uses: actions/upload-artifact@v1
       with:
         name: js
