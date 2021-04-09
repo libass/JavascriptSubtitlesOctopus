@@ -5,6 +5,7 @@ BASE_DIR:=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 DIST_DIR:=$(BASE_DIR)dist/libraries
 
 GLOBAL_CFLAGS:=-O3 -s ENVIRONMENT=web,webview -s DOUBLE_MODE=0
+GLOBAL_LDFLAGS:=
 
 all: subtitleoctopus
 
@@ -22,6 +23,9 @@ lib/fribidi/configure:
 $(DIST_DIR)/lib/libfribidi.a: lib/fribidi/configure
 	cd lib/fribidi && \
 	emconfigure ./configure \
+		LDFLAGS=" \
+		$(GLOBAL_LDFLAGS) \
+		" \
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
 		$(GLOBAL_CFLAGS) \
@@ -52,6 +56,9 @@ lib/expat/expat/configured:
 $(DIST_DIR)/lib/libexpat.a: lib/expat/expat/configured
 	cd lib/expat/expat/build && \
 	emcmake cmake \
+		-DCMAKE_STATIC_LINKER_FLAGS=" \
+		$(GLOBAL_LDFLAGS) \
+		" \
 		-DCMAKE_C_FLAGS=" \
 		-s USE_PTHREADS=0 \
 		$(GLOBAL_CFLAGS) \
@@ -82,6 +89,9 @@ lib/brotli/configured:
 lib/brotli/build/libbrotlidec.pc: lib/brotli/configured
 	cd lib/brotli/build && \
 	emcmake cmake \
+		-DCMAKE_STATIC_LINKER_FLAGS=" \
+		$(GLOBAL_LDFLAGS) \
+		" \
 		-DCMAKE_C_FLAGS=" \
 		$(GLOBAL_CFLAGS) \
 		" \
@@ -111,6 +121,9 @@ lib/freetype/build_hb/dist_hb/lib/libfreetype.a: $(DIST_DIR)/lib/libbrotlidec.a
 	cd build_hb && \
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
 	emconfigure ../configure \
+		LDFLAGS=" \
+		$(GLOBAL_LDFLAGS) \
+		" \
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
 		$(GLOBAL_CFLAGS) \
@@ -146,6 +159,9 @@ $(DIST_DIR)/lib/libharfbuzz.a: lib/freetype/build_hb/dist_hb/lib/libfreetype.a l
 	cd lib/harfbuzz && \
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig:$(BASE_DIR)lib/freetype/build_hb/dist_hb/lib/pkgconfig \
 	emconfigure ./configure \
+		LDFLAGS=" \
+		$(GLOBAL_LDFLAGS) \
+		" \
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
 		$(GLOBAL_CFLAGS) \
@@ -154,7 +170,6 @@ $(DIST_DIR)/lib/libharfbuzz.a: lib/freetype/build_hb/dist_hb/lib/libfreetype.a l
 		--llvm-lto 1 \
 		-s MODULARIZE=1 \
 		" \
-		LDFLAGS="" \
 		--prefix="$(DIST_DIR)" \
 		--host=x86-none-linux \
 		--build=x86_64 \
@@ -181,6 +196,9 @@ $(DIST_DIR)/lib/libfreetype.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/lib
 	NOCONFIGURE=1 ./autogen.sh && \
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
 	emconfigure ./configure \
+		LDFLAGS=" \
+		$(GLOBAL_LDFLAGS) \
+		" \
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
 		$(GLOBAL_CFLAGS) \
@@ -217,6 +235,9 @@ $(DIST_DIR)/lib/libfontconfig.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/l
 	cd lib/fontconfig && \
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
 	emconfigure ./configure \
+		LDFLAGS=" \
+		$(GLOBAL_LDFLAGS) \
+		" \
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
 		-DEMSCRIPTEN \
@@ -250,6 +271,9 @@ $(DIST_DIR)/lib/libass.a: $(DIST_DIR)/lib/libfontconfig.a $(DIST_DIR)/lib/libhar
 	cd lib/libass && \
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
 	emconfigure ./configure \
+		LDFLAGS=" \
+		$(GLOBAL_LDFLAGS) \
+		" \
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
 		$(GLOBAL_CFLAGS) \
@@ -266,6 +290,7 @@ $(DIST_DIR)/lib/libass.a: $(DIST_DIR)/lib/libfontconfig.a $(DIST_DIR)/lib/libhar
 		\
 		--enable-harfbuzz \
 		--enable-fontconfig \
+		--enable-large-tiles \
 	&& \
 	emmake make -j8 && \
 	emmake make install
@@ -290,7 +315,7 @@ src/Makefile: src/SubOctpInterface.cpp
 	cd src && \
 	autoreconf -fi && \
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
-	emconfigure ./configure --host=x86-none-linux --build=x86_64 CFLAGS="$(GLOBAL_CFLAGS)"
+	emconfigure ./configure --disable-shared --host=x86-none-linux --build=x86_64 LDFLAGS="$(GLOBAL_LDFLAGS)" CFLAGS="$(GLOBAL_CFLAGS)"
 
 src/subtitles-octopus-worker.bc: $(OCTP_DEPS) src/Makefile src/SubtitleOctopus.cpp src/SubOctpInterface.cpp
 	cd src && \
@@ -336,9 +361,11 @@ dist/js/subtitles-octopus-worker-legacy.js: src/subtitles-octopus-worker.bc src/
 		--post-js src/SubOctpInterface.js \
 		--post-js src/post-worker.js \
 		-s WASM=0 \
-		-s LEGACY_VM_SUPPORT=1 \
-		-s MIN_CHROME_VERSION=27 \
-		-s MIN_SAFARI_VERSION=60005 \
+		-s LEGACY_VM_SUPPORT=0 \
+		-s MIN_CHROME_VERSION=51 \
+		-s MIN_FIREFOX_VERSION=54 \
+		-s MIN_EDGE_VERSION=15 \
+		-s MIN_SAFARI_VERSION=10 \
 		$(EMCC_COMMON_ARGS)
 
 dist/js/subtitles-octopus.js: src/subtitles-octopus.js

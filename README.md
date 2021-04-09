@@ -152,7 +152,7 @@ Run `git clone --recursive https://github.com/WeebDataHoarder/JavascriptSubtitle
 ### Build with Docker
 1) Install Docker
 2) `docker build -t radio/javascriptsubtitlesoctopus .`
-3) `docker run -it --rm -v ${PWD}:/code radio/javascriptsubtitlesoctopus:latest`
+3) `docker run -it --rm -v ${PWD}/dist/js:/code/dist/js radio/javascriptsubtitlesoctopus:latest`
 4) Artifacts are in /dist/js
 
 ## Why "Octopus"?
