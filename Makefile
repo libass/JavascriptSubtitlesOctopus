@@ -290,7 +290,6 @@ $(DIST_DIR)/lib/libass.a: $(DIST_DIR)/lib/libfontconfig.a $(DIST_DIR)/lib/libhar
 		\
 		--enable-harfbuzz \
 		--enable-fontconfig \
-		--enable-large-tiles \
 	&& \
 	emmake make -j8 && \
 	emmake make install
