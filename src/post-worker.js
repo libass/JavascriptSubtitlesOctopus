@@ -637,6 +637,9 @@ function onMessageFromMainEmscriptenThread(message) {
             self.renderOnDemand = message.data.renderOnDemand || false;
             self.dropAllAnimations = message.data.dropAllAnimations || false;
             removeRunDependency('worker-init');
+            postMessage({
+                target: "ready",
+            });
             break;
         }
         case 'oneshot-render':
