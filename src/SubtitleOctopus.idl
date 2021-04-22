@@ -208,5 +208,6 @@ interface SubtitleOctopus {
     RenderBlendResult renderBlend(double tm, long force);
     double findNextEventStart(double tm);
     EventStopTimesResult findEventStopTimes(double tm);
+    void setTrackFeatures();
     void rescanAllAnimations();
 };

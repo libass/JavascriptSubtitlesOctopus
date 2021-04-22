@@ -170,12 +170,7 @@ self.freeTrack = function () {
  * @param {!string} url the URL of the subtitle file.
  */
 self.setTrackByUrl = function (url) {
-    var content = "";
-    if (url.endsWith(".br")) {
-        content = Module["BrotliDecode"](readBinary(url))
-    } else {
-        content = read_(url);
-    }
+    var content = read_(url);
     self.setTrack(content);
 };
 
@@ -656,7 +651,7 @@ function onMessageFromMainEmscriptenThread(message) {
             self.subContent = message.data.subContent;
             self.fontFiles = message.data.fonts;
             self.renderMode = message.data.renderMode;
-            if(self.renderMode == "fast" && typeof createImageBitmap === 'undefined'){
+            if(self.renderMode === "fast" && typeof createImageBitmap === 'undefined'){
                 self.renderMode = "normal";
             }
             self.availableFonts = message.data.availableFonts;

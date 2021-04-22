@@ -118,11 +118,6 @@ The Fast Render mode has been created by @no1d as a suggestion for fix browser f
 
 To enable this mode set the option `lossyRender` to `true` when creating an instance of SubtitleOctopus.
 
-### Brotli Compressed Subtitles
-The SubtitleOctopus allow the use of compressed subtitles in brotli format, saving bandwidth and reducing library startup time
-
-To use, just run: `brotli subFile.ass` and use the .br result file with the subUrl option
-
 ## How to build?
 
 ### Dependencies

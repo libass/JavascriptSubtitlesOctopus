@@ -72,7 +72,7 @@ private:
 void msg_callback(int level, const char *fmt, va_list va, void *data) {
     if (level > log_level) // 6 for verbose
         return;
-    printf("libass: ");
+    printf("libass: [ass] ");
     vprintf(fmt, va);
     printf("\n");
 }
@@ -96,7 +96,7 @@ typedef struct {
 
 // maximum regions - a grid of 3x3
 #define MAX_BLEND_STORAGES (3 * 3)
-typedef struct {
+typedef struct RenderBlendStorage {
     RenderBlendPart part;
     ReusableBuffer buf;
     bool taken;
@@ -276,6 +276,7 @@ public:
     }
 
     void setLogLevel(int level) {
+        printf("set log_level to %u\n", level);
         log_level = level;
     }
 
@@ -297,6 +298,7 @@ public:
         }
 
         ass_set_message_cb(ass_library, msg_callback, NULL);
+        //ass_set_extract_fonts(ass_library, 1);
 
         ass_renderer = ass_renderer_init(ass_library);
         if (!ass_renderer) {
@@ -319,6 +321,7 @@ public:
             printf("Failed to start a track\n");
             exit(4);
         }
+        setTrackFeatures();
         rescanAllAnimations();
     }
 
@@ -329,6 +332,7 @@ public:
             printf("Failed to start a track\n");
             exit(4);
         }
+        setTrackFeatures();
         rescanAllAnimations();
     }
 
@@ -561,6 +565,14 @@ public:
         }
 
         return &result;
+    }
+
+    void setTrackFeatures() {
+        if (!track) {
+            return;
+        }
+        ass_track_set_feature(track, ASS_FEATURE_INCOMPATIBLE_EXTENSIONS, 1);
+        ass_track_set_feature(track, ASS_FEATURE_BIDI_BRACKETS, 1);
     }
 
     void rescanAllAnimations() {

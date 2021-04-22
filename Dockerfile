@@ -39,10 +39,10 @@ WORKDIR /code
 COPY . /code
 
 #Fixes fribidi requiring a git repository as a submodule
-RUN cd lib/fribidi/ && git init && git add . && git -c user.email="bogus@example.com" -c user.name="bogus" commit -m "bogus" && cd /code
+RUN cd lib/fribidi/ && git init && git -c user.email="bogus@example.com" -c user.name="bogus" commit --allow-empty -m "bogus" && cd /code
 #Fixes fontconfig requiring a git repository as a submodule
-RUN cd lib/fontconfig/ && git init && git add . && git -c user.email="bogus@example.com" -c user.name="bogus" commit -m "bogus" && cd /code
+RUN cd lib/fontconfig/ && git init && git -c user.email="bogus@example.com" -c user.name="bogus" commit --allow-empty -m "bogus" && cd /code
 #Fixes libass requiring a git repository as a submodule
-RUN cd lib/libass/ && git init && git add . && git -c user.email="bogus@example.com" -c user.name="bogus" commit -m "bogus" && cd /code
+RUN cd lib/libass/ && git init && git -c user.email="bogus@example.com" -c user.name="bogus" commit --allow-empty -m "bogus" && cd /code
 
 CMD ["make"]
