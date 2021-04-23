@@ -271,6 +271,7 @@ public:
     int canvas_h;
 
     int status;
+    char m_defaultFont[256];
 
     SubtitleOctopus(): ass_library(NULL), ass_renderer(NULL), track(NULL), canvas_w(0), canvas_h(0), status(0), m_is_event_animated(NULL), m_drop_animations(false) {
     }
@@ -290,7 +291,12 @@ public:
         return m_drop_animations;
     }
 
-    void initLibrary(int frame_w, int frame_h) {
+    void initLibrary(int frame_w, int frame_h, char* defaultFont) {
+        if(strlen(defaultFont) >= sizeof(m_defaultFont)){
+            printf("defaultFont is too large!\n");
+            exit(4);
+        }
+        strcpy(m_defaultFont, defaultFont);
         ass_library = ass_library_init();
         if (!ass_library) {
             printf("ass_library_init failed!\n");
@@ -371,11 +377,11 @@ public:
     void reloadLibrary() {
         quitLibrary();
 
-        initLibrary(canvas_w, canvas_h);
+        initLibrary(canvas_w, canvas_h, m_defaultFont);
     }
 
     void reloadFonts() {
-        ass_set_fonts(ass_renderer, "/assets/default.ttc", NULL, ASS_FONTPROVIDER_FONTCONFIG, "/assets/fonts.conf", 1);
+        ass_set_fonts(ass_renderer, m_defaultFont, NULL, ASS_FONTPROVIDER_FONTCONFIG, "/assets/fonts.conf", 1);
     }
 
     void setMargin(int top, int bottom, int left, int right) {

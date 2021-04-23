@@ -655,6 +655,7 @@ function onMessageFromMainEmscriptenThread(message) {
                 self.renderMode = "normal";
             }
             self.availableFonts = message.data.availableFonts;
+            self.fallbackFont = message.data.fallbackFont;
             self.debug = message.data.debug;
             if (!hasNativeConsole && self.debug) {
                 console = makeCustomConsole();

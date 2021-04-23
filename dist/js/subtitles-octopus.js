@@ -32,6 +32,7 @@ var SubtitlesOctopus = function (options) {
     self.isOurCanvas = false; // (internal) we created canvas and manage it
     self.video = options.video; // HTML video element (optional if canvas specified)
     self.canvasParent = null; // (internal) HTML canvas parent element
+    self.fallbackFont = options.fallbackFont;
     self.fonts = options.fonts || []; // Array with links to fonts used in sub (optional)
     self.availableFonts = options.availableFonts || []; // Object with all available fonts (optional). Key is font name in lower case, value is link: {"arial": "/font1.ttf"}
     self.onReadyEvent = options.onReady; // Function called when SubtitlesOctopus is ready (optional)
@@ -129,6 +130,7 @@ var SubtitlesOctopus = function (options) {
             renderMode: self.renderMode,
             subUrl: self.subUrl,
             subContent: self.subContent,
+            fallbackFont: self.fallbackFont,
             fonts: self.fonts,
             availableFonts: self.availableFonts,
             debug: self.debug,

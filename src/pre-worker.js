@@ -114,10 +114,12 @@ Module["preRun"].push(function () {
 
     self.subContent = null;
 
+    Module["FS_createLazyFile"]("/fonts", ".fallback." + self.fallbackFont.match(/(?:\.([^.]+))?$/)[1].toLowerCase(), self.fallbackFont, true, false);
+
     //Module["FS"].mount(Module["FS"].filesystems.IDBFS, {}, '/fonts');
     var fontFiles = self.fontFiles || [];
     for (i = 0; i < fontFiles.length; i++) {
-        Module["FS_createPreloadedFile"]("/fonts", 'font' + i + '-' + fontFiles[i].split('/').pop(), fontFiles[i], true, true);
+        Module["FS_createPreloadedFile"]("/fonts", 'font' + i + '-' + fontFiles[i].split('/').pop(), fontFiles[i], true, false);
     }
 });
 
@@ -129,7 +131,7 @@ Module['onRuntimeInitialized'] = function () {
     if(self.debug){
         self.octObj.setLogLevel(7);
     }
-    self.octObj.initLibrary(screen.width, screen.height);
+    self.octObj.initLibrary(screen.width, screen.height, "/fonts/.fallback." + self.fallbackFont.match(/(?:\.([^.]+))?$/)[1].toLowerCase());
     self.octObj.setDropAnimations(!!self.dropAllAnimations);
     self.octObj.createTrack("/sub.ass");
     self.ass_track = self.octObj.track;

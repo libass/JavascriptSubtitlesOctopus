@@ -325,10 +325,9 @@ src/subtitles-octopus-worker.bc: $(OCTP_DEPS) src/Makefile src/SubtitleOctopus.c
 EMCC_COMMON_ARGS = \
 	$(GLOBAL_CFLAGS) \
 	-s EXPORTED_FUNCTIONS="['_main', '_malloc']" \
-	-s EXTRA_EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'getValue', 'FS_createPreloadedFile', 'FS_createFolder']" \
+	-s EXTRA_EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'getValue', 'FS_createPreloadedFile', 'FS_createFolder', 'FS_createLazyFile']" \
 	-s NO_EXIT_RUNTIME=1 \
 	--use-preload-plugins \
-	--preload-file assets/default.ttc \
 	--preload-file assets/fonts.conf \
 	-s ALLOW_MEMORY_GROWTH=1 \
 	-s FORCE_FILESYSTEM=1 \
