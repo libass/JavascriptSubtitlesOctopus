@@ -27,12 +27,12 @@ self.readDataUri = function (dataURI) {
         throw new Error('Invalid argument: dataURI must be a string');
     }
     dataURI = dataURI.split(',');
-    var type = dataURI[0].split(':')[1].split(';')[0],
+    const type = dataURI[0].split(':')[1].split(';')[0],
         byteString = atob(dataURI[1]),
         byteStringLength = byteString.length,
         arrayBuffer = new ArrayBuffer(byteStringLength),
         intArray = new Uint8Array(arrayBuffer);
-    for (var i = 0; i < byteStringLength; i++) {
+    for (let i = 0; i < byteStringLength; i++) {
         intArray[i] = byteString.charCodeAt(i);
     }
     return intArray;
@@ -88,18 +88,14 @@ self.writeFontToFS = function(font) {
 
     self.fontMap_[font] = true;
 
-    var content;
-    var name;
+    let path;
     if (self.availableFonts.hasOwnProperty(font)){
-        content = readBinary(self.availableFonts[font]);
-        name = self.availableFonts[font].split('/').pop();
+        path = self.availableFonts[font];
     } else {
         return;
     }
 
-    Module["FS"].writeFile('/fonts/font' + (self.fontId++) + '-' + name, content, {
-        encoding: 'binary'
-    });
+    Module["FS_createLazyFile"]("/fonts", 'font' + (self.fontId++) + '-' + path.split('/').pop(), path, true, false);
 };
 
 /**
@@ -109,27 +105,27 @@ self.writeFontToFS = function(font) {
 self.writeAvailableFontsToFS = function(content) {
     if (!self.availableFonts) return;
 
-    var sections = parseAss(content);
+    const sections = parseAss(content);
 
-    for (var i = 0; i < sections.length; i++) {
-        for (var j = 0; j < sections[i].body.length; j++) {
+    for (let i = 0; i < sections.length; i++) {
+        for (let j = 0; j < sections[i].body.length; j++) {
             if (sections[i].body[j].key === 'Style') {
                 self.writeFontToFS(sections[i].body[j].value['Fontname']);
             }
         }
     }
 
-    var regex = /\\fn([^\\}]*?)[\\}]/g;
-    var matches;
+    const regex = /\\fn([^\\}]*?)[\\}]/g;
+    let matches;
     while (matches = regex.exec(self.subContent)) {
         self.writeFontToFS(matches[1]);
     }
 };
 
 self.getRenderMethod = function () {
-    if (self.renderMode == 'fast') {
+    if (self.renderMode === 'fast') {
         return self.fastRender;
-    } else if (self.renderMode == 'blend') {
+    } else if (self.renderMode === 'blend') {
         return self.blendRender;
     } else {
         return self.render;
@@ -170,7 +166,7 @@ self.freeTrack = function () {
  * @param {!string} url the URL of the subtitle file.
  */
 self.setTrackByUrl = function (url) {
-    var content = read_(url);
+    const content = read_(url);
     self.setTrack(content);
 };
 
@@ -181,7 +177,7 @@ self.resize = function (width, height) {
 };
 
 self.getCurrentTime = function () {
-    var diff = (Date.now() - self.lastCurrentTimeReceivedAt) / 1000;
+    const diff = (Date.now() - self.lastCurrentTimeReceivedAt) / 1000;
     if (self._isPaused) {
         return self.lastCurrentTime;
     }
@@ -240,12 +236,12 @@ self.setIsPaused = function (isPaused) {
 self.render = function (force) {
     self.rafId = 0;
     self.renderPending = false;
-    var startTime = performance.now();
-    var renderResult = self.octObj.renderImage(self.getCurrentTime() + self.delay, self.changed);
-    var changed = Module.getValue(self.changed, 'i32');
-    if (changed != 0 || force) {
-        var result = self.buildResult(renderResult);
-        var spentTime = performance.now() - startTime;
+    const startTime = performance.now();
+    const renderResult = self.octObj.renderImage(self.getCurrentTime() + self.delay, self.changed);
+    const changed = Module.getValue(self.changed, 'i32');
+    if (changed !== 0 || force) {
+        const result = self.buildResult(renderResult);
+        const spentTime = performance.now() - startTime;
         postMessage({
             target: 'canvas',
             op: 'renderCanvas',
@@ -261,14 +257,14 @@ self.render = function (force) {
 };
 
 self.blendRenderTiming = function (timing, force) {
-    var startTime = performance.now();
+    const startTime = performance.now();
 
-    var renderResult = self.octObj.renderBlend(timing, force);
-    var blendTime = renderResult.blend_time;
-    var canvases = [], buffers = [];
-    if (renderResult.ptr != 0 && (renderResult.changed != 0 || force)) {
+    const renderResult = self.octObj.renderBlend(timing, force);
+    const blendTime = renderResult.blend_time;
+    const canvases = [], buffers = [];
+    if (renderResult.ptr !== 0 && (renderResult.changed !== 0 || force)) {
         // make a copy, as we should free the memory so subsequent calls can utilize it
-        for (var part = renderResult.part; part.ptr != 0; part = part.next) {
+        for (var part = renderResult.part; part.ptr !== 0; part = part.next) {
             var result = new Uint8Array(HEAPU8.subarray(part.image, part.image + part.dest_width * part.dest_height * 4));
             canvases.push({w: part.dest_width, h: part.dest_height, x: part.dest_x, y: part.dest_y, buffer: result.buffer});
             buffers.push(result.buffer);
@@ -288,7 +284,7 @@ self.blendRender = function (force) {
     self.rafId = 0;
     self.renderPending = false;
 
-    var rendered = self.blendRenderTiming(self.getCurrentTime() + self.delay, force);
+    const rendered = self.blendRenderTiming(self.getCurrentTime() + self.delay, force);
     if (rendered.canvases.length > 0) {
         postMessage({
             target: 'canvas',
@@ -306,9 +302,9 @@ self.blendRender = function (force) {
 };
 
 self.oneshotRender = function (lastRenderedTime, renderNow, iteration) {
-    var eventStart = renderNow ? lastRenderedTime : self.octObj.findNextEventStart(lastRenderedTime);
-    var eventFinish = -1.0, emptyFinish = -1.0, animated = false;
-    var rendered = {};
+    const eventStart = renderNow ? lastRenderedTime : self.octObj.findNextEventStart(lastRenderedTime);
+    let eventFinish = -1.0, emptyFinish = -1.0, animated = false;
+    let rendered = {};
     if (eventStart >= 0) {
         eventTimes = self.octObj.findEventStopTimes(eventStart);
         eventFinish = eventTimes.eventFinish;
@@ -340,25 +336,25 @@ self.oneshotRender = function (lastRenderedTime, renderNow, iteration) {
 self.fastRender = function (force) {
     self.rafId = 0;
     self.renderPending = false;
-    var startTime = performance.now();
-    var renderResult = self.octObj.renderImage(self.getCurrentTime() + self.delay, self.changed);
-    var changed = Module.getValue(self.changed, "i32");
-    if (changed != 0 || force) {
-        var result = self.buildResult(renderResult);
-        var newTime = performance.now();
-        var libassTime = newTime - startTime;
-        var promises = [];
-        for (var i = 0; i < result[0].length; i++) {
-            var image = result[0][i];
-            var imageBuffer = new Uint8ClampedArray(image.buffer);
-            var imageData = new ImageData(imageBuffer, image.w, image.h);
+    const startTime = performance.now();
+    const renderResult = self.octObj.renderImage(self.getCurrentTime() + self.delay, self.changed);
+    const changed = Module.getValue(self.changed, "i32");
+    if (changed !== 0 || force) {
+        const result = self.buildResult(renderResult);
+        const newTime = performance.now();
+        const libassTime = newTime - startTime;
+        const promises = [];
+        for (let i = 0; i < result[0].length; i++) {
+            const image = result[0][i];
+            const imageBuffer = new Uint8ClampedArray(image.buffer);
+            const imageData = new ImageData(imageBuffer, image.w, image.h);
             promises[i] = createImageBitmap(imageData, 0, 0, image.w, image.h);
         }
         Promise.all(promises).then(function (imgs) {
-            var decodeTime = performance.now() - newTime;
-            var bitmaps = [];
-            for (var i = 0; i < imgs.length; i++) {
-                var image = result[0][i];
+            const decodeTime = performance.now() - newTime;
+            const bitmaps = [];
+            for (let i = 0; i < imgs.length; i++) {
+                const image = result[0][i];
                 bitmaps[i] = { x: image.x, y: image.y, bitmap: imgs[i] };
             }
             postMessage({
@@ -377,11 +373,11 @@ self.fastRender = function (force) {
 };
 
 self.buildResult = function (ptr) {
-    var items = [];
-    var transferable = [];
-    var item;
+    const items = [];
+    const transferable = [];
+    let item;
 
-    while (ptr.ptr != 0) {
+    while (ptr.ptr !== 0) {
         item = self.buildResultItem(ptr);
         if (item !== null) {
             items.push(item);
@@ -439,13 +435,13 @@ if (typeof SDL !== 'undefined') {
 }
 
 function FPSTracker(text) {
-    var last = 0;
-    var mean = 0;
-    var counter = 0;
+    let last = 0;
+    let mean = 0;
+    let counter = 0;
     this.tick = function () {
-        var now = Date.now();
+        const now = Date.now();
         if (last > 0) {
-            var diff = now - last;
+            const diff = now - last;
             mean = 0.99 * mean + 0.01 * diff;
             if (counter++ === 60) {
                 counter = 0;
@@ -461,9 +457,9 @@ function FPSTracker(text) {
  * @param {!string} content the content of the file
  */
 function parseAss(content) {
-    var m, format, lastPart, parts, key, value, tmp, i, j, body;
-    var sections = [];
-    var lines = content.split(/[\r\n]+/g);
+    let m, format, lastPart, parts, key, value, tmp, i, j, body;
+    const sections = [];
+    const lines = content.split(/[\r\n]+/g);
     for (i = 0; i < lines.length; i++) {
         m = lines[i].match(/^\[(.*)\]$/);
         if (m) {
@@ -519,7 +515,7 @@ function parseAss(content) {
 
 self.requestAnimationFrame = (function () {
     // similar to Browser.requestAnimationFrame
-    var nextRAF = 0;
+    let nextRAF = 0;
     return function (func) {
         // try to keep target fps (30fps) between calls to here
         var now = Date.now();
@@ -536,7 +532,7 @@ self.requestAnimationFrame = (function () {
     };
 })();
 
-var screen = {
+const screen = {
     width: 0,
     height: 0
 };
@@ -552,11 +548,11 @@ Module.printErr = function Module_printErr(x) {
 
 // Frame throttling
 
-var frameId = 0;
-var clientFrameId = 0;
-var commandBuffer = [];
+let frameId = 0;
+let clientFrameId = 0;
+let commandBuffer = [];
 
-var postMainLoop = Module['postMainLoop'];
+const postMainLoop = Module['postMainLoop'];
 Module['postMainLoop'] = function () {
     if (postMainLoop) postMainLoop();
     // frame complete, send a frame id
@@ -570,8 +566,8 @@ addRunDependency('worker-init');
 
 // buffer messages until the program starts to run
 
-var messageBuffer = null;
-var messageResenderTimeout = null;
+let messageBuffer = null;
+let messageResenderTimeout = null;
 
 function messageResender() {
     if (calledMain) {
@@ -587,9 +583,9 @@ function messageResender() {
 }
 
 function _applyKeys(input, output) {
-    var vargs = Object.keys(input);
+    const vargs = Object.keys(input);
 
-    for (var i = 0; i < vargs.length; i++) {
+    for (let i = 0; i < vargs.length; i++) {
         output[vargs[i]] = input[vargs[i]];
     }
 }

@@ -1,16 +1,4 @@
 var SubtitlesOctopus = function (options) {
-    var supportsWebAssembly = false;
-    try {
-        if (typeof WebAssembly === "object"
-            && typeof WebAssembly.instantiate === "function") {
-            const module = new WebAssembly.Module(Uint8Array.of(0x0, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00));
-            if (module instanceof WebAssembly.Module)
-                supportsWebAssembly = (new WebAssembly.Instance(module) instanceof WebAssembly.Instance);
-        }
-    } catch (e) {
-    }
-    console.log("WebAssembly support detected: " + (supportsWebAssembly ? "yes" : "no"));
-
     var self = this;
     self.canvas = options.canvas; // HTML canvas element (optional if video specified)
     self.renderMode = options.renderMode || (options.lossyRender ? 'fast' : (options.blendRender ? 'blend' : 'normal'));
@@ -36,11 +24,7 @@ var SubtitlesOctopus = function (options) {
     self.fonts = options.fonts || []; // Array with links to fonts used in sub (optional)
     self.availableFonts = options.availableFonts || []; // Object with all available fonts (optional). Key is font name in lower case, value is link: {"arial": "/font1.ttf"}
     self.onReadyEvent = options.onReady; // Function called when SubtitlesOctopus is ready (optional)
-    if (supportsWebAssembly) {
-        self.workerUrl = options.workerUrl || 'subtitles-octopus-worker.js'; // Link to WebAssembly worker
-    } else {
-        self.workerUrl = options.legacyWorkerUrl || 'subtitles-octopus-worker-legacy.js'; // Link to legacy worker
-    }
+    self.workerUrl = options.workerUrl || 'subtitles-octopus-worker.js'; // Link to WebAssembly worker
     self.subUrl = options.subUrl; // Link to sub file (optional if subContent specified)
     self.subContent = options.subContent || null; // Sub content (optional if subUrl specified)
     self.onErrorEvent = options.onError; // Function called in case of critical error meaning sub wouldn't be shown and you should use alternative method (for instance it occurs if browser doesn't support web workers).

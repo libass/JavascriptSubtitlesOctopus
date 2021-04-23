@@ -27,9 +27,9 @@ To start using SubtitlesOctopus you only need to instantiate a new instance of
 var options = {
     video: document.getElementById('video'), // HTML5 video element
     subUrl: '/test/test.ass', // Link to subtitles
+    fallbackFont: '/test/font-1.ttf', // Fallback font to be used in case none can be loaded / or has special characters
     fonts: ['/test/font-1.ttf', '/test/font-2.ttf'], // Links to fonts (not required, default font already included in build)
-    workerUrl: '/libassjs-worker.js', // Link to WebAssembly-based file "libassjs-worker.js"
-    legacyWorkerUrl: '/libassjs-worker-legacy.js' // Link to non-WebAssembly worker
+    workerUrl: '/subtitles-octopus-worker.js', // Link to worker file "libassjs-worker.js"
 };
 var instance = new SubtitlesOctopus(options);
 ```
@@ -47,8 +47,9 @@ the time the subtitles should render at yourself:
 var options = {
     canvas: document.getElementById('canvas'), // canvas element
     subUrl: '/test/test.ass', // Link to subtitles
-    fonts: ['/test/font-1.ttf', '/test/font-2.ttf'], // Links to fonts (not required, default font already included in build)
-    workerUrl: '/libassjs-worker.js' // Link to file "libassjs-worker.js"
+    fallbackFont: '/test/font-1.ttf', // Fallback font to be used in case none can be loaded / or has special characters
+    fonts: ['/test/font-1.ttf', '/test/font-2.ttf'], // Links to fonts
+    workerUrl: '/subtitles-octopus-worker.js' // Link to file "libassjs-worker.js"
 };
 var instance = new SubtitlesOctopus(options);
 // And then...
@@ -98,7 +99,8 @@ When creating an instance of SubtitleOctopus, you can set the following options:
   `subContent` to be specified)
 - `subContent`: The content of the subtitle file to play. (Require either
   `subContent` or `subUrl` to be specified)
-- `workerUrl`: The URL of the worker. (Default: `libassjs-worker.js`)
+- `workerUrl`: The URL of the worker. (Default: `subtitles-octopus-worker.js`)
+- `fallbackFont`: The URL of a fallback font to be used in case none can be loaded / or has special characters
 - `fonts`: An array of links to the fonts used in the subtitle. (Optional)
 - `availableFonts`: Object with all available fonts - Key is font name in lower
   case, value is link: `{"arial": "/font1.ttf"}` (Optional)

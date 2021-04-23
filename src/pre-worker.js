@@ -17,7 +17,7 @@ if (!Uint8Array.prototype.slice) {
 }
 
 
-var hasNativeConsole = typeof console !== "undefined";
+const hasNativeConsole = typeof console !== "undefined";
 
 // implement console methods if they're missing
 function makeCustomConsole() {
@@ -30,19 +30,19 @@ function makeCustomConsole() {
         }
 
         return {
-            log: function() {
+            log: function () {
                 postConsoleMessage("log", arguments);
             },
-            debug: function() {
+            debug: function () {
                 postConsoleMessage("debug", arguments);
             },
-            info: function() {
+            info: function () {
                 postConsoleMessage("info", arguments);
             },
-            warn: function() {
+            warn: function () {
                 postConsoleMessage("warn", arguments);
             },
-            error: function() {
+            error: function () {
                 postConsoleMessage("error", arguments);
             }
         }
@@ -56,6 +56,7 @@ Module = Module || {};
 Module["preRun"] = Module["preRun"] || [];
 
 Module["preRun"].push(function () {
+    let i;
     Module["FS_createFolder"]("/", "fonts", true, true);
     Module["FS_createFolder"]("/", ".fontconfig", true, true);
 
@@ -92,17 +93,17 @@ Module["preRun"].push(function () {
     }
 
     if ((self.availableFonts && self.availableFonts.length !== 0)) {
-        var sections = parseAss(self.subContent);
-        for (var i = 0; i < sections.length; i++) {
-            for (var j = 0; j < sections[i].body.length; j++) {
+        const sections = parseAss(self.subContent);
+        for (i = 0; i < sections.length; i++) {
+            for (let j = 0; j < sections[i].body.length; j++) {
                 if (sections[i].body[j].key === 'Style') {
                     self.writeFontToFS(sections[i].body[j].value['Fontname']);
                 }
             }
         }
 
-        var regex = /\\fn([^\\}]*?)[\\}]/g;
-        var matches;
+        const regex = /\\fn([^\\}]*?)[\\}]/g;
+        let matches;
         while (matches = regex.exec(self.subContent)) {
             self.writeFontToFS(matches[1]);
         }
@@ -114,12 +115,12 @@ Module["preRun"].push(function () {
 
     self.subContent = null;
 
-    Module["FS_createLazyFile"]("/fonts", ".fallback." + self.fallbackFont.match(/(?:\.([^.]+))?$/)[1].toLowerCase(), self.fallbackFont, true, false);
+    Module["FS_createLazyFile"]("/fonts", ".fallback-" + self.fallbackFont.split('/').pop(), self.fallbackFont, true, false);
 
     //Module["FS"].mount(Module["FS"].filesystems.IDBFS, {}, '/fonts');
-    var fontFiles = self.fontFiles || [];
+    const fontFiles = self.fontFiles || [];
     for (i = 0; i < fontFiles.length; i++) {
-        Module["FS_createPreloadedFile"]("/fonts", 'font' + i + '-' + fontFiles[i].split('/').pop(), fontFiles[i], true, false);
+        Module["FS_createLazyFile"]("/fonts", 'font' + i + '-' + fontFiles[i].split('/').pop(), fontFiles[i], true, false);
     }
 });
 
@@ -131,7 +132,7 @@ Module['onRuntimeInitialized'] = function () {
     if(self.debug){
         self.octObj.setLogLevel(7);
     }
-    self.octObj.initLibrary(screen.width, screen.height, "/fonts/.fallback." + self.fallbackFont.match(/(?:\.([^.]+))?$/)[1].toLowerCase());
+    self.octObj.initLibrary(screen.width, screen.height, "/fonts/.fallback-" + self.fallbackFont.split('/').pop());
     self.octObj.setDropAnimations(!!self.dropAllAnimations);
     self.octObj.createTrack("/sub.ass");
     self.ass_track = self.octObj.track;
@@ -182,7 +183,7 @@ Date.now = (Date.now || function () {
     return new Date().getTime();
 });
 if ("now" in self.performance === false) {
-    var nowOffset = Date.now();
+    let nowOffset = Date.now();
     if (performance.timing && performance.timing.navigationStart) {
         nowOffset = performance.timing.navigationStart
     }

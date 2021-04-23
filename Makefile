@@ -4,7 +4,7 @@
 BASE_DIR:=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 DIST_DIR:=$(BASE_DIR)dist/libraries
 
-GLOBAL_CFLAGS:=-O3 -s ENVIRONMENT=web,webview -s DOUBLE_MODE=0
+GLOBAL_CFLAGS:=-O3 -g0 -s ENVIRONMENT=web,worker -s DOUBLE_MODE=0
 GLOBAL_LDFLAGS:=
 
 all: subtitleoctopus
@@ -327,42 +327,36 @@ EMCC_COMMON_ARGS = \
 	-s EXPORTED_FUNCTIONS="['_main', '_malloc']" \
 	-s EXTRA_EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'getValue', 'FS_createPreloadedFile', 'FS_createFolder', 'FS_createLazyFile']" \
 	-s NO_EXIT_RUNTIME=1 \
-	--use-preload-plugins \
-	--preload-file assets/fonts.conf \
+	-s MALLOC=emmalloc \
 	-s ALLOW_MEMORY_GROWTH=1 \
+	-s INITIAL_MEMORY=67108864 \
+	--embed-file assets/fonts.conf \
 	-s FORCE_FILESYSTEM=1 \
-	-s ENVIRONMENT=web,webview \
+	-s ENVIRONMENT=web,worker \
 	-s DOUBLE_MODE=0 \
+	-s EVAL_CTORS=1 \
+	-s TEXTDECODER=2 \
+	-s LEGACY_VM_SUPPORT=0 \
+	-s MIN_CHROME_VERSION=75 \
+	-s MIN_FIREFOX_VERSION=65 \
+	-s MIN_EDGE_VERSION=0x7FFFFFFF \
+	-s MIN_SAFARI_VERSION=120000 \
 	--llvm-lto 1 \
 	--no-heap-copy \
+	--memory-init-file 0 \
+	-flto \
 	-o $@
-	#--js-opts 0 -g4 \
-	#--closure 1 \
-	#--memory-init-file 0 \
+	#-s WASM_BIGINT \
 	#-s OUTLINING_LIMIT=20000 \
 
-dist: src/subtitles-octopus-worker.bc dist/js/subtitles-octopus-worker.js dist/js/subtitles-octopus-worker-legacy.js dist/js/subtitles-octopus.js
+dist: src/subtitles-octopus-worker.bc dist/js/subtitles-octopus-worker.js dist/js/subtitles-octopus.js
 
 dist/js/subtitles-octopus-worker.js: src/subtitles-octopus-worker.bc src/pre-worker.js src/SubOctpInterface.js src/post-worker.js
 	emcc src/subtitles-octopus-worker.bc $(OCTP_DEPS) \
 		--pre-js src/pre-worker.js \
 		--post-js src/SubOctpInterface.js \
 		--post-js src/post-worker.js \
-		-s WASM_BIGINT \
-		-s WASM=1 \
-		$(EMCC_COMMON_ARGS)
-
-dist/js/subtitles-octopus-worker-legacy.js: src/subtitles-octopus-worker.bc src/pre-worker.js src/SubOctpInterface.js src/post-worker.js
-	emcc src/subtitles-octopus-worker.bc $(OCTP_DEPS) \
-		--pre-js src/pre-worker.js \
-		--post-js src/SubOctpInterface.js \
-		--post-js src/post-worker.js \
-		-s WASM=0 \
-		-s LEGACY_VM_SUPPORT=0 \
-		-s MIN_CHROME_VERSION=51 \
-		-s MIN_FIREFOX_VERSION=54 \
-		-s MIN_EDGE_VERSION=15 \
-		-s MIN_SAFARI_VERSION=10 \
+		-s WASM=2 \
 		$(EMCC_COMMON_ARGS)
 
 dist/js/subtitles-octopus.js: src/subtitles-octopus.js
