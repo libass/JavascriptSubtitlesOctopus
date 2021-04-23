@@ -223,7 +223,7 @@ $(DIST_DIR)/lib/libfreetype.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/lib
 	emmake make install
 
 # Fontconfig
-lib/fontconfig/configure: 
+lib/fontconfig/configure:
 	cd lib/fontconfig && \
 	git reset --hard && \
 	$(foreach file, \
@@ -314,7 +314,7 @@ src/Makefile: src/SubOctpInterface.cpp
 	cd src && \
 	autoreconf -fi && \
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
-	emconfigure ./configure --disable-shared --host=x86-none-linux --build=x86_64 LDFLAGS="$(GLOBAL_LDFLAGS)" CFLAGS="$(GLOBAL_CFLAGS)"
+	emconfigure ./configure --host=x86-none-linux --build=x86_64 LDFLAGS="$(GLOBAL_LDFLAGS)" CFLAGS="$(GLOBAL_CFLAGS)"
 
 src/subtitles-octopus-worker.bc: $(OCTP_DEPS) src/Makefile src/SubtitleOctopus.cpp src/SubOctpInterface.cpp
 	cd src && \
@@ -349,6 +349,7 @@ dist/js/subtitles-octopus-worker.js: src/subtitles-octopus-worker.bc src/pre-wor
 		--pre-js src/pre-worker.js \
 		--post-js src/SubOctpInterface.js \
 		--post-js src/post-worker.js \
+		-s WASM_BIGINT \
 		-s WASM=1 \
 		$(EMCC_COMMON_ARGS)
 

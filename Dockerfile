@@ -1,4 +1,5 @@
 FROM debian:buster
+
 RUN echo "force-unsafe-io" > /etc/dpkg/dpkg.cfg.d/force-unsafe-io
 RUN apt-get update && apt-get install -y --no-install-recommends \
         llvm \
@@ -28,10 +29,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN pip install ply
 
+
+ARG EMSCRIPTEN_TAG=2.0.2
+
 RUN git clone https://github.com/emscripten-core/emsdk.git && \
     cd emsdk && \
-    ./emsdk install 1.39.15 && \
-    ./emsdk activate 1.39.15
+    ./emsdk install ${EMSCRIPTEN_TAG} && \
+    ./emsdk activate ${EMSCRIPTEN_TAG}
 
 ENV PATH=$PATH:/emsdk:/emsdk/upstream/emscripten:/emsdk/node/14.15.5_64bit/bin
 WORKDIR /code
