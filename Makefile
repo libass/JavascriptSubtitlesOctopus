@@ -287,6 +287,7 @@ $(DIST_DIR)/lib/libass.a: $(DIST_DIR)/lib/libfontconfig.a $(DIST_DIR)/lib/libhar
 		--disable-shared \
 		--enable-static \
 		--disable-asm \
+		--enable-large-tiles \
 		\
 		--enable-harfbuzz \
 		--enable-fontconfig \
