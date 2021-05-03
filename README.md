@@ -1,8 +1,8 @@
-[![Actions Status](https://github.com/Dador/JavascriptSubtitlesOctopus/workflows/Emscripten/badge.svg)](https://github.com/Dador/JavascriptSubtitlesOctopus/actions)
+[![Actions Status](https://github.com/libass/JavascriptSubtitlesOctopus/workflows/Emscripten/badge.svg)](https://github.com/libass/JavascriptSubtitlesOctopus/actions)
 
 SubtitlesOctopus displays subtitles in .ass format and easily integrates with HTML5 videos. It supports all SSA/ASS features and fully compatible with [libass](https://github.com/libass/libass).
 
-[ONLINE DEMO](https://dador.github.io/JavascriptSubtitlesOctopus/videojs.html) / [other examples with demo](https://dador.github.io/JavascriptSubtitlesOctopus/)
+[ONLINE DEMO](https://libass.github.io/JavascriptSubtitlesOctopus/videojs.html) / [other examples with demo](https://libass.github.io/JavascriptSubtitlesOctopus/)
 
 ## Features
 
@@ -41,7 +41,7 @@ var instance = new SubtitlesOctopus(options);
 After that SubtitlesOctopus automatically "connects" to your video and it starts
 to display subtitles. You can use it with any HTML5 player.
 
-[See other examples](https://github.com/Dador/JavascriptSubtitlesOctopus/tree/master/example).
+[See other examples](https://github.com/libass/JavascriptSubtitlesOctopus/tree/gh-pages/).
 
 ### Using only with canvas
 You're also able to use it without any video. However, that requires you to set
@@ -151,12 +151,12 @@ To use, just run: `brotli subFile.ass` and use the .br result file with the subU
 
 ### Get the Source
 
-Run `git clone --recursive https://github.com/Dador/JavascriptSubtitlesOctopus.git`
+Run `git clone --recursive https://github.com/libass/JavascriptSubtitlesOctopus.git`
 
 ### Build with Docker
 1) Install Docker
-2) `docker build -t dador/javascriptsubtitlesoctopus .`
-3) `docker run -it --rm -v ${PWD}:/code dador/javascriptsubtitlesoctopus:latest`
+2) `docker build -t libass/javascriptsubtitlesoctopus .`
+3) `docker run -it --rm -v ${PWD}:/code libass/javascriptsubtitlesoctopus:latest`
 4) Artifacts are in /dist/js
 
 ## Why "Octopus"?
