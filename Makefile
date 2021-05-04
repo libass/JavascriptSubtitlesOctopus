@@ -11,16 +11,15 @@ all: subtitleoctopus
 subtitleoctopus: dist
 
 # Fribidi
-lib/fribidi/configure:
-	cd lib/fribidi && \
-	git reset --hard && \
-	$(foreach file, \
-	$(wildcard $(BASE_DIR)build/patches/fribidi/*.patch), \
-	patch -d "$(BASE_DIR)lib/fribidi" -Np1 -i $(file);) \
-	NOCONFIGURE=1 ./autogen.sh
+build/lib/fribidi/configure: lib/fribidi
+	rm -rf build/lib/fribidi
+	mkdir -p build/lib
+	cp -r lib/fribidi build/lib/fribidi
+	$(foreach file, $(wildcard $(BASE_DIR)build/patches/fribidi/*.patch), patch -d "$(BASE_DIR)build/lib/fribidi" -Np1 -i $(file) && ) true
+	cd build/lib/fribidi && NOCONFIGURE=1 ./autogen.sh
 
-$(DIST_DIR)/lib/libfribidi.a: lib/fribidi/configure
-	cd lib/fribidi && \
+$(DIST_DIR)/lib/libfribidi.a: build/lib/fribidi/configure
+	cd build/lib/fribidi && \
 	emconfigure ./configure \
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
@@ -41,16 +40,13 @@ $(DIST_DIR)/lib/libfribidi.a: lib/fribidi/configure
 	&& \
 	emmake make -j8 && \
 	emmake make install
-	
-lib/expat/expat/configured:
-	cd lib/expat/expat && \
-	$(foreach file, \
-	$(wildcard $(BASE_DIR)build/patches/expat/*.patch), \
-	patch -d "$(BASE_DIR)lib/expat" -Np1 -i $(file);) \
-	touch configured && mkdir build
 
-$(DIST_DIR)/lib/libexpat.a: lib/expat/expat/configured
-	cd lib/expat/expat/build && \
+build/lib/expat/configured: lib/expat
+	mkdir -p build/lib/expat
+	touch build/lib/expat/configured
+
+$(DIST_DIR)/lib/libexpat.a: build/lib/expat/configured
+	cd build/lib/expat && \
 	emcmake cmake \
 		-DCMAKE_C_FLAGS=" \
 		-s USE_PTHREADS=0 \
@@ -67,84 +63,83 @@ $(DIST_DIR)/lib/libexpat.a: lib/expat/expat/configured
 		-DEXPAT_BUILD_FUZZERS=off \
 		-DEXPAT_BUILD_TESTS=off \
 		-DEXPAT_BUILD_TOOLS=off \
-		.. \
+		$(BASE_DIR)lib/expat/expat \
 	&& \
 	emmake make -j8 && \
 	emmake make install
 
-lib/brotli/configured:
-	cd lib/brotli && \
-	$(foreach file, \
-	$(wildcard $(BASE_DIR)build/patches/brotli/*.patch), \
-	patch -d "$(BASE_DIR)lib/brotli" -Np1 -i $(file);) \
-	touch configured && mkdir build
+build/lib/brotli/configured: lib/brotli
+	mkdir -p build/lib/brotli
+	touch build/lib/brotli/configured
 
-lib/brotli/build/libbrotlidec.pc: lib/brotli/configured
-	cd lib/brotli/build && \
+build/lib/brotli/libbrotlidec.pc: build/lib/brotli/configured
+	cd build/lib/brotli && \
 	emcmake cmake \
 		-DCMAKE_C_FLAGS=" \
 		$(GLOBAL_CFLAGS) \
 		" \
 		-DCMAKE_INSTALL_PREFIX=$(DIST_DIR) \
-		.. \
+		$(BASE_DIR)lib/brotli \
 	&& \
 	emmake make -j8 && \
-	cp -r ../c/include $(DIST_DIR)
+	cp -r $(BASE_DIR)lib/brotli/c/include $(DIST_DIR)
 
-$(DIST_DIR)/lib/libbrotlicommon.a: lib/brotli/build/libbrotlidec.pc
-	cd lib/brotli/build && \
+$(DIST_DIR)/lib/libbrotlicommon.a: build/lib/brotli/libbrotlidec.pc
+	cd build/lib/brotli && \
 	mkdir -p $(DIST_DIR)/lib/pkgconfig && \
 	cp libbrotlicommon.pc $(DIST_DIR)/lib/pkgconfig && \
 	cp libbrotlicommon-static.a $(DIST_DIR)/lib/libbrotlicommon.a
 
-$(DIST_DIR)/lib/libbrotlidec.a: lib/brotli/build/libbrotlidec.pc $(DIST_DIR)/lib/libbrotlicommon.a
-	cd lib/brotli/build && \
+$(DIST_DIR)/lib/libbrotlidec.a: build/lib/brotli/libbrotlidec.pc $(DIST_DIR)/lib/libbrotlicommon.a
+	cd build/lib/brotli && \
 	mkdir -p $(DIST_DIR)/lib/pkgconfig && \
 	cp libbrotlidec.pc $(DIST_DIR)/lib/pkgconfig && \
 	cp libbrotlidec-static.a $(DIST_DIR)/lib/libbrotlidec.a
 
 # Freetype without Harfbuzz
-lib/freetype/build_hb/dist_hb/lib/libfreetype.a: $(DIST_DIR)/lib/libbrotlidec.a
-	cd "lib/freetype" && \
-	NOCONFIGURE=1 ./autogen.sh && \
-	mkdir -p build_hb && \
-	cd build_hb && \
-	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
-	emconfigure ../configure \
-		CFLAGS=" \
-		-s USE_PTHREADS=0 \
-		$(GLOBAL_CFLAGS) \
-		-s NO_FILESYSTEM=1 \
-		-s NO_EXIT_RUNTIME=1 \
-		--llvm-lto 1 \
-		-s MODULARIZE=1 \
-		" \
-		--prefix="$$(pwd)/dist_hb" \
-		--host=x86-none-linux \
-		--build=x86_64 \
-		--enable-static \
-		--disable-shared \
-		\
-		--with-brotli=yes \
-		--without-zlib \
-		--without-bzip2 \
-		--without-png \
-		--without-harfbuzz \
-	&& \
-	emmake make -j8 && \
-	emmake make install
+build/lib/freetype/build_hb/dist_hb/lib/libfreetype.a: $(DIST_DIR)/lib/libbrotlidec.a
+	rm -rf build/lib/freetype
+	cp -r lib/freetype build/lib/freetype
+	$(foreach file, $(wildcard $(BASE_DIR)build/patches/freetype/*.patch), patch -d "$(BASE_DIR)build/lib/freetype" -Np1 -i $(file) && ) true
+	cd build/lib/freetype && \
+		NOCONFIGURE=1 ./autogen.sh && \
+		mkdir -p build_hb && \
+		cd build_hb && \
+		EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
+		emconfigure ../configure \
+			CFLAGS=" \
+			-s USE_PTHREADS=0 \
+			$(GLOBAL_CFLAGS) \
+			-s NO_FILESYSTEM=1 \
+			-s NO_EXIT_RUNTIME=1 \
+			--llvm-lto 1 \
+			-s MODULARIZE=1 \
+			" \
+			--prefix="$$(pwd)/dist_hb" \
+			--host=x86-none-linux \
+			--build=x86_64 \
+			--enable-static \
+			--disable-shared \
+			\
+			--with-brotli=yes \
+			--without-zlib \
+			--without-bzip2 \
+			--without-png \
+			--without-harfbuzz \
+		&& \
+		emmake make -j8 && \
+		emmake make install
 
 # Harfbuzz
-lib/harfbuzz/configure:
-	cd lib/harfbuzz && \
-	$(foreach file, \
-	$(wildcard $(BASE_DIR)build/patches/harfbuzz/*.patch), \
-	patch -d "$(BASE_DIR)lib/harfbuzz" -Np1 -i $(file);) \
-	NOCONFIGURE=1 ./autogen.sh
+build/lib/harfbuzz/configure: lib/harfbuzz
+	rm -rf build/lib/harfbuzz
+	cp -r lib/harfbuzz build/lib/harfbuzz
+	$(foreach file, $(wildcard $(BASE_DIR)build/patches/harfbuzz/*.patch), patch -d "$(BASE_DIR)build/lib/harfbuzz" -Np1 -i $(file) && ) true
+	cd build/lib/harfbuzz && NOCONFIGURE=1 ./autogen.sh
 
-$(DIST_DIR)/lib/libharfbuzz.a: lib/freetype/build_hb/dist_hb/lib/libfreetype.a lib/harfbuzz/configure
-	cd lib/harfbuzz && \
-	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig:$(BASE_DIR)lib/freetype/build_hb/dist_hb/lib/pkgconfig \
+$(DIST_DIR)/lib/libharfbuzz.a: build/lib/freetype/build_hb/dist_hb/lib/libfreetype.a build/lib/harfbuzz/configure
+	cd build/lib/harfbuzz && \
+	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig:$(BASE_DIR)build/lib/freetype/build_hb/dist_hb/lib/pkgconfig \
 	emconfigure ./configure \
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
@@ -173,12 +168,7 @@ $(DIST_DIR)/lib/libharfbuzz.a: lib/freetype/build_hb/dist_hb/lib/libfreetype.a l
 
 # Freetype with Harfbuzz
 $(DIST_DIR)/lib/libfreetype.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/libbrotlidec.a
-	cd "lib/freetype" && \
-	git reset --hard && \
-	$(foreach file, \
-	$(wildcard $(BASE_DIR)build/patches/freetype/*.patch), \
-	patch -d "$(BASE_DIR)lib/freetype" -Np1 -i $(file);) \
-	NOCONFIGURE=1 ./autogen.sh && \
+	cd build/lib/freetype && \
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
 	emconfigure ./configure \
 		CFLAGS=" \
@@ -205,16 +195,14 @@ $(DIST_DIR)/lib/libfreetype.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/lib
 	emmake make install
 
 # Fontconfig
-lib/fontconfig/configure: 
-	cd lib/fontconfig && \
-	git reset --hard && \
-	$(foreach file, \
-	$(wildcard $(BASE_DIR)build/patches/fontconfig/*.patch), \
-	patch -d "$(BASE_DIR)lib/fontconfig" -Np1 -i $(file);) \
-	NOCONFIGURE=1 ./autogen.sh
+build/lib/fontconfig/configure: lib/fontconfig
+	rm -rf build/lib/fontconfig
+	cp -r lib/fontconfig build/lib/fontconfig
+	$(foreach file, $(wildcard $(BASE_DIR)build/patches/fontconfig/*.patch), patch -d "$(BASE_DIR)build/lib/fontconfig" -Np1 -i $(file) && ) true
+	cd build/lib/fontconfig && NOCONFIGURE=1 ./autogen.sh
 
-$(DIST_DIR)/lib/libfontconfig.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/libexpat.a $(DIST_DIR)/lib/libfribidi.a $(DIST_DIR)/lib/libfreetype.a lib/fontconfig/configure
-	cd lib/fontconfig && \
+$(DIST_DIR)/lib/libfontconfig.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/libexpat.a $(DIST_DIR)/lib/libfribidi.a $(DIST_DIR)/lib/libfreetype.a build/lib/fontconfig/configure
+	cd build/lib/fontconfig && \
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
 	emconfigure ./configure \
 		CFLAGS=" \
@@ -238,16 +226,13 @@ $(DIST_DIR)/lib/libfontconfig.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/l
 
 # libass --
 
-lib/libass/configure:
-	cd lib/libass && \
-	git reset --hard && \
-	$(foreach file, \
-	$(wildcard $(BASE_DIR)build/patches/libass/*.patch), \
-	patch -d "$(BASE_DIR)lib/libass" -Np1 -i $(file);) \
-	NOCONFIGURE=1 ./autogen.sh
+build/lib/libass/configure: lib/libass
+	rm -rf build/lib/libass
+	cp -r lib/libass build/lib/libass
+	cd build/lib/libass && NOCONFIGURE=1 ./autogen.sh
 
-$(DIST_DIR)/lib/libass.a: $(DIST_DIR)/lib/libfontconfig.a $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/libexpat.a $(DIST_DIR)/lib/libfribidi.a $(DIST_DIR)/lib/libfreetype.a $(DIST_DIR)/lib/libbrotlidec.a lib/libass/configure
-	cd lib/libass && \
+$(DIST_DIR)/lib/libass.a: $(DIST_DIR)/lib/libfontconfig.a $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/libexpat.a $(DIST_DIR)/lib/libfribidi.a $(DIST_DIR)/lib/libfreetype.a $(DIST_DIR)/lib/libbrotlidec.a build/lib/libass/configure
+	cd build/lib/libass && \
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
 	emconfigure ./configure \
 		CFLAGS=" \
@@ -342,24 +327,12 @@ dist/js/subtitles-octopus.js: src/subtitles-octopus.js
 
 # Clean Tasks
 
-clean: clean-dist clean-freetype clean-fribidi clean-harfbuzz clean-fontconfig clean-expat clean-libass clean-octopus clean-brotli
+clean: clean-dist clean-libs clean-octopus
 
 clean-dist:
 	cd dist && rm -frv ./libraries/* && rm -frv ./js/*
-clean-freetype:
-	cd lib/freetype && git clean -fdx
-clean-fribidi:
-	cd lib/fribidi && git clean -fdx
-clean-fontconfig:
-	cd lib/fontconfig && git clean -fdx
-clean-expat:
-	cd lib/expat/expat && git clean -fdx
-clean-harfbuzz:
-	cd lib/harfbuzz && git clean -fdx
-clean-libass:
-	cd lib/libass && git clean -fdx
-clean-brotli:
-	cd lib/brotli && git clean -fdx
+clean-libs:
+	rm -frv dist/libraries build/lib
 clean-octopus:
 	cd src && git clean -fdx
 
@@ -389,25 +362,25 @@ git-fribidi:
 	git reset --hard && \
 	git clean -dfx && \
 	git pull origin master
-	
+
 git-fontconfig:
 	cd lib/fontconfig && \
 	git reset --hard && \
 	git clean -dfx && \
 	git pull origin master
-	
+
 git-expat:
 	cd lib/expat && \
 	git reset --hard && \
 	git clean -dfx && \
 	git pull origin master
-	
+
 git-harfbuzz:
 	cd lib/harfbuzz && \
 	git reset --hard && \
 	git clean -dfx && \
 	git pull origin master
-	
+
 git-libass:
 	cd lib/libass && \
 	git reset --hard && \
