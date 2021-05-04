@@ -148,6 +148,7 @@ To use, just run: `brotli subFile.ass` and use the .br result file with the subU
 * python-html5lib
 * python-chardet
 * gperf
+* python3 ply (`pip3 install ply`)
 
 ### Get the Source
 
@@ -158,6 +159,12 @@ Run `git clone --recursive https://github.com/libass/JavascriptSubtitlesOctopus.
 2) `docker build -t libass/javascriptsubtitlesoctopus .`
 3) `docker run -it --rm -v ${PWD}:/code libass/javascriptsubtitlesoctopus:latest`
 4) Artifacts are in /dist/js
+
+### Build without Docker
+1) Install the dependency packages listed above
+2) `make`
+    - If on macOS with libtool from brew, `LIBTOOLIZE=glibtoolize make`
+3) Artifacts are in /dist/js
 
 ## Why "Octopus"?
 How am I an Octopus? [Ba da ba da ba!](https://www.youtube.com/watch?v=tOzOD-82mW0)
