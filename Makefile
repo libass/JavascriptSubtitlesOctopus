@@ -284,7 +284,7 @@ OCTP_DEPS = \
 # Require a patch to fix some errors
 src/SubOctpInterface.cpp: src/SubtitleOctopus.idl
 	cd src && \
-	python ../build/webidl_binder.py SubtitleOctopus.idl SubOctpInterface
+	python3 ../build/webidl_binder.py SubtitleOctopus.idl SubOctpInterface
 
 src/Makefile: src/SubOctpInterface.cpp
 	cd src && \
