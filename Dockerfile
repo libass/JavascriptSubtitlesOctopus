@@ -23,7 +23,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         autoconf \
         m4 \
         gperf && \
-    pip install ply && \
+    pip3 install ply && \
     rm -rf /var/lib/apt/lists/*
 
 RUN git clone https://github.com/emscripten-core/emsdk.git && \
