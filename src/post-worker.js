@@ -541,6 +541,9 @@ function onMessageFromMainEmscriptenThread(message) {
             self.libassMemoryLimit = message.data.libassMemoryLimit || self.libassMemoryLimit;
             self.libassGlyphLimit = message.data.libassGlyphLimit || 0;
             removeRunDependency('worker-init');
+            postMessage({
+                target: "ready",
+            });
             break;
         }
         case 'destroy':
