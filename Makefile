@@ -27,7 +27,6 @@ $(DIST_DIR)/lib/libfribidi.a: build/lib/fribidi/configure
 		-s NO_FILESYSTEM=1 \
 		-s NO_EXIT_RUNTIME=1 \
 		-DFRIBIDI_ENTRY=extern \
-		--llvm-lto 1 \
 		-s MODULARIZE=1 \
 		" \
 		--prefix="$(DIST_DIR)" \
@@ -38,8 +37,11 @@ $(DIST_DIR)/lib/libfribidi.a: build/lib/fribidi/configure
 		--disable-dependency-tracking \
 		--disable-debug \
 	&& \
-	emmake make -j8 && \
-	emmake make install
+	emmake make distdir && \
+	cd lib && \
+	emmake make install-libLTLIBRARIES install-pkgincludeHEADERS install-nodist_pkgincludeHEADERS && \
+	cd .. && \
+	emmake make install-pkgconfigDATA
 
 build/lib/expat/configured: lib/expat
 	mkdir -p build/lib/expat
@@ -53,7 +55,6 @@ $(DIST_DIR)/lib/libexpat.a: build/lib/expat/configured
 		$(GLOBAL_CFLAGS) \
 		-s NO_FILESYSTEM=1 \
 		-s NO_EXIT_RUNTIME=1 \
-		--llvm-lto 1 \
 		-s MODULARIZE=1 \
 		" \
 		-DCMAKE_INSTALL_PREFIX=$(DIST_DIR) \
@@ -112,7 +113,6 @@ build/lib/freetype/build_hb/dist_hb/lib/libfreetype.a: $(DIST_DIR)/lib/libbrotli
 			$(GLOBAL_CFLAGS) \
 			-s NO_FILESYSTEM=1 \
 			-s NO_EXIT_RUNTIME=1 \
-			--llvm-lto 1 \
 			-s MODULARIZE=1 \
 			" \
 			--prefix="$$(pwd)/dist_hb" \
@@ -146,7 +146,6 @@ $(DIST_DIR)/lib/libharfbuzz.a: build/lib/freetype/build_hb/dist_hb/lib/libfreety
 		$(GLOBAL_CFLAGS) \
 		-s NO_FILESYSTEM=1 \
 		-s NO_EXIT_RUNTIME=1 \
-		--llvm-lto 1 \
 		-s MODULARIZE=1 \
 		" \
 		LDFLAGS="" \
@@ -163,8 +162,8 @@ $(DIST_DIR)/lib/libharfbuzz.a: build/lib/freetype/build_hb/dist_hb/lib/libfreety
 		--with-freetype \
 		--without-glib \
 	&& \
-	emmake make -j8 && \
-	emmake make install
+	cd src && \
+	emmake make -j8 install-libLTLIBRARIES install-pkgincludeHEADERS install-pkgconfigDATA
 
 # Freetype with Harfbuzz
 $(DIST_DIR)/lib/libfreetype.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/libbrotlidec.a
@@ -176,7 +175,6 @@ $(DIST_DIR)/lib/libfreetype.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/lib
 		$(GLOBAL_CFLAGS) \
 		-s NO_FILESYSTEM=1 \
 		-s NO_EXIT_RUNTIME=1 \
-		--llvm-lto 1 \
 		-s MODULARIZE=1 \
 		" \
 		--prefix="$(DIST_DIR)" \
@@ -210,7 +208,6 @@ $(DIST_DIR)/lib/libfontconfig.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/l
 		-DEMSCRIPTEN \
 		$(GLOBAL_CFLAGS) \
 		-s NO_EXIT_RUNTIME=1 \
-		--llvm-lto 1 \
 		-s MODULARIZE=1 \
 		" \
 		--prefix="$(DIST_DIR)" \
@@ -221,8 +218,12 @@ $(DIST_DIR)/lib/libfontconfig.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/l
 		--disable-docs \
 		--with-default-fonts=/fonts \
 	&& \
-	emmake make -j8 && \
-	emmake make install
+	cd src && \
+	emmake make distdir install-libLTLIBRARIES && \
+	cd ../fontconfig && \
+	emmake make distdir install-fontconfigincludeHEADERS && \
+	cd ../ && \
+	emmake make install-pkgconfigDATA
 
 # libass --
 
@@ -239,7 +240,6 @@ $(DIST_DIR)/lib/libass.a: $(DIST_DIR)/lib/libfontconfig.a $(DIST_DIR)/lib/libhar
 		-s USE_PTHREADS=0 \
 		$(GLOBAL_CFLAGS) \
 		-s NO_EXIT_RUNTIME=1 \
-		--llvm-lto 1 \
 		-s MODULARIZE=1 \
 		" \
 		--prefix="$(DIST_DIR)" \
@@ -280,20 +280,19 @@ src/Makefile: src/SubOctpInterface.cpp
 src/subtitles-octopus-worker.bc: $(OCTP_DEPS) src/Makefile src/SubtitleOctopus.cpp src/SubOctpInterface.cpp
 	cd src && \
 	emmake make -j8 && \
-	mv subtitlesoctopus subtitles-octopus-worker.bc
+	mv subtitlesoctopus.bc subtitles-octopus-worker.bc
 
 # Dist Files
 EMCC_COMMON_ARGS = \
 	$(GLOBAL_CFLAGS) \
 	-s EXPORTED_FUNCTIONS="['_main', '_malloc']" \
-	-s EXTRA_EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'getValue', 'FS_createPreloadedFile', 'FS_createFolder']" \
+	-s EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'getValue', 'FS_createPreloadedFile', 'FS_createPath']" \
 	-s NO_EXIT_RUNTIME=1 \
 	--use-preload-plugins \
 	--preload-file assets/default.woff2 \
 	--preload-file assets/fonts.conf \
 	-s ALLOW_MEMORY_GROWTH=1 \
-	-s FORCE_FILESYSTEM=1 \
-	--llvm-lto 1 \
+	-s NO_FILESYSTEM=0 \
 	--no-heap-copy \
 	-o $@
 	#--js-opts 0 -g4 \
