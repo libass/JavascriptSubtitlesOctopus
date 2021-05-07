@@ -132,23 +132,18 @@ To use, just run: `brotli subFile.ass` and use the .br result file with the subU
 ### Dependencies
 * git
 * emscripten (Configure the enviroment)
-* llvm
-* clang
-* ragel
 * make
-* autoconf
 * python3
+* cmake
 * pkgconfig
 * patch
 * libtool
-* itstool
-* automake
-* python-lxml
-* python-pip
-* python-html5lib
-* python-chardet
-* gperf
-* python3 ply (`pip3 install ply`)
+* autotools (autoconf, automake, autopoint)
+* gettext
+* ragel - Required by Harfbuzz
+* itstool - Required by Fontconfig
+* python3-ply - Required by WebIDL
+* gperf - Required by Fontconfig
 
 ### Get the Source
 
