@@ -2,6 +2,7 @@ a.out.js
 a.out.wasm
 a.out.js.mem
 a.out
+a.wasm
 src/.deps/
 src/WebIDLGrammar.pkl
 src/parser.out

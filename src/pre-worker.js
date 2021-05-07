@@ -48,7 +48,7 @@ Module["preRun"] = Module["preRun"] || [];
 Module["preRun"].push(function () {
     var i;
 
-    Module["FS_createFolder"]("/", "fonts", true, true);
+    Module["FS_createPath"]("/", "fonts", true, true);
 
     if (!self.subContent) {
         // We can use sync xhr cause we're inside Web Worker
