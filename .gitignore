@@ -26,6 +26,7 @@ dist
 *.la
 *.o
 *.pyc
+*.tgz
 venv/
 node_modules/
 build/lib
