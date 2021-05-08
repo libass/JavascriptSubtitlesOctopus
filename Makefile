@@ -303,6 +303,7 @@ EMCC_COMMON_ARGS = \
 dist: src/subtitles-octopus-worker.bc dist/js/subtitles-octopus-worker.js dist/js/subtitles-octopus-worker-legacy.js dist/js/subtitles-octopus.js
 
 dist/js/subtitles-octopus-worker.js: src/subtitles-octopus-worker.bc src/pre-worker.js src/unbrotli.js src/SubOctpInterface.js src/post-worker.js
+	mkdir -p dist/js
 	emcc src/subtitles-octopus-worker.bc $(OCTP_DEPS) \
 		--pre-js src/pre-worker.js \
 		--pre-js src/unbrotli.js \
@@ -312,6 +313,7 @@ dist/js/subtitles-octopus-worker.js: src/subtitles-octopus-worker.bc src/pre-wor
 		$(EMCC_COMMON_ARGS)
 
 dist/js/subtitles-octopus-worker-legacy.js: src/subtitles-octopus-worker.bc src/pre-worker.js src/unbrotli.js src/SubOctpInterface.js src/post-worker.js
+	mkdir -p dist/js
 	emcc src/subtitles-octopus-worker.bc $(OCTP_DEPS) \
 		--pre-js src/pre-worker.js \
 		--pre-js src/unbrotli.js \
@@ -322,6 +324,7 @@ dist/js/subtitles-octopus-worker-legacy.js: src/subtitles-octopus-worker.bc src/
 		$(EMCC_COMMON_ARGS)
 
 dist/js/subtitles-octopus.js: src/subtitles-octopus.js
+	mkdir -p dist/js
 	cp src/subtitles-octopus.js dist/js/
 
 # Clean Tasks
