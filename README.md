@@ -1,21 +1,24 @@
 [![Actions Status](https://github.com/libass/JavascriptSubtitlesOctopus/workflows/Emscripten/badge.svg)](https://github.com/libass/JavascriptSubtitlesOctopus/actions)
 
-SubtitlesOctopus displays subtitles in .ass format and easily integrates with HTML5 videos. It supports all SSA/ASS features and fully compatible with [libass](https://github.com/libass/libass).
+SubtitlesOctopus displays subtitles in .ass format and easily integrates with HTML5 videos.
+Since it uses [libass](https://github.com/libass/libass), SubtitlesOctopus supports most SSA/ASS features
+and enables you to get consistent results in authoring and web-playback, provided libass is also used locally.
 
 [ONLINE DEMO](https://libass.github.io/JavascriptSubtitlesOctopus/videojs.html) / [other examples with demo](https://libass.github.io/JavascriptSubtitlesOctopus/)
 
 ## Features
 
-- Supports all SSA/ASS features
-- Supports any fonts (including woff2 fonts)
+- Supports most SSA/ASS features (everything libass supports)
+- Supports all OpenType- and TrueType-fonts (including woff2 fonts)
 - Works fast (because uses WebAssembly with fallback to asm.js if it's not available)
 - Uses Web Workers thus video and interface doesn't lag even on "heavy" subtitles (working in background)
 - Doesn't use DOM manipulations and render subtitles on single canvas
-- Fully compatible with [libass](https://github.com/libass/libass)
+- Fully compatible with [libass'](https://github.com/libass/libass) extensions (but beware of compatability to other ASS-renderers when using them)
 - Easy to use - just connect it to video element
 
 ## Included Libraries
 
+* libass
 * expat
 * fontconfig
 * freetype
