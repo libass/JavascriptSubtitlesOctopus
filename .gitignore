@@ -14,6 +14,7 @@ src/compile
 src/config.log
 src/config.status
 src/configure
+src/configure~
 src/depcomp
 src/install-sh
 src/missing
