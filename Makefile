@@ -148,6 +148,15 @@ $(DIST_DIR)/lib/libharfbuzz.a: build/lib/freetype/build_hb/dist_hb/lib/libfreety
 		-s USE_PTHREADS=0 \
 		$(GLOBAL_CFLAGS) \
 		-s NO_FILESYSTEM=1 \
+		-DHB_NO_MT \
+		-s NO_EXIT_RUNTIME=1 \
+		-s MODULARIZE=1 \
+		" \
+		CXXFLAGS=" \
+		-s USE_PTHREADS=0 \
+		$(GLOBAL_CFLAGS) \
+		-s NO_FILESYSTEM=1 \
+		-DHB_NO_MT \
 		-s NO_EXIT_RUNTIME=1 \
 		-s MODULARIZE=1 \
 		" \
