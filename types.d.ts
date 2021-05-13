@@ -63,7 +63,7 @@ interface OptionsBase {
      * @default false
      * @see https://github.com/libass/JavascriptSubtitlesOctopus#fast-render-mode-lossy-experimental
      */
-    lossyRender: boolean
+    lossyRender?: boolean
 }
 
 interface OptionsWithSubUrl extends OptionsBase {
