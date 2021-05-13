@@ -13,9 +13,16 @@ interface OptionsBase {
     /**
      * The URL of the worker
      *
-     * @default libassjs-worker.js
+     * @default `subtitles-octopus-worker.js`
      */
     workerUrl?: string,
+
+    /**
+     * The URL of the legacy worker
+     *
+     * @default `subtitles-octopus-worker-legacy.js`
+     */
+    legacyWorkerUrl?: string,
 
     /**
      * An array of links to the fonts used in the subtitle
