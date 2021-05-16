@@ -3,6 +3,7 @@ name: Emscripten
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 jobs:
   build:
@@ -26,7 +27,7 @@ jobs:
 
     - name: Upload Nightly Build
       uses: actions/upload-artifact@v2
-      if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+      if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/master'
       with:
         name: js
         path: dist/js
