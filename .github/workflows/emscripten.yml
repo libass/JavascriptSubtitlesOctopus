@@ -1,6 +1,8 @@
 name: Emscripten
 
-on: [push]
+on:
+  push:
+  pull_request:
 
 jobs:
   build:
@@ -17,6 +19,7 @@ jobs:
     - name: Build All
       run: docker run --rm -v ${PWD}:/code libass/javascriptsubtitlesoctopus:latest
     - uses: actions/upload-artifact@v1
+      if: github.event_name == 'push' && github.ref == 'refs/heads/master'
       with:
         name: js
         path: dist/js
