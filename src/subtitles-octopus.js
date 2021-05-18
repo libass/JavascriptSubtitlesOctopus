@@ -184,9 +184,6 @@ var SubtitlesOctopus = function (options) {
             self.video.addEventListener("ratechange", function () {
                 self.setRate(video.playbackRate);
             }, false);
-            self.video.addEventListener("timeupdate", function () {
-                self.setCurrentTime(video.currentTime + self.timeOffset);
-            }, false);
             self.video.addEventListener("waiting", function () {
                 self.setIsPaused(true, video.currentTime + self.timeOffset);
             }, false);
