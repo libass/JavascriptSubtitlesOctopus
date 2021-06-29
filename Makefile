@@ -300,7 +300,7 @@ EMCC_COMMON_ARGS = \
 	#--memory-init-file 0 \
 	#-s OUTLINING_LIMIT=20000 \
 
-dist: src/subtitles-octopus-worker.bc dist/js/subtitles-octopus-worker.js dist/js/subtitles-octopus-worker-legacy.js dist/js/subtitles-octopus.js
+dist: src/subtitles-octopus-worker.bc dist/js/subtitles-octopus-worker.js dist/js/subtitles-octopus-worker-legacy.js dist/js/subtitles-octopus.js dist/js/LICENSE.bundle
 
 dist/js/subtitles-octopus-worker.js: src/subtitles-octopus-worker.bc src/pre-worker.js src/unbrotli.js src/SubOctpInterface.js src/post-worker.js
 	mkdir -p dist/js
@@ -326,6 +326,19 @@ dist/js/subtitles-octopus-worker-legacy.js: src/subtitles-octopus-worker.bc src/
 dist/js/subtitles-octopus.js: src/subtitles-octopus.js
 	mkdir -p dist/js
 	cp src/subtitles-octopus.js dist/js/
+
+dist/js/LICENSE.bundle: dist/js/subtitles-octopus.js
+	mkdir -p dist/js/licenses
+	cp LICENSE.bundle dist/js/LICENSE
+	cp LICENSE dist/js/licenses/subtitles-octopus.LICENSE
+	cp lib/brotli/LICENSE dist/js/licenses/brotli.LICENSE
+	cp lib/expat/expat/COPYING dist/js/licenses/expat.LICENSE
+	cp lib/freetype/docs/LICENSE.TXT dist/js/licenses/fontconfig.LICENSE
+	cp lib/freetype/docs/FTL.TXT dist/js/licenses/fontconfig.FTL.LICENSE
+	cp lib/freetype/docs/GPLv2.TXT dist/js/licenses/fontconfig.GPLv2.LICENSE
+	cp lib/fribidi/COPYING dist/js/licenses/fribidi.LICENSE
+	cp lib/harfbuzz/COPYING dist/js/licenses/harfbuzz.LICENSE
+	cp lib/libass/COPYING dist/js/licenses/libass.LICENSE
 
 # Clean Tasks
 

@@ -1,0 +1,13 @@
+The project core library is licensed under MIT license, see LICENSE or licenses/subtitles-octopus.LICENSE for details.
+
+This project includes the following libraries:
+
+Emscripten Runtime library: MIT/NCSA - See https://github.com/emscripten-core/emscripten/blob/main/LICENSE for details
+Brotli: MIT - See lib/brotli/LICENSE or licenses/brotli.LICENSE for details
+Expat: MIT - See lib/expat/expat/COPYING or licenses/expat.LICENSE for details
+Fontconfig: MIT - See lib/fontconfig/COPYING or licenses/fontconfig.LICENSE for details
+Freetype: FTL GPL-2.0-or-later - See lib/freetype/docs/LICENSE.TXT or licenses/fontconfig.LICENSE for details
+Fribidi: LGPL-2.0-or-later - See lib/fribidi/COPYING or licenses/fribidi.LICENSE for details
+Harfbuzz: MIT - See lib/harfbuzz/COPYING or licenses/harfbuzz.LICENSE for details
+libass: ISC - See lib/libass/COPYING or licenses/libass.LICENSE for details
+unbrotli.js: Apache-2.0/MIT - This file use parts from https://github.com/foliojs/brotli.js project

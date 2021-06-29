@@ -1,3 +1,10 @@
+/**
+ * --------------------------------------------------------------------------
+ * SubtitlesOctopus
+ * Licensed under MIT (https://github.com/libass/JavascriptSubtitlesOctopus/blob/master/LICENSE)
+ * --------------------------------------------------------------------------
+ */
+
 var SubtitlesOctopus = function (options) {
     var supportsWebAssembly = false;
     try {
