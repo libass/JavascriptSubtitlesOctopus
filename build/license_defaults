@@ -1,0 +1,12 @@
+# Tab seperated list of default license
+# and if given copyrightholder per project
+subtitlesoctopus	Expat			2017 JavascriptSubtitlesOctopus contributors
+
+brotli				Expat			2009, 2010, 2013-2016 by the Brotli Authors
+expat				Expat			2000-2017 Expat development team / 1997-2000 Thai Open Source Software Center Ltd
+libass				ISC				2006-2016 libass contributors
+fontconfig			NTP~disclaimer	2000-2007 Keith Packard / 2005 Patrick Lam / 2009 Roozbeh Pournader / 2008,2009 Red Hat, Inc. / 2008 Danilo Šegan / 2012 Google, Inc.
+
+fribidi				LGPL-2.1+
+harfbuzz			MIT~old
+freetype			FTL
