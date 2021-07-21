@@ -37,7 +37,7 @@ var instance = new SubtitlesOctopus(options);
 After that SubtitlesOctopus automatically "connects" to your video and it starts
 to display subtitles. You can use it with any HTML5 player.
 
-[See other examples](https://github.com/WeebDataHoarder/JavascriptSubtitlesOctopus/tree/master/example).
+[See other examples](https://github.com/libass/JavascriptSubtitlesOctopus/tree/master/example).
 
 ### Using only with canvas
 You're also able to use it without any video. However, that requires you to set
@@ -144,12 +144,12 @@ To enable this mode set the option `lossyRender` to `true` when creating an inst
 
 ### Get the Source
 
-Run `git clone --recursive https://github.com/WeebDataHoarder/JavascriptSubtitlesOctopus.git`
+Run `git clone --recursive https://github.com/libass/JavascriptSubtitlesOctopus.git`
 
 ### Build with Docker
 1) Install Docker
-2) `docker build -t radio/javascriptsubtitlesoctopus .`
-3) `docker run -it --rm -v ${PWD}/dist/js:/code/dist/js radio/javascriptsubtitlesoctopus:latest`
+2) `docker build -t libass/javascriptsubtitlesoctopus .`
+3) `docker run -it --rm -v ${PWD}/dist/js:/code/dist/js libas/javascriptsubtitlesoctopus:latest`
 4) Artifacts are in /dist/js
 
 ## Why "Octopus"?
