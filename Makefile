@@ -69,8 +69,11 @@ $(DIST_DIR)/lib/libexpat.a: build/lib/expat/configured
 	emmake make -j8 && \
 	emmake make install
 
+build/lib/brotli/js/decode.js: build/lib/brotli/configured
 build/lib/brotli/configured: lib/brotli
-	mkdir -p build/lib/brotli
+	rm -rf build/lib/brotli
+	cp -r lib/brotli build/lib/brotli
+	$(foreach file, $(wildcard $(BASE_DIR)build/patches/brotli/*.patch), patch -d "$(BASE_DIR)build/lib/brotli" -Np1 -i $(file) && ) true
 	touch build/lib/brotli/configured
 
 build/lib/brotli/libbrotlidec.pc: build/lib/brotli/configured
@@ -80,10 +83,10 @@ build/lib/brotli/libbrotlidec.pc: build/lib/brotli/configured
 		$(GLOBAL_CFLAGS) \
 		" \
 		-DCMAKE_INSTALL_PREFIX=$(DIST_DIR) \
-		$(BASE_DIR)lib/brotli \
+		. \
 	&& \
 	emmake make -j8 && \
-	cp -r $(BASE_DIR)lib/brotli/c/include $(DIST_DIR)
+	cp -r ./c/include $(DIST_DIR)
 
 $(DIST_DIR)/lib/libbrotlicommon.a: build/lib/brotli/libbrotlidec.pc
 	cd build/lib/brotli && \
@@ -302,21 +305,21 @@ EMCC_COMMON_ARGS = \
 
 dist: src/subtitles-octopus-worker.bc dist/js/subtitles-octopus-worker.js dist/js/subtitles-octopus-worker-legacy.js dist/js/subtitles-octopus.js
 
-dist/js/subtitles-octopus-worker.js: src/subtitles-octopus-worker.bc src/pre-worker.js src/unbrotli.js src/SubOctpInterface.js src/post-worker.js
+dist/js/subtitles-octopus-worker.js: src/subtitles-octopus-worker.bc src/pre-worker.js src/SubOctpInterface.js src/post-worker.js build/lib/brotli/js/decode.js
 	mkdir -p dist/js
 	emcc src/subtitles-octopus-worker.bc $(OCTP_DEPS) \
 		--pre-js src/pre-worker.js \
-		--pre-js src/unbrotli.js \
+		--pre-js build/lib/brotli/js/decode.js \
 		--post-js src/SubOctpInterface.js \
 		--post-js src/post-worker.js \
 		-s WASM=1 \
 		$(EMCC_COMMON_ARGS)
 
-dist/js/subtitles-octopus-worker-legacy.js: src/subtitles-octopus-worker.bc src/pre-worker.js src/unbrotli.js src/SubOctpInterface.js src/post-worker.js
+dist/js/subtitles-octopus-worker-legacy.js: src/subtitles-octopus-worker.bc src/pre-worker.js src/SubOctpInterface.js src/post-worker.js build/lib/brotli/js/decode.js
 	mkdir -p dist/js
 	emcc src/subtitles-octopus-worker.bc $(OCTP_DEPS) \
 		--pre-js src/pre-worker.js \
-		--pre-js src/unbrotli.js \
+		--pre-js build/lib/brotli/js/decode.js \
 		--post-js src/SubOctpInterface.js \
 		--post-js src/post-worker.js \
 		-s WASM=0 \
