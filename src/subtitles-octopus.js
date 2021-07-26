@@ -180,17 +180,12 @@ class SubtitlesOctopus {
     this.video = video
     if (this.video) {
       const timeupdate = () => {
-        this.setCurrentTime(video.currentTime + this.timeOffset)
+        this.setCurrentTime(video.paused, video.currentTime + this.timeOffset)
       }
       this.video.addEventListener('timeupdate', timeupdate, false)
+      this.video.addEventListener('progress', timeupdate, false)
 
-      this.video.addEventListener('playing', () => {
-        this.setIsPaused(false, video.currentTime + this.timeOffset)
-      }, false)
-
-      this.video.addEventListener('pause', () => {
-        this.setIsPaused(true, video.currentTime + this.timeOffset)
-      }, false)
+      this.video.addEventListener('pause', timeupdate, false)
 
       this.video.addEventListener('seeking', () => {
         this.video.removeEventListener('timeupdate', timeupdate)
@@ -209,7 +204,7 @@ class SubtitlesOctopus {
       }, false)
 
       this.video.addEventListener('waiting', () => {
-        this.setIsPaused(true, video.currentTime + this.timeOffset)
+        this.setCurrentTime(true, video.currentTime + this.timeOffset)
       }, false)
 
       // Support Element Resize Observer
@@ -720,9 +715,10 @@ class SubtitlesOctopus {
     })
   }
 
-  setCurrentTime (currentTime) {
+  setCurrentTime (isPaused, currentTime) {
     this.worker.postMessage({
       target: 'video',
+      isPaused: isPaused,
       currentTime: currentTime
     })
   }
@@ -748,14 +744,6 @@ class SubtitlesOctopus {
       target: 'free-track'
     })
     this.resetRenderAheadCache(false)
-  }
-
-  setIsPaused (isPaused, currentTime) {
-    this.worker.postMessage({
-      target: 'video',
-      isPaused: isPaused,
-      currentTime: currentTime
-    })
   }
 
   setRate (rate) {
