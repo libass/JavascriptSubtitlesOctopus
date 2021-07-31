@@ -11,7 +11,7 @@ all: subtitleoctopus
 subtitleoctopus: dist
 
 # Fribidi
-build/lib/fribidi/configure: lib/fribidi
+build/lib/fribidi/configure: lib/fribidi $(wildcard $(BASE_DIR)build/patches/fribidi/*.patch)
 	rm -rf build/lib/fribidi
 	mkdir -p build/lib
 	cp -r lib/fribidi build/lib/fribidi
@@ -70,7 +70,7 @@ $(DIST_DIR)/lib/libexpat.a: build/lib/expat/configured
 	emmake make install
 
 build/lib/brotli/js/decode.js: build/lib/brotli/configured
-build/lib/brotli/configured: lib/brotli
+build/lib/brotli/configured: lib/brotli $(wildcard $(BASE_DIR)build/patches/brotli/*.patch)
 	rm -rf build/lib/brotli
 	cp -r lib/brotli build/lib/brotli
 	$(foreach file, $(wildcard $(BASE_DIR)build/patches/brotli/*.patch), patch -d "$(BASE_DIR)build/lib/brotli" -Np1 -i $(file) && ) true
@@ -101,7 +101,7 @@ $(DIST_DIR)/lib/libbrotlidec.a: build/lib/brotli/libbrotlidec.pc $(DIST_DIR)/lib
 	cp libbrotlidec-static.a $(DIST_DIR)/lib/libbrotlidec.a
 
 # Freetype without Harfbuzz
-build/lib/freetype/build_hb/dist_hb/lib/libfreetype.a: $(DIST_DIR)/lib/libbrotlidec.a
+build/lib/freetype/build_hb/dist_hb/lib/libfreetype.a: $(DIST_DIR)/lib/libbrotlidec.a $(wildcard $(BASE_DIR)build/patches/freetype/*.patch)
 	rm -rf build/lib/freetype
 	cp -r lib/freetype build/lib/freetype
 	$(foreach file, $(wildcard $(BASE_DIR)build/patches/freetype/*.patch), patch -d "$(BASE_DIR)build/lib/freetype" -Np1 -i $(file) && ) true
@@ -134,7 +134,7 @@ build/lib/freetype/build_hb/dist_hb/lib/libfreetype.a: $(DIST_DIR)/lib/libbrotli
 		emmake make install
 
 # Harfbuzz
-build/lib/harfbuzz/configure: lib/harfbuzz
+build/lib/harfbuzz/configure: lib/harfbuzz $(wildcard $(BASE_DIR)build/patches/harfbuzz/*.patch)
 	rm -rf build/lib/harfbuzz
 	cp -r lib/harfbuzz build/lib/harfbuzz
 	$(foreach file, $(wildcard $(BASE_DIR)build/patches/harfbuzz/*.patch), patch -d "$(BASE_DIR)build/lib/harfbuzz" -Np1 -i $(file) && ) true
@@ -196,7 +196,7 @@ $(DIST_DIR)/lib/libfreetype.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/lib
 	emmake make install
 
 # Fontconfig
-build/lib/fontconfig/configure: lib/fontconfig
+build/lib/fontconfig/configure: lib/fontconfig $(wildcard $(BASE_DIR)build/patches/fontconfig/*.patch)
 	rm -rf build/lib/fontconfig
 	cp -r lib/fontconfig build/lib/fontconfig
 	$(foreach file, $(wildcard $(BASE_DIR)build/patches/fontconfig/*.patch), patch -d "$(BASE_DIR)build/lib/fontconfig" -Np1 -i $(file) && ) true
