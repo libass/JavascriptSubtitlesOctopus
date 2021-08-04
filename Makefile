@@ -303,7 +303,7 @@ EMCC_COMMON_ARGS = \
 	#--memory-init-file 0 \
 	#-s OUTLINING_LIMIT=20000 \
 
-dist: src/subtitles-octopus-worker.bc dist/js/subtitles-octopus-worker.js dist/js/subtitles-octopus-worker-legacy.js dist/js/subtitles-octopus.js
+dist: src/subtitles-octopus-worker.bc dist/js/subtitles-octopus-worker.js dist/js/subtitles-octopus-worker-legacy.js dist/js/subtitles-octopus.js dist/js/COPYRIGHT
 
 dist/js/subtitles-octopus-worker.js: src/subtitles-octopus-worker.bc src/pre-worker.js src/SubOctpInterface.js src/post-worker.js build/lib/brotli/js/decode.js
 	mkdir -p dist/js
@@ -360,6 +360,9 @@ dist/license/all: dist/license/subtitlesoctopus $(addprefix dist/license/, $(LIB
 	mv dist/license/all dist/license/all.tmp
 	build/license_lint.awk dist/license/all.tmp build/license_fullnotice
 	cat dist/license/all.tmp build/license_fullnotice > dist/license/all
+
+dist/js/COPYRIGHT: dist/license/all
+	cp "$<" "$@"
 
 # Clean Tasks
 
