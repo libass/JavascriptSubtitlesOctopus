@@ -12,7 +12,7 @@
 	ignore = dirty
 [submodule "lib/freetype"]
 	path = lib/freetype
-	url = https://git.savannah.gnu.org/git/freetype/freetype2.git
+	url = https://gitlab.freedesktop.org/freetype/freetype.git
 	ignore = dirty
 [submodule "lib/expat"]
 	path = lib/expat

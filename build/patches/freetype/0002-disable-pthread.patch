@@ -1,0 +1,13 @@
+diff --git a/builds/unix/configure.raw b/builds/unix/configure.raw
+index 56e0a8e2c..0639c10db 100644
+--- a/builds/unix/configure.raw
++++ b/builds/unix/configure.raw
+@@ -1007,7 +1007,7 @@ esac
+ 
+ # Check for pthreads
+ 
+-AX_PTHREAD([have_pthread=yes], [have_pthread=no])
++have_pthread=no
+ 
+ # Check for Python and docwriter
+ 

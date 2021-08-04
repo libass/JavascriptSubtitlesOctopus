@@ -15,7 +15,7 @@ jobs:
     - name: Checkout Submodules
       run: |
         git submodule sync
-        git submodule update --init --force
+        git submodule update --init --recursive --force
 
     - name: Build Docker Image
       run: |

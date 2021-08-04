@@ -22,7 +22,7 @@
     "emscripten"
   ],
   "author": "TFSThiagoBR98, Dador",
-  "license": "LGPL-2.1-or-later AND (FTL OR GPL-2.0-or-later) AND MIT AND MIT-Modern-Variant AND ISC AND NTP AND Zlib",
+  "license": "LGPL-2.1-or-later AND (FTL OR GPL-2.0-or-later) AND MIT AND MIT-Modern-Variant AND ISC AND NTP AND Zlib AND BSL-1.0",
   "bugs": {
     "url": "https://github.com/Dador/JavascriptSubtitlesOctopus/issues"
   },
