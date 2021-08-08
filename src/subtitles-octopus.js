@@ -8,14 +8,12 @@ class SubtitlesOctopus {
     this.canvas = options.canvas // HTML canvas element (optional if video specified)
 
     // choose best render mode based on browser support
-    this.renderMode = options.renderMode || 'fast'
-    if (typeof createImageBitmap === 'undefined') {
-      if (this.renderMode !== 'blend') this.renderMode = 'normal'
-    } else {
-      if (typeof OffscreenCanvas !== 'undefined') {
-        if (this.renderMode === 'fast') this.renderMode = 'offscreen'
-      } else if (this.renderMode !== 'blend') {
-        this.renderMode = 'fast'
+    this.renderMode = options.renderMode || 'offscreen'
+    if (this.renderMode !== 'blend' && this.renderMode !== 'normal') {
+      if (typeof createImageBitmap === 'undefined') {
+        this.renderMode = 'normal'
+      } else if (typeof OffscreenCanvas !== 'undefined') {
+        this.renderMode = 'offscreen'
       }
     }
 
@@ -203,9 +201,7 @@ class SubtitlesOctopus {
         this.setRate(video.playbackRate)
       }, false)
 
-      this.video.addEventListener('waiting', () => {
-        this.setCurrentTime(true, video.currentTime + this.timeOffset)
-      }, false)
+      this.video.addEventListener('waiting', timeupdate, false)
 
       // Support Element Resize Observer
       if (typeof ResizeObserver !== 'undefined') {
@@ -216,7 +212,7 @@ class SubtitlesOctopus {
       if (this.video.videoWidth > 0) {
         this.resize()
       } else {
-        this.video.addEventListener('loadedmetadata', e => {
+        this.video.addEventListener('loadedmetadata', () => {
           this.resize()
         }, false)
       }
@@ -633,7 +629,6 @@ class SubtitlesOctopus {
     this.resetRenderAheadCache(true)
   }
 
-  // Message retardism
   onWorkerMessage (event) {
     if (!this.workerActive) {
       this.workerActive = true
