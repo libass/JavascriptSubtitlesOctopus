@@ -1,5 +1,14 @@
 #! /bin/sh
 set -e
 cd "$(dirname "$0")"
-docker build -t libass/javascriptsubtitlesoctopus .
-docker run -it --rm -v "${PWD}":/code libass/javascriptsubtitlesoctopus:latest
+
+. ./run-common.sh
+
+if [ "$FAST" -eq 0 ] ; then
+    docker build -t "$IMAGE" .
+fi
+if [ "$#" -eq 0 ] ; then
+    docker run -it --rm -v "${PWD}":/code --name "$CONTAINER" "$IMAGE":latest
+else
+    docker run -it --rm -v "${PWD}":/code --name "$CONTAINER" "$IMAGE":latest "$@"
+fi

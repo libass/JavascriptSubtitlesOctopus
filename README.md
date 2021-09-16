@@ -152,13 +152,17 @@ To use, just run: `brotli subFile.ass` and use the .br result file with the subU
 
 Run `git clone --recursive https://github.com/libass/JavascriptSubtitlesOctopus.git`
 
-### Build with Docker
+### Build inside a Container
+#### Docker
 1) Install Docker
-2) `docker build -t libass/javascriptsubtitlesoctopus .`
-3) `docker run -it --rm -v ${PWD}:/code libass/javascriptsubtitlesoctopus:latest`
-4) Artifacts are in /dist/js
+2) `./run-docker-build.sh`
+3) Artifacts are in /dist/js
+#### Buildah
+1) Install Buildah and a suitable backend for `buildah run` like `crun` or `runc`
+2) `./run-buildah-build.sh`
+3) Artifacts are in /dist/js
 
-### Build without Docker
+### Build without Containers
 1) Install the dependency packages listed above
 2) `make`
     - If on macOS with libtool from brew, `LIBTOOLIZE=glibtoolize make`
