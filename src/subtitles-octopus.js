@@ -285,7 +285,8 @@ var SubtitlesOctopus = function (options) {
                     for (var i = 0, len = retainedItems.length; i < len; i++) {
                         var item = retainedItems[i];
                         size += item.size;
-                        if (size >= limit) break;
+                        // Remove the end marker (emptyFinish < 0) to allow re-rendering in case we already reached end-of-events
+                        if (size >= limit || item.emptyFinish < 0) break;
                         retain.push(item);
                     }
                     retainedItems = retain;
