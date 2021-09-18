@@ -239,15 +239,16 @@ $(DIST_DIR)/lib/libfontconfig.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/l
 
 # libass --
 
-build/lib/libass/configure: lib/libass
+build/lib/libass/configured: lib/libass
 	rm -rf build/lib/libass
-	cp -r lib/libass build/lib/libass
-	cd build/lib/libass && NOCONFIGURE=1 ./autogen.sh
+	cd lib/libass && NOCONFIGURE=1 ./autogen.sh
+	mkdir -p build/lib/libass
+	touch build/lib/libass/configured
 
-$(DIST_DIR)/lib/libass.a: $(DIST_DIR)/lib/libfontconfig.a $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/libexpat.a $(DIST_DIR)/lib/libfribidi.a $(DIST_DIR)/lib/libfreetype.a $(DIST_DIR)/lib/libbrotlidec.a build/lib/libass/configure
+$(DIST_DIR)/lib/libass.a: $(DIST_DIR)/lib/libfontconfig.a $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/libexpat.a $(DIST_DIR)/lib/libfribidi.a $(DIST_DIR)/lib/libfreetype.a $(DIST_DIR)/lib/libbrotlidec.a build/lib/libass/configured
 	cd build/lib/libass && \
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
-	emconfigure ./configure \
+	emconfigure ../../../lib/libass/configure \
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
 		$(GLOBAL_CFLAGS) \
