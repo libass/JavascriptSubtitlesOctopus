@@ -4,7 +4,7 @@
 BASE_DIR:=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 DIST_DIR:=$(BASE_DIR)dist/libraries
 
-GLOBAL_CFLAGS:=-O3 -s ENVIRONMENT=web,webview -s DOUBLE_MODE=0
+GLOBAL_CFLAGS:=-O3 -s ENVIRONMENT=web,webview
 
 all: subtitleoctopus
 
@@ -306,8 +306,6 @@ EMCC_COMMON_ARGS = \
 	--preload-file assets/fonts.conf \
 	-s ALLOW_MEMORY_GROWTH=1 \
 	-s NO_FILESYSTEM=0 \
-	-s ENVIRONMENT=web,webview \
-	-s DOUBLE_MODE=0 \
 	--no-heap-copy \
 	-o $@
 	#--js-opts 0 -g4 \
