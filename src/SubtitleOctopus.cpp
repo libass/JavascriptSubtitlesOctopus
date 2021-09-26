@@ -233,10 +233,11 @@ public:
 
     RenderBlendResult* renderBlend(double tm, int force) {
         m_blendResult.blend_time = 0.0;
+        m_blendResult.image = NULL;
 
         ASS_Image *img = ass_render_frame(ass_renderer, track, (int)(tm * 1000), &m_blendResult.changed);
         if (img == NULL || (m_blendResult.changed == 0 && !force)) {
-            return NULL;
+            return &m_blendResult;
         }
 
         double start_blend_time = emscripten_get_now();
@@ -259,7 +260,7 @@ public:
         float* buf = (float*)buffer_resize(&m_blend, sizeof(float) * width * height * 4, 0);
         if (buf == NULL) {
             printf("libass: error: cannot allocate buffer for blending");
-            return NULL;
+            return &m_blendResult;
         }
         memset(buf, 0, sizeof(float) * width * height * 4);
 
