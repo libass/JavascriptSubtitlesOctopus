@@ -325,9 +325,10 @@ dist/js/subtitles-octopus-worker.js: src/subtitles-octopus-worker.bc src/pre-wor
 		-s WASM=1 \
 		$(EMCC_COMMON_ARGS)
 
-dist/js/subtitles-octopus-worker-legacy.js: src/subtitles-octopus-worker.bc src/pre-worker.js src/SubOctpInterface.js src/post-worker.js build/lib/brotli/js/decode.js
+dist/js/subtitles-octopus-worker-legacy.js: src/subtitles-octopus-worker.bc src/polyfill.js src/pre-worker.js src/SubOctpInterface.js src/post-worker.js build/lib/brotli/js/decode.js
 	mkdir -p dist/js
 	emcc src/subtitles-octopus-worker.bc $(OCTP_DEPS) \
+		--pre-js src/polyfill.js \
 		--pre-js src/pre-worker.js \
 		--pre-js build/lib/brotli/js/decode.js \
 		--post-js src/SubOctpInterface.js \
