@@ -22,6 +22,33 @@ if (!String.prototype.includes) {
     };
 }
 
+if (!ArrayBuffer.isView) {
+    var typedArrays = [
+        Int8Array,
+        Uint8Array,
+        Uint8ClampedArray,
+        Int16Array,
+        Uint16Array,
+        Int32Array,
+        Uint32Array,
+        Float32Array,
+        Float64Array
+    ];
+
+    ArrayBuffer.isView = function (obj) {
+        return obj && obj.constructor && typedArrays.indexOf(obj.constructor) !== -1;
+    };
+}
+
+if (!Int8Array.prototype.slice) {
+    Object.defineProperty(Int8Array.prototype, 'slice', {
+        value: function (begin, end)
+            {
+                return new Int8Array(this.subarray(begin, end));
+            }
+    });
+}
+
 if (!Uint8Array.prototype.slice) {
     Object.defineProperty(Uint8Array.prototype, 'slice', {
         value: function (begin, end)
