@@ -24,6 +24,7 @@ and enables you to get consistent results in authoring and web-playback, provide
 * freetype
 * fribidi
 * harfbuzz
+* brotli
 
 ## Usage
 
