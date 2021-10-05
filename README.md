@@ -119,12 +119,29 @@ When creating an instance of SubtitleOctopus, you can set the following options:
 - `debug`: Whether performance info is printed in the console. (Default:
   `false`)
 
-### Fast Render Mode (Lossy) (EXPERIMENTAL)
+Additionally there are options to choose between different rendering modes, which are detailed
+below. If multiple rendering options are set any of them may be used, they are not additive.
+
+### Rendering Modes
+#### Default
+Do not set any addiotional rendering option to use this mode.
+This will do all the processing of the bitmaps produced by libass outside of WebAssembly.
+
+#### WASM Blending
+Upon creating the SubtitleOctopus instance, set `blendRender` in the options to `true` to use this mode.
+This will blend the bitmaps of the different events together in WebAssembly, so the
+JavaScript-part only needs to process a single image.
+If WebAssembly-support is available this will be faster than the default mode,
+especially for many and/or complex simultaneous subtitles.
+Without WebAssembly-support it will fallback to asm.js and should at least
+not be slower than the default mode.
+
+#### Fast Render Mode (Lossy) (EXPERIMENTAL)
+Upon creating the SubtitleOctopus instance, set `lossyRender` in the options to `true` to use this mode.
 The Fast Render mode has been created by @no1d as a suggestion for fix browser freezing when rendering heavy subtitles (#46), it use [createImageBitmap](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/createImageBitmap) to render the bitmap in the Worker, using Promises instead of direct render on canvas in the Main Thread. When the browser start to hang, it will not lock main thread, instead will run Async, so if the function createImageBitmap fail, it will not stop the rendering process at all and may cause some bitmap loss or simply will not draw anything in canvas, mostly on low end devices.
 
 **WARNING: Experimental, not stable and not working in Safari**
 
-To enable this mode set the option `lossyRender` to `true` when creating an instance of SubtitleOctopus.
 
 ### Brotli Compressed Subtitles
 The SubtitleOctopus allow the use of compressed subtitles in brotli format, saving bandwidth and reducing library startup time
