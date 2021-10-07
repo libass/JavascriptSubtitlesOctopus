@@ -530,7 +530,7 @@ public:
         if (minFinish != -1) {
             // some event is going on, so we need to re-draw either when it stops
             // or when some other event starts
-            result.eventFinish = ((minFinish < minStart) ? minFinish : minStart) / 1000.0;
+            result.eventFinish = ((minStart == -1 || minFinish < minStart) ? minFinish : minStart) / 1000.0;
         } else {
             // there's no current event, so no need to draw anything
             result.eventFinish = -1;
