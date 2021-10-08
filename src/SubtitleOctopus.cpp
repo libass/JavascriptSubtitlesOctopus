@@ -383,6 +383,7 @@ public:
         int max_x = img->dst_x + img->w - 1, max_y = img->dst_y + img->h - 1;
         ASS_Image *cur;
         for (cur = img->next; cur != NULL; cur = cur->next) {
+            if (cur->w == 0 || cur->h == 0) continue; // skip empty images
             if (cur->dst_x < min_x) min_x = cur->dst_x;
             if (cur->dst_y < min_y) min_y = cur->dst_y;
             int right = cur->dst_x + cur->w - 1;
@@ -391,8 +392,14 @@ public:
             if (bottom > max_y) max_y = bottom;
         }
 
-        // make float buffer for blending
         int width = max_x - min_x + 1, height = max_y - min_y + 1;
+
+        if (width == 0 || height == 0) {
+            // all images are empty
+            return &m_blendResult;
+        }
+
+        // make float buffer for blending
         float* buf = (float*)m_blend.take(sizeof(float) * width * height * 4, 0);
         if (buf == NULL) {
             printf("libass: error: cannot allocate buffer for blending");
