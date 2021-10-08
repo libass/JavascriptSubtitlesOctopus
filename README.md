@@ -118,6 +118,9 @@ When creating an instance of SubtitleOctopus, you can set the following options:
   occurs if browser doesn't support web workers). (Optional)
 - `debug`: Whether performance info is printed in the console. (Default:
   `false`)
+- `prescaleFactor`: Scale down (`< 1.0`) the subtitles canvas to `prescaleHeight` to improve speed, or scale it up (`> 1.0`) to improve quality. (Default: `null` - no scaling)
+- `prescaleHeight`: The height beyond which the subtitles canvas won't be pre-scaled. (Default: `1080`)
+- `maxHeight`: The maximum height of the subtitles canvas. (Default: `0` - no limit)
 
 Additionally there are options to choose between different rendering modes, which are detailed
 below. If multiple rendering options are set any of them may be used, they are not additive.
