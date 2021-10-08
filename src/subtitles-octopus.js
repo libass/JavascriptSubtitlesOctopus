@@ -22,7 +22,7 @@ var SubtitlesOctopus = function (options) {
     self.targetFps = options.targetFps || 30;
     self.prescaleTradeoff = options.prescaleTradeoff || null; // render subtitles less than viewport when less than 1.0 to improve speed, render to more than 1.0 to improve quality; set to null to disable scaling
     self.softHeightLimit = options.softHeightLimit || 1080; // don't apply prescaleTradeoff < 1 when viewport height is less that this limit
-    self.hardHeightLimit = options.hardHeightLimit || 2160; // don't ever go above this limit
+    self.hardHeightLimit = options.hardHeightLimit || 0; // don't ever go above this limit; 0 - no limit
     self.resizeVariation = options.resizeVariation || 0.2; // by how many a size can vary before it would cause clearance of prerendered buffer
 
     self.renderAhead = options.renderAhead || 0; // how many MiB to render ahead and store; 0 to disable (approximate)
@@ -701,10 +701,12 @@ var SubtitlesOctopus = function (options) {
     };
 
     function _computeCanvasSize(width, height) {
+        var hardHeightLimit = Math.max(self.hardHeightLimit || height, self.softHeightLimit);
+
         if (self.prescaleTradeoff === null) {
-            if (height > self.hardHeightLimit) {
-                width = width * self.hardHeightLimit / height;
-                height = self.hardHeightLimit;
+            if (height > hardHeightLimit) {
+                width = width * hardHeightLimit / height;
+                height = hardHeightLimit;
             }
         } else if (self.prescaleTradeoff > 1) {
             if (height * self.prescaleTradeoff <= self.softHeightLimit) {
@@ -713,20 +715,20 @@ var SubtitlesOctopus = function (options) {
             } else if (height < self.softHeightLimit) {
                 width = width * self.softHeightLimit / height;
                 height = self.softHeightLimit;
-            } else if (height >= self.hardHeightLimit) {
-                width = width * self.hardHeightLimit / height;
-                height = self.hardHeightLimit;
+            } else if (height > hardHeightLimit) {
+                width = width * hardHeightLimit / height;
+                height = hardHeightLimit;
             }
-        } else if (height >= self.softHeightLimit) {
+        } else if (height > self.softHeightLimit) {
             if (height * self.prescaleTradeoff <= self.softHeightLimit) {
                 width = width * self.softHeightLimit / height;
                 height = self.softHeightLimit;
-            } else if (height * self.prescaleTradeoff <= self.hardHeightLimit) {
+            } else if (height * self.prescaleTradeoff <= hardHeightLimit) {
                 width *= self.prescaleTradeoff;
                 height *= self.prescaleTradeoff;
             } else {
-                width = width * self.hardHeightLimit / height;
-                height = self.hardHeightLimit;
+                width = width * hardHeightLimit / height;
+                height = hardHeightLimit;
             }
         }
 
