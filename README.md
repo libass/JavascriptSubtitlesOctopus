@@ -118,6 +118,19 @@ When creating an instance of SubtitleOctopus, you can set the following options:
   occurs if browser doesn't support web workers). (Optional)
 - `debug`: Whether performance info is printed in the console. (Default:
   `false`)
+- `renderMode`: Rendering mode. (If not set, the rendering mode is determined by the `blendRender` and `lossyRender` options)
+  - `normal` - Default
+  - `blend` - WASM Blending
+  - `fast` - Fast Render Mode (Lossy) (EXPERIMENTAL)
+- `dropAllAnimations`: Remove all animation tags, such as karaoke, move, fade, etc. (Default: `false`)
+- `libassMemoryLimit`: libass bitmap cache memory limit in MiB (approximate) (Default: `0` - no limit)
+- `libassGlyphLimit`: libass glyph cache memory limit in MiB (approximate) (Default: `0` - no limit)
+- `targetFps`: Target FPS (Default: `30`)
+- `prescaleTradeoff`: Scale down (`< 1.0`) the subtitles canvas to `softHeightLimit` to improve speed, or scale it up (`> 1.0`) to improve quality. (Default: `null` - no scaling)
+- `softHeightLimit`: The height to which the subtitles canvas will be scaled. (Default: `1080`)
+- `hardHeightLimit`: The maximum height of the subtitles canvas. (Default: `0` - no limit)
+- `renderAhead`: How many MiB (approximate) of subtitles to render ahead and store. (Default: `0` - don't render ahead)
+- `resizeVariation`: The resize threshold at which the cache of pre-rendered events is cleared. (Default: `0.2`)
 
 Additionally there are options to choose between different rendering modes, which are detailed
 below. If multiple rendering options are set any of them may be used, they are not additive.
@@ -141,6 +154,24 @@ Upon creating the SubtitleOctopus instance, set `lossyRender` in the options to 
 The Fast Render mode has been created by @no1d as a suggestion for fix browser freezing when rendering heavy subtitles (#46), it use [createImageBitmap](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/createImageBitmap) to render the bitmap in the Worker, using Promises instead of direct render on canvas in the Main Thread. When the browser start to hang, it will not lock main thread, instead will run Async, so if the function createImageBitmap fail, it will not stop the rendering process at all and may cause some bitmap loss or simply will not draw anything in canvas, mostly on low end devices.
 
 **WARNING: Experimental, not stable and not working in Safari**
+
+#### Render Ahead (WASM Blending with pre-rendering) (EXPERIMENTAL)
+Upon creating the SubtitleOctopus instance, set `renderAhead` in the options to a positive value to use this mode.
+In this mode, SubtitleOctopus renders events in advance (using WASM blending) so that they are ready in time.
+The amount of pre-rendered events is controlled by the `renderAhead` option.
+Each pre-rendered event is provided with information about its start time, end time, and end time of the gap after (if any).
+This mode will analyse the events to avoid rendering empty sections or rerendering non-animated events.
+Resizing the video player clears the cache of pre-rendered events (the threshold is set by `resizeVariation`).
+
+> The `renderMode`, `blendRender` and `lossyRender` options are ignored.
+
+> **WARNING: Experimental, may stall on heavily animated subtitles**
+This mode tries to render every transition - at worst, every frame - in advance.
+If the rendering of many frames takes too long and the cache of prepared frames gets depleted
+(e.g. during a long section with heavy animations), the current subtitle-frame will continue to
+be displayed until the prerendering can catch up again.
+Adjusting `prescaleTradeoff`, `softHeightLimit` and `hardHeightLimit` to lower the resolution of
+the rendering canvas can work around this at the expense of visual quality.
 
 
 ### Brotli Compressed Subtitles
