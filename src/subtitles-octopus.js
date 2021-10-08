@@ -21,7 +21,7 @@ var SubtitlesOctopus = function (options) {
     self.targetFps = options.targetFps || undefined;
     self.prescaleFactor = options.prescaleFactor || null; // render subtitles less than viewport when less than 1.0 to improve speed, render to more than 1.0 to improve quality; set to null to disable scaling
     self.prescaleHeight = options.prescaleHeight || 1080; // don't apply prescaleFactor < 1 when viewport height is less than this limit; don't apply prescaleFactor > 1 when viewport height is greater than this limit
-    self.maxHeight = options.maxHeight || 2160;           // don't ever go above this limit
+    self.maxHeight = options.maxHeight || 0;              // don't ever go above this limit; 0 - no limit
 
     self.isOurCanvas = false; // (internal) we created canvas and manage it
     self.video = options.video; // HTML video element (optional if canvas specified)
@@ -411,10 +411,12 @@ var SubtitlesOctopus = function (options) {
     };
 
     function _computeCanvasSize(width, height) {
+        var maxHeight = Math.max(self.maxHeight || height, self.prescaleHeight);
+
         if (self.prescaleFactor === null) {
-            if (height > self.maxHeight) {
-                width = width * self.maxHeight / height;
-                height = self.maxHeight;
+            if (height > maxHeight) {
+                width = width * maxHeight / height;
+                height = maxHeight;
             }
         } else if (self.prescaleFactor > 1) {
             if (height * self.prescaleFactor <= self.prescaleHeight) {
@@ -423,20 +425,20 @@ var SubtitlesOctopus = function (options) {
             } else if (height < self.prescaleHeight) {
                 width = width * self.prescaleHeight / height;
                 height = self.prescaleHeight;
-            } else if (height >= self.maxHeight) {
-                width = width * self.maxHeight / height;
-                height = self.maxHeight;
+            } else if (height > maxHeight) {
+                width = width * maxHeight / height;
+                height = maxHeight;
             }
-        } else if (height >= self.prescaleHeight) {
+        } else if (height > self.prescaleHeight) {
             if (height * self.prescaleFactor <= self.prescaleHeight) {
                 width = width * self.prescaleHeight / height;
                 height = self.prescaleHeight;
-            } else if (height * self.prescaleFactor <= self.maxHeight) {
+            } else if (height * self.prescaleFactor <= maxHeight) {
                 width *= self.prescaleFactor;
                 height *= self.prescaleFactor;
             } else {
-                width = width * self.maxHeight / height;
-                height = self.maxHeight;
+                width = width * maxHeight / height;
+                height = maxHeight;
             }
         }
 
