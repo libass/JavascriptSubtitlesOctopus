@@ -91,115 +91,122 @@ typedef struct {
     int is_animated;
 } EventStopTimesResult;
 
-static int _is_move_tag_animated(char *begin, char *end) {
-    int params[6];
-    int count = 0, value = 0, num_digits = 0;
-    for (; begin < end; begin++) {
-        switch (*begin) {
-            case ' ': // fallthrough
-            case '\t':
-                break;
-            case ',':
-                params[count] = value;
-                count++;
-                value = 0;
-                num_digits = 0;
-                break;
-            default: {
-                    int digit = *begin - '0';
-                    if (digit < 0 || digit > 9) return 0; // invalid move
-                    value = value * 10 + digit;
-                    num_digits++;
-                    break;
-                }
+/**
+ * \brief Overwrite tag with whitespace to nullify its effect
+ * Boundaries are inclusive at both ends.
+ */
+static void _remove_tag(char *begin, char *end) {
+    if (end < begin)
+        return;
+    memset(begin, ' ', end - begin + 1);
+}
+
+/**
+ * \param begin point to the first character of the tag name (after backslash)
+ * \param end   last character that can be read; at least the name itself
+                and the following character if any must be included
+ * \return true if tag may cause animations, false if it will definitely not
+ */
+static bool _is_animated_tag(char *begin, char *end) {
+    if (end <= begin)
+        return false;
+
+    size_t length = end - begin + 1;
+
+    #define check_simple_tag(tag)  (sizeof(tag)-1 < length && !strncmp(begin, tag, sizeof(tag)-1))
+    #define check_complex_tag(tag) (check_simple_tag(tag) && (begin[sizeof(tag)-1] == '(' \
+                                        || begin[sizeof(tag)-1] == ' ' || begin[sizeof(tag)-1] == '\t'))
+    switch (begin[0]) {
+        case 'k': //-fallthrough
+        case 'K':
+            // Karaoke: k, kf, ko, K and kt ; no other valid ASS-tag starts with k/K
+            return true;
+        case 't':
+            // Animated transform: no other valid tag begins with t
+            // non-nested t-tags have to be complex tags even in single argument
+            // form, but nested t-tags (which act like independent t-tags) are allowed to be
+            // simple-tags without parentheses due to VSF-parsing quirk.
+            // Since all valid simple t-tags require the existence of a complex t-tag, we only check for complex tags
+            // to avoid false positives from invalid simple t-tags. This makes animation-dropping somewhat incorrect
+            // but as animation detection remains accurate, we consider this to be "good enough"
+            return check_complex_tag("t");
+        case 'm':
+            // Movement: complex tag; again no other valid tag begins with m
+            // but ensure it's complex just to be sure
+            return check_complex_tag("move");
+        case 'f':
+            // Fade: \fad and Fade (complex): \fade; both complex
+            // there are several other valid tags beginning with f
+            return check_complex_tag("fad") || check_complex_tag("fade");
+    }
+
+    return false;
+    #undef check_complex_tag
+    #undef check_simple_tag
+}
+
+/**
+ * \param start First character after { (optionally spaces can be dropped)
+ * \param end   Last character before } (optionally spaces can be dropped)
+ */
+static bool _is_block_animated(char *start, char *end, bool drop_animations)
+{
+    char *tag_start = NULL; // points to beginning backslash
+    for (char *p = start; p <= end; p++) {
+        if (*p == '\\') {
+            // It is safe to go one before and beyond unconditionally
+            // because the text passed in must be surronded by { }
+            if (tag_start && _is_animated_tag(tag_start + 1, p - 1)) {
+                if (!drop_animations)
+                    return true;
+                // For \t transforms this will assume the final state
+                _remove_tag(tag_start, p - 1);
+            }
+            tag_start = p;
         }
     }
-    if (num_digits > 0) {
-        params[count] = value;
-        count++;
-    }
-    if (count < 4) return 0; // invalid move
 
-    // move is animated if (x1,y1) != (x2,y2)
-    return params[0] != params[2] || params[1] != params[3];
-}
-
-static int _is_animated_tag(char *begin, char *end) {
-    // strip whitespaces around the tag
-    while (begin < end && (*begin == ' ' || *begin == '\t')) begin++;
-    while (end > begin && (end[-1] == ' ' || end[-1] == '\t')) end--;
-
-    int length = end - begin;
-    if (length < 3 || *begin != '\\') return 0; // too short to be animated or not a command
-
-    switch (begin[1]) {
-        case 'k': // fallthrough
-        case 'K':
-            // \kXX is karaoke
-            return 1;
-        case 't':
-            // \t(...) is transition
-            return length >= 4 && begin[2] == '(' && end[-1] == ')';
-        case 'm':
-            if (length >=7 && end[-1] == ')' && strcmp(begin, "\\move(") == 0) {
-                return _is_move_tag_animated(begin + 6, end - 1);
-            }
-            break;
-        case 'f':
-            // \fad() or \fade() are fades
-            return (length >= 7 && end[-1] == ')' &&
-                (strcmp(begin, "\\fad(") == 0 || strcmp(begin, "\\fade(") == 0));
+    if (tag_start && _is_animated_tag(tag_start + 1, end)) {
+        if (!drop_animations)
+            return true;
+        _remove_tag(tag_start, end);
     }
 
-    return 0;
+    return false;
 }
 
-static void _remove_tag(char *begin, char *end) {
-    // overwrite the tag with whitespace so libass won't see it
-    for (; begin < end; begin++) *begin = ' ';
-}
-
-static int _is_event_animated(ASS_Event *event, bool drop_animations) {
-    // event is complex if it's animated in any way,
-    // either by having non-empty Effect or
-    // by having tags (enclosed in '{}' in Text)
+static bool _is_event_animated(ASS_Event *event, bool drop_animations) {
+    // Event is animated if it has an Effect or animated override tags
     if (event->Effect && event->Effect[0] != '\0') {
         if (!drop_animations) return 1;
         event->Effect[0] = '\0';
     }
 
-    int escaped = 0;
-    char *tagStart = NULL;
+    // Search for override blocks
+    // Only closed {...}-blocks are parsed by VSFilters and libass
+    char *block_start = NULL; // points to opening {
     for (char *p = event->Text; *p != '\0'; p++) {
         switch (*p) {
-            case '\\':
-                escaped = !escaped;
-                break;
             case '{':
-                if (!escaped && tagStart == NULL) tagStart = p + 1;
+                // Escaping the opening curly bracket to not start an override block is
+                // a VSFilter incompatiple libass extension. But we only use libass, so...
+                if (!block_start && (p == event->Text || *(p-1) != '\\'))
+                    block_start = p;
                 break;
             case '}':
-                if (!escaped && tagStart != NULL) {
-                    if (_is_animated_tag(tagStart, p)) {
-                        if (!drop_animations) return 1;
-                        _remove_tag(tagStart, p);
-                    }
-                    tagStart = NULL;
+                if (block_start && p - block_start > 2) {
+                    bool is_anim = _is_block_animated(block_start + 1, p - 1, drop_animations);
+                    if (is_anim && !drop_animations)
+                        return true;
                 }
+                block_start = NULL;
                 break;
-            case ';':
-                if (tagStart != NULL) {
-                    if (_is_animated_tag(tagStart, p)) {
-                        if (!drop_animations) return 1;
-                        _remove_tag(tagStart, p + 1 /* +1 is because we want to drop ';' as well */);
-                    }
-                }
-                tagStart = p + 1;
+            default:
                 break;
         }
     }
 
-    return 0;
+    return false;
 }
 
 class SubtitleOctopus {
