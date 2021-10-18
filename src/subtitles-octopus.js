@@ -295,7 +295,7 @@ var SubtitlesOctopus = function (options) {
             }
         }
 
-        var removed = retainedItems.length < self.renderedItems;
+        var removed = retainedItems.length < self.renderedItems.length;
         self.renderedItems = retainedItems;
         return removed;
     }
