@@ -125,7 +125,7 @@ When creating an instance of SubtitleOctopus, you can set the following options:
 - `dropAllAnimations`: Remove all animation tags, such as karaoke, move, fade, etc. (Default: `false`)
 - `libassMemoryLimit`: libass bitmap cache memory limit in MiB (approximate) (Default: `0` - no limit)
 - `libassGlyphLimit`: libass glyph cache memory limit in MiB (approximate) (Default: `0` - no limit)
-- `targetFps`: Target FPS (Default: `30`)
+- `targetFps`: Target FPS (Default: `24`)
 - `prescaleTradeoff`: Scale down (`< 1.0`) the subtitles canvas to `softHeightLimit` to improve speed, or scale it up (`> 1.0`) to improve quality. (Default: `null` - no scaling)
 - `softHeightLimit`: The height to which the subtitles canvas will be scaled. (Default: `1080`)
 - `hardHeightLimit`: The maximum height of the subtitles canvas. (Default: `0` - no limit)
