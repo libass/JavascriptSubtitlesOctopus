@@ -200,7 +200,7 @@ interface SubtitleOctopus {
     void removeAllEvents();
     void setMemoryLimits(long glyph_limit, long bitmap_cache_limit);
     RenderBlendResult renderBlend(double tm, long force);
-    double findNextEventStart(double tm);
+    double findNextEventFrame(double tm);
     EventStopTimesResult findEventStopTimes(double tm);
     void rescanAllAnimations();
 };

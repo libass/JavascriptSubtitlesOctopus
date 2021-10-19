@@ -486,7 +486,7 @@ public:
         return &m_blendResult;
     }
 
-    double findNextEventStart(double tm) const {
+    double findNextEventFrame(double tm) const {
         if (!track || track->n_events == 0) return -1;
 
         ASS_Event *cur = track->events;

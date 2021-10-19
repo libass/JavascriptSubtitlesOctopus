@@ -251,7 +251,7 @@ self.blendRender = function (force) {
 };
 
 self.oneshotRender = function (lastRenderedTime, renderNow, iteration) {
-    var eventStart = renderNow ? lastRenderedTime : self.octObj.findNextEventStart(lastRenderedTime);
+    var eventStart = renderNow ? lastRenderedTime : self.octObj.findNextEventFrame(lastRenderedTime);
     var eventFinish = -1.0, emptyFinish = -1.0, animated = false;
     var rendered = {};
     if (eventStart >= 0) {
