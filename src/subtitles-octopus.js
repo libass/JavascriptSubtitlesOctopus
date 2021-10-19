@@ -1,3 +1,8 @@
+// minimum time difference between frames
+var FRAMETIME_ULP = 0.001;
+// minimum time difference between subtitle events
+var EVENTTIME_ULP = 0.01;
+
 var SubtitlesOctopus = function (options) {
     var supportsWebAssembly = false;
     try {
@@ -327,7 +332,7 @@ var SubtitlesOctopus = function (options) {
         }
 
         if (size <= self.renderAhead) {
-            var lastRendered = currentTime - (renderNow ? 0 : 0.001);
+            var lastRendered = currentTime - (renderNow ? 0 : FRAMETIME_ULP);
             if (!self.oneshotState.renderRequested) {
                 self.oneshotState.renderRequested = true;
                 self.worker.postMessage({
@@ -388,7 +393,7 @@ var SubtitlesOctopus = function (options) {
                 // we've already found a known event, now find
                 // the farthest point of consequent events
                 // NOTE: self.renderedItems may have gaps due to seeking
-                if (item.eventStart - finishTime < 0.01) {
+                if (item.eventStart - finishTime < EVENTTIME_ULP) {
                     finishTime = item.emptyFinish;
                     animated = item.animated;
                 } else {
@@ -398,7 +403,7 @@ var SubtitlesOctopus = function (options) {
         }
 
         if (!eventShown) {
-            if (Math.abs(self.oneshotState.requestNextTimestamp - currentTime) > 0.01) {
+            if (Math.abs(self.oneshotState.requestNextTimestamp - currentTime) > EVENTTIME_ULP) {
                 _cleanPastRendered(currentTime);
                 tryRequestOneshot(currentTime, true);
             }
@@ -587,14 +592,14 @@ var SubtitlesOctopus = function (options) {
                                     '), render: ' + Math.round(data.spentTime) + ' ms');
                         }
                         self.oneshotState.renderRequested = false;
-                        if (Math.abs(data.lastRenderedTime - self.oneshotState.requestNextTimestamp) < 0.01) {
+                        if (Math.abs(data.lastRenderedTime - self.oneshotState.requestNextTimestamp) < EVENTTIME_ULP) {
                             self.oneshotState.requestNextTimestamp = -1;
                         }
-                        if (data.eventStart - data.lastRenderedTime > 0.01) {
+                        if (data.eventStart - data.lastRenderedTime > EVENTTIME_ULP) {
                             // generate bogus empty element, so all timeline is covered anyway
                             self.renderedItems.push({
                                 eventStart: data.lastRenderedTime,
-                                eventFinish: data.lastRenderedTime - 0.001,
+                                eventFinish: data.lastRenderedTime - FRAMETIME_ULP,
                                 emptyFinish: data.eventStart,
                                 viewport: data.viewport,
                                 spentTime: 0,
