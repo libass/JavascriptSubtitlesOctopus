@@ -97,13 +97,13 @@
             });
             var isFirstRun = true;
             var changeResolution = function (width, height) {
-                player.width(width)
-                player.height(height);
+                player.width(width / window.devicePixelRatio)
+                player.height(height / window.devicePixelRatio);
                 window.octopusInstance.resize();
             };
             var changeResolutionRO = function (width, height) {
-                player.width(width)
-                player.height(height);
+                player.width(width / window.devicePixelRatio)
+                player.height(height / window.devicePixelRatio);
             };
             var runBenchmark = function () {
                 player.play();
