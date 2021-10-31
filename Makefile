@@ -37,10 +37,7 @@ $(DIST_DIR)/lib/libfribidi.a: build/lib/fribidi/configure
 		--disable-dependency-tracking \
 		--disable-debug \
 	&& \
-	emmake make distdir && \
-	cd lib && \
-	emmake make install-libLTLIBRARIES install-pkgincludeHEADERS install-nodist_pkgincludeHEADERS && \
-	cd .. && \
+	emmake make -C lib/ install && \
 	emmake make install-pkgconfigDATA
 
 build/lib/expat/configured: lib/expat
@@ -231,11 +228,8 @@ $(DIST_DIR)/lib/libfontconfig.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/l
 		--disable-docs \
 		--with-default-fonts=/fonts \
 	&& \
-	cd src && \
-	emmake make distdir install-libLTLIBRARIES && \
-	cd ../fontconfig && \
-	emmake make distdir install-fontconfigincludeHEADERS && \
-	cd ../ && \
+	emmake make -C src/ install && \
+	emmake make -C fontconfig/ install && \
 	emmake make install-pkgconfigDATA
 
 # libass --
