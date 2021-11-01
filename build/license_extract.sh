@@ -33,6 +33,14 @@ if [ -z "$def_license" ] || [ "$def_license" = "$def_copy" ] ; then
     exit 1
 fi
 
+if command -v licensecheck >/dev/null ; then
+    :
+else
+    echo "Could not find licensecheck!" >&2
+    exit 2
+fi
+
+
 find "$base_dir" $FINDOPTS -type f -regextype egrep -regex '.*\.(c|h|cpp|hpp|js)$' -exec \
     licensecheck --machine --copyright --deb-fmt '{}' \; \
     | awk -F"$tabulator" -v base_dir="$base_dir" \

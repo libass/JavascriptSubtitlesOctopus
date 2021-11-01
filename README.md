@@ -165,6 +165,7 @@ To use, just run: `brotli subFile.ass` and use the .br result file with the subU
 * itstool - Required by Fontconfig
 * python3-ply - Required by WebIDL
 * gperf - Required by Fontconfig
+* licensecheck
 
 ### Get the Source
 
