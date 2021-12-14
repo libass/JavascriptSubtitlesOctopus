@@ -1,6 +1,6 @@
 [submodule "lib/libass"]
 	path = lib/libass
-	url = https://github.com/libass/libass.git
+	url = https://github.com/v6x/libass.git
 	ignore = dirty
 [submodule "lib/fribidi"]
 	path = lib/fribidi
