@@ -126,6 +126,11 @@ When creating an instance of SubtitleOctopus, you can set the following options:
   - `js-blend` - JS Blending, currently the default
   - `wasm-blend` - WASM Blending
   - `lossy` - Lossy Render Mode (EXPERIMENTAL)
+- `targetFps`: Target FPS (Default: `30`)
+- `libassMemoryLimit`: libass bitmap cache memory limit in MiB (approximate)
+                       (Default: `0` - no limit)
+- `libassGlyphLimit`: libass glyph cache memory limit in MiB (approximate)
+                      (Default: `0` - no limit)
 
 ### Rendering Modes
 #### JS Blending
