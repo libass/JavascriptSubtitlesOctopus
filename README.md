@@ -1,10 +1,12 @@
 [![Actions Status](https://github.com/libass/JavascriptSubtitlesOctopus/workflows/Emscripten/badge.svg)](https://github.com/libass/JavascriptSubtitlesOctopus/actions)
 
 SubtitlesOctopus displays subtitles in .ass format and easily integrates with HTML5 videos.
-Since it uses [libass](https://github.com/libass/libass), SubtitlesOctopus supports most SSA/ASS features
-and enables you to get consistent results in authoring and web-playback, provided libass is also used locally.
+Since it uses [libass](https://github.com/libass/libass), SubtitlesOctopus supports most
+SSA/ASS features and enables you to get consistent results in authoring and web-playback,
+provided libass is also used locally.
 
-[ONLINE DEMO](https://libass.github.io/JavascriptSubtitlesOctopus/videojs.html) / [other examples with demo](https://libass.github.io/JavascriptSubtitlesOctopus/)
+[ONLINE DEMO](https://libass.github.io/JavascriptSubtitlesOctopus/videojs.html)
+/ [other examples with demo](https://libass.github.io/JavascriptSubtitlesOctopus/)
 
 ## Features
 
@@ -13,7 +15,8 @@ and enables you to get consistent results in authoring and web-playback, provide
 - Works fast (because uses WebAssembly with fallback to asm.js if it's not available)
 - Uses Web Workers thus video and interface doesn't lag even on "heavy" subtitles (working in background)
 - Doesn't use DOM manipulations and render subtitles on single canvas
-- Fully compatible with [libass'](https://github.com/libass/libass) extensions (but beware of compatability to other ASS-renderers when using them)
+- Fully compatible with [libass'](https://github.com/libass/libass) extensions
+  (but beware of compatability to other ASS-renderers when using them)
 - Easy to use - just connect it to video element
 
 ## Included Libraries
@@ -129,22 +132,30 @@ This will do all the processing of the bitmaps produced by libass outside of Web
 
 #### WASM Blending
 Upon creating the SubtitleOctopus instance, set `blendRender` in the options to `true` to use this mode.
-This will blend the bitmaps of the different events together in WebAssembly, so the
-JavaScript-part only needs to process a single image.
+This will blend the bitmaps of the different events together in WebAssembly,
+so the JavaScript-part only needs to process a single image.
 If WebAssembly-support is available this will be faster than the default mode,
 especially for many and/or complex simultaneous subtitles.
-Without WebAssembly-support it will fallback to asm.js and should at least
-not be slower than the default mode.
+Without WebAssembly-support it will fallback to asm.js and
+should at least not be slower than the default mode.
 
 #### Fast Render Mode (Lossy) (EXPERIMENTAL)
 Upon creating the SubtitleOctopus instance, set `lossyRender` in the options to `true` to use this mode.
-The Fast Render mode has been created by @no1d as a suggestion for fix browser freezing when rendering heavy subtitles (#46), it use [createImageBitmap](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/createImageBitmap) to render the bitmap in the Worker, using Promises instead of direct render on canvas in the Main Thread. When the browser start to hang, it will not lock main thread, instead will run Async, so if the function createImageBitmap fail, it will not stop the rendering process at all and may cause some bitmap loss or simply will not draw anything in canvas, mostly on low end devices.
+The Fast Render mode has been created by @no1d as a suggestion for fix browser
+freezing when rendering heavy subtitles (#46), it uses
+[createImageBitmap](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/createImageBitmap)
+to render the bitmap in the Worker, using Promises instead of direct render on
+canvas in the Main Thread. When the browser start to hang, it will not lock main
+thread, instead will run Async, so if the function createImageBitmap fail, it
+will not stop the rendering process at all and may cause some bitmap loss or
+simply will not draw anything in canvas, mostly on low end devices.
 
 **WARNING: Experimental, not stable and not working in Safari**
 
 
 ### Brotli Compressed Subtitles
-The SubtitleOctopus allow the use of compressed subtitles in brotli format, saving bandwidth and reducing library startup time
+The SubtitleOctopus allow the use of compressed subtitles in brotli format,
+saving bandwidth and reducing library startup time
 
 To use, just run: `brotli subFile.ass` and use the .br result file with the subUrl option
 
