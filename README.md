@@ -126,7 +126,7 @@ Additionally there are options to choose between different rendering modes, whic
 below. If multiple rendering options are set any of them may be used, they are not additive.
 
 ### Rendering Modes
-#### Default
+#### JS Blending
 Do not set any addiotional rendering option to use this mode.
 This will do all the processing of the bitmaps produced by libass outside of WebAssembly.
 
@@ -139,9 +139,9 @@ especially for many and/or complex simultaneous subtitles.
 Without WebAssembly-support it will fallback to asm.js and
 should at least not be slower than the default mode.
 
-#### Fast Render Mode (Lossy) (EXPERIMENTAL)
+#### Lossy Render Mode (EXPERIMENTAL)
 Upon creating the SubtitleOctopus instance, set `lossyRender` in the options to `true` to use this mode.
-The Fast Render mode has been created by @no1d as a suggestion for fix browser
+The Lossy Render mode has been created by @no1d as a suggestion for fix browser
 freezing when rendering heavy subtitles (#46), it uses
 [createImageBitmap](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/createImageBitmap)
 to render the bitmap in the Worker, using Promises instead of direct render on

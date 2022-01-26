@@ -63,9 +63,9 @@ self.writeAvailableFontsToFS = function(content) {
 };
 
 self.getRenderMethod = function () {
-    if (self.renderMode == 'fast') {
-        return self.fastRender;
-    } else if (self.renderMode == 'blend') {
+    if (self.renderMode == 'lossy') {
+        return self.lossyRender;
+    } else if (self.renderMode == 'wasm-blend') {
         return self.blendRender;
     } else {
         return self.render;
@@ -224,7 +224,7 @@ self.blendRender = function (force) {
     }
 };
 
-self.fastRender = function (force) {
+self.lossyRender = function (force) {
     self.rafId = 0;
     self.renderPending = false;
     var startTime = performance.now();
@@ -259,7 +259,7 @@ self.fastRender = function (force) {
         });
     }
     if (!self._isPaused) {
-        self.rafId = self.requestAnimationFrame(self.fastRender);
+        self.rafId = self.requestAnimationFrame(self.lossyRender);
     }
 };
 
