@@ -121,17 +121,19 @@ When creating an instance of SubtitleOctopus, you can set the following options:
   occurs if browser doesn't support web workers). (Optional)
 - `debug`: Whether performance info is printed in the console. (Default:
   `false`)
-
-Additionally there are options to choose between different rendering modes, which are detailed
-below. If multiple rendering options are set any of them may be used, they are not additive.
+- `renderMode`: Rendering mode.
+  (If not set, the deprecated options `blendRender` and `lossyRender` are evaluated)
+  - `js-blend` - JS Blending, currently the default
+  - `wasm-blend` - WASM Blending
+  - `lossy` - Lossy Render Mode (EXPERIMENTAL)
 
 ### Rendering Modes
 #### JS Blending
-Do not set any addiotional rendering option to use this mode.
+To use this mode set `renderMode` to `js-blend` upon instance creation.
 This will do all the processing of the bitmaps produced by libass outside of WebAssembly.
 
 #### WASM Blending
-Upon creating the SubtitleOctopus instance, set `blendRender` in the options to `true` to use this mode.
+To use this mode set `renderMode` to `wasm-blend` upon instance creation.
 This will blend the bitmaps of the different events together in WebAssembly,
 so the JavaScript-part only needs to process a single image.
 If WebAssembly-support is available this will be faster than the default mode,
@@ -140,7 +142,7 @@ Without WebAssembly-support it will fallback to asm.js and
 should at least not be slower than the default mode.
 
 #### Lossy Render Mode (EXPERIMENTAL)
-Upon creating the SubtitleOctopus instance, set `lossyRender` in the options to `true` to use this mode.
+To use this mode set `renderMode` to `lossy` upon instance creation.
 The Lossy Render mode has been created by @no1d as a suggestion for fix browser
 freezing when rendering heavy subtitles (#46), it uses
 [createImageBitmap](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/createImageBitmap)

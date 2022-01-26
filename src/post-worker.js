@@ -68,6 +68,8 @@ self.getRenderMethod = function () {
     } else if (self.renderMode == 'wasm-blend') {
         return self.blendRender;
     } else {
+        if (self.renderMode != 'js-blend')
+            console.error('Unrecognised renderMode, falling back to default!');
         return self.render;
     }
 }
