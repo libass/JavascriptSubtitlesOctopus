@@ -6,7 +6,7 @@ self.rate = 1;
 self.rafId = null;
 self.nextIsRaf = false;
 self.lastCurrentTimeReceivedAt = Date.now();
-self.targetFps = 30;
+self.targetFps = 24;
 self.libassMemoryLimit = 0; // in MiB
 
 self.width = 0;
