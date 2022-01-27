@@ -122,9 +122,9 @@ When creating an instance of SubtitleOctopus, you can set the following options:
 - `debug`: Whether performance info is printed in the console. (Default:
   `false`)
 - `renderMode`: Rendering mode.
-  (If not set, the deprecated options `blendRender` and `lossyRender` are evaluated)
-  - `js-blend` - JS Blending, currently the default
-  - `wasm-blend` - WASM Blending
+  (If not set, the deprecated option `lossyRender` is evaluated)
+  - `js-blend` - JS Blending
+  - `wasm-blend` - WASM Blending, currently the default
   - `lossy` - Lossy Render Mode (EXPERIMENTAL)
 - `targetFps`: Target FPS (Default: `24`)
 - `libassMemoryLimit`: libass bitmap cache memory limit in MiB (approximate)

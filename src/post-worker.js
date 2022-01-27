@@ -65,12 +65,12 @@ self.writeAvailableFontsToFS = function(content) {
 self.getRenderMethod = function () {
     if (self.renderMode == 'lossy') {
         return self.lossyRender;
-    } else if (self.renderMode == 'wasm-blend') {
-        return self.blendRender;
-    } else {
-        if (self.renderMode != 'js-blend')
-            console.error('Unrecognised renderMode, falling back to default!');
+    } else if (self.renderMode == 'js-blend') {
         return self.render;
+    } else {
+        if (self.renderMode != 'wasm-blend')
+            console.error('Unrecognised renderMode, falling back to default!');
+        return self.blendRender;
     }
 }
 
