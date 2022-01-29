@@ -19,6 +19,7 @@ var SubtitlesOctopus = function (options) {
     self.targetFps = options.targetFps || 24;
     self.prescaleFactor = options.prescaleFactor || 1.0;
     self.prescaleHeightLimit = options.prescaleHeightLimit || 1080;
+    self.maxRenderHeight = options.maxRenderHeight || 0; // 0 - no limit
     self.isOurCanvas = false; // (internal) we created canvas and manage it
     self.video = options.video; // HTML video element (optional if canvas specified)
     self.canvasParent = null; // (internal) HTML canvas parent element
@@ -419,6 +420,9 @@ var SubtitlesOctopus = function (options) {
                 newH *= scalefactor;
             else if (sgn * newH < sgn * self.prescaleHeightLimit)
                 newH = self.prescaleHeightLimit;
+
+            if (self.maxRenderHeight > 0 && newH > self.maxRenderHeight)
+                newH = self.maxRenderHeight;
 
             width *= newH / height;
             height = newH;

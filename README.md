@@ -137,6 +137,9 @@ When creating an instance of SubtitleOctopus, you can set the following options:
                     (Default: `1.0` - no scaling; must be a number > 0)
 - `prescaleHeightLimit`: The height beyond which the subtitles canvas won't be prescaled.
                          (Default: `1080`)
+- `maxRenderHeight`: The maximum rendering height of the subtitles canvas.
+                     Beyond this subtitles will be upscaled by the browser.
+                     (Default: `0` - no limit)
 
 ### Rendering Modes
 #### JS Blending
