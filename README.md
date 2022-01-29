@@ -132,6 +132,11 @@ When creating an instance of SubtitleOctopus, you can set the following options:
                        (Default: `0` - no limit)
 - `libassGlyphLimit`: libass glyph cache memory limit in MiB (approximate)
                       (Default: `0` - no limit)
+- `prescaleFactor`: Scale down (`< 1.0`) the subtitles canvas to improve
+                    performance at the expense of quality, or scale it up (`> 1.0`).
+                    (Default: `1.0` - no scaling; must be a number > 0)
+- `prescaleHeightLimit`: The height beyond which the subtitles canvas won't be prescaled.
+                         (Default: `1080`)
 
 ### Rendering Modes
 #### JS Blending

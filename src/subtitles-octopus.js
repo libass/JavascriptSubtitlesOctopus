@@ -17,6 +17,8 @@ var SubtitlesOctopus = function (options) {
     self.libassMemoryLimit = options.libassMemoryLimit || 0;
     self.libassGlyphLimit = options.libassGlyphLimit || 0;
     self.targetFps = options.targetFps || 24;
+    self.prescaleFactor = options.prescaleFactor || 1.0;
+    self.prescaleHeightLimit = options.prescaleHeightLimit || 1080;
     self.isOurCanvas = false; // (internal) we created canvas and manage it
     self.video = options.video; // HTML video element (optional if canvas specified)
     self.canvasParent = null; // (internal) HTML canvas parent element
@@ -404,14 +406,36 @@ var SubtitlesOctopus = function (options) {
         }
     };
 
+    function _computeCanvasSize(width, height) {
+        var scalefactor = self.prescaleFactor <= 0 ? 1.0 : self.prescaleFactor;
+
+        if (height <= 0 || width <= 0) {
+            width = 0;
+            height = 0;
+        } else {
+            var sgn = scalefactor < 1 ? -1 : 1;
+            var newH = height;
+            if (sgn * newH * scalefactor <= sgn * self.prescaleHeightLimit)
+                newH *= scalefactor;
+            else if (sgn * newH < sgn * self.prescaleHeightLimit)
+                newH = self.prescaleHeightLimit;
+
+            width *= newH / height;
+            height = newH;
+        }
+
+        return {'width': width, 'height': height};
+    }
+
     self.resize = function (width, height, top, left) {
         var videoSize = null;
         top = top || 0;
         left = left || 0;
         if ((!width || !height) && self.video) {
             videoSize = self.getVideoPosition();
-            width = videoSize.width * self.pixelRatio;
-            height = videoSize.height * self.pixelRatio;
+            var newSize = _computeCanvasSize(videoSize.width * self.pixelRatio, videoSize.height * self.pixelRatio);
+            width = newSize.width;
+            height = newSize.height;
             var offset = self.canvasParent.getBoundingClientRect().top - self.video.getBoundingClientRect().top;
             top = videoSize.y - offset;
             left = videoSize.x;
