@@ -21,11 +21,11 @@ int log_level = 3;
 
 typedef struct {
     void *buffer;
-    int size;
-    int lessen_counter;
+    size_t size;
+    size_t lessen_counter;
 } buffer_t;
 
-void* buffer_resize(buffer_t *buf, int new_size, int keep_content) {
+void* buffer_resize(buffer_t *buf, size_t new_size, int keep_content) {
     if (buf->size >= new_size) {
         if (buf->size >= 1.3 * new_size) {
             // big reduction request
@@ -56,7 +56,7 @@ void* buffer_resize(buffer_t *buf, int new_size, int keep_content) {
 
 void buffer_init(buffer_t *buf) {
     buf->buffer = NULL;
-    buf->size = -1;
+    buf->size = 0;
     buf->lessen_counter = 0;
 }
 
