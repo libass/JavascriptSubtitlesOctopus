@@ -19,6 +19,11 @@
 
 int log_level = 3;
 
+// maximum frame buffer width (8K resolution)
+const size_t FRAMEBUFFER_MAX_WIDTH = 7680;
+// maximum frame buffer height (8K resolution)
+const size_t FRAMEBUFFER_MAX_HEIGHT = 4320;
+
 typedef struct {
     void *buffer;
     size_t size;
@@ -163,6 +168,13 @@ public:
 
     /* CANVAS */
     void resizeCanvas(int frame_w, int frame_h) {
+        if (frame_w > FRAMEBUFFER_MAX_WIDTH || frame_h > FRAMEBUFFER_MAX_HEIGHT) {
+            fprintf(stderr, "jso: canvas is oversized - %dx%d\n", frame_w, frame_h);
+            if (frame_w > FRAMEBUFFER_MAX_WIDTH) frame_w = FRAMEBUFFER_MAX_WIDTH;
+            if (frame_h > FRAMEBUFFER_MAX_HEIGHT) frame_h = FRAMEBUFFER_MAX_HEIGHT;
+            printf("jso: canvas is trimmed to %dx%d\n", frame_w, frame_h);
+        }
+
         ass_set_frame_size(ass_renderer, frame_w, frame_h);
         canvas_h = frame_h;
         canvas_w = frame_w;
