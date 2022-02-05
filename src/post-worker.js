@@ -21,11 +21,11 @@ self.fontId = 0;
  */
 self.writeFontToFS = function(font) {
     font = font.trim().toLowerCase();
-    
+
     if (font.startsWith("@")) {
         font = font.substr(1);
     }
-    
+
     if (self.fontMap_.hasOwnProperty(font)) return;
 
     self.fontMap_[font] = true;
@@ -33,7 +33,7 @@ self.writeFontToFS = function(font) {
     if (!self.availableFonts.hasOwnProperty(font)) return;
     var content = readBinary(self.availableFonts[font]);
 
-    Module["FS"].writeFile('/fonts/font' + (self.fontId++) + '-' + self.availableFonts[font].split('/').pop(), content, { 
+    Module["FS"].writeFile('/fonts/font' + (self.fontId++) + '-' + self.availableFonts[font].split('/').pop(), content, {
         encoding: 'binary'
     });
 };
@@ -54,7 +54,7 @@ self.writeAvailableFontsToFS = function(content) {
             }
         }
     }
-    
+
     var regex = /\\fn([^\\}]*?)[\\}]/g;
     var matches;
     while (matches = regex.exec(self.subContent)) {
@@ -144,7 +144,7 @@ self.setCurrentTime = function (currentTime) {
         }
         else {
             self.getRenderMethod()();
-            
+
             // Give onmessage chance to receive all queued messages
             setTimeout(function () {
                 self.nextIsRaf = false;

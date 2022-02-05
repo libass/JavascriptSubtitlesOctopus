@@ -294,13 +294,13 @@ public:
                 {
                     float pix_alpha = bitmap[bitmap_offset + x] * normalized_a / 255.0;
                     float inv_alpha = 1.0 - pix_alpha;
-                    
+
                     int buf_coord = (buf_line_coord + curx + x) << 2;
                     float *buf_r = buf + buf_coord;
                     float *buf_g = buf + buf_coord + 1;
                     float *buf_b = buf + buf_coord + 2;
                     float *buf_a = buf + buf_coord + 3;
-                    
+
                     // do the compositing, pre-multiply image RGB with alpha for current pixel
                     *buf_a = pix_alpha + *buf_a * inv_alpha;
                     *buf_r = r * pix_alpha + *buf_r * inv_alpha;
@@ -332,7 +332,7 @@ public:
                 result[buf_line_coord + x] = pixel;
             }
         }
-        
+
         // return the thing
         m_blendResult.dest_x = min_x;
         m_blendResult.dest_y = min_y;
