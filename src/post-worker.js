@@ -541,6 +541,14 @@ function onMessageFromMainEmscriptenThread(message) {
             self.subContent = message.data.subContent;
             self.fontFiles = message.data.fonts;
             self.renderMode = message.data.renderMode;
+            // Force fallback if engine does not support 'lossy' mode.
+            // We only use createImageBitmap in the worker and historic WebKit versions supported
+            // the API in the normal but not the worker scope, so we can't check this earlier.
+            if (self.renderMode == 'lossy' && typeof createImageBitmap === 'undefined') {
+                self.renderMode = 'wasm-blend';
+                console.error("'createImageBitmap' needed for 'lossy' unsupported. Falling back to default!");
+            }
+
             self.availableFonts = message.data.availableFonts;
             self.debug = message.data.debug;
             if (!hasNativeConsole && self.debug) {
