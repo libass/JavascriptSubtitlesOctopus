@@ -1,4 +1,5 @@
-[![Actions Status](https://github.com/libass/JavascriptSubtitlesOctopus/workflows/Emscripten/badge.svg)](https://github.com/libass/JavascriptSubtitlesOctopus/actions)
+[![Actions Status](https://github.com/libass/JavascriptSubtitlesOctopus/actions/workflows/emscripten.yml/badge.svg)](https://github.com/libass/JavascriptSubtitlesOctopus/actions/workflows/emscripten.yml?query=branch%3Amaster+event%3Apush)
+
 
 SubtitlesOctopus displays subtitles in .ass format and easily integrates with HTML5 videos.
 Since it uses [libass](https://github.com/libass/libass), SubtitlesOctopus supports most
