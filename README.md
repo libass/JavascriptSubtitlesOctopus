@@ -157,7 +157,7 @@ thread, instead will run Async, so if the function createImageBitmap fail, it
 will not stop the rendering process at all and may cause some bitmap loss or
 simply will not draw anything in canvas, mostly on low end devices.
 
-**WARNING: Experimental, not stable and not working in Safari**
+**WARNING: Experimental, not stable and not working in some browsers**
 
 
 ### Brotli Compressed Subtitles
