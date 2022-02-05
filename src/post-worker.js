@@ -70,6 +70,7 @@ self.getRenderMethod = function () {
             return self.render;
         default:
             console.error('Unrecognised renderMode, falling back to default!');
+            self.renderMode = 'wasm-blend';
             // fallthrough
         case 'wasm-blend':
             return self.blendRender;
