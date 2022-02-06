@@ -112,7 +112,7 @@ public:
     void initLibrary(int frame_w, int frame_h) {
         ass_library = ass_library_init();
         if (!ass_library) {
-            printf("ass_library_init failed!\n");
+            fprintf(stderr, "ass_library_init failed!\n");
             exit(2);
         }
 
@@ -120,7 +120,7 @@ public:
 
         ass_renderer = ass_renderer_init(ass_library);
         if (!ass_renderer) {
-            printf("ass_renderer_init failed!\n");
+            fprintf(stderr, "ass_renderer_init failed!\n");
             exit(3);
         }
 
@@ -135,7 +135,7 @@ public:
         removeTrack();
         track = ass_read_file(ass_library, subfile, NULL);
         if (!track) {
-            printf("Failed to start a track\n");
+            fprintf(stderr, "Failed to start a track\n");
             exit(4);
         }
     }
@@ -144,7 +144,7 @@ public:
         removeTrack();
         track = ass_read_memory(ass_library, buf, (size_t)bufsize, NULL);
         if (!track) {
-            printf("Failed to start a track\n");
+            fprintf(stderr, "Failed to start a track\n");
             exit(4);
         }
     }
@@ -266,7 +266,7 @@ public:
         // make float buffer for blending
         float* buf = (float*)buffer_resize(&m_blend, sizeof(float) * width * height * 4, 0);
         if (buf == NULL) {
-            printf("libass: error: cannot allocate buffer for blending\n");
+            fprintf(stderr, "libass: cannot allocate buffer for blending\n");
             return &m_blendResult;
         }
         memset(buf, 0, sizeof(float) * width * height * 4);
