@@ -266,7 +266,7 @@ public:
         // make float buffer for blending
         float* buf = (float*)buffer_resize(&m_blend, sizeof(float) * width * height * 4, 0);
         if (buf == NULL) {
-            printf("libass: error: cannot allocate buffer for blending");
+            printf("libass: error: cannot allocate buffer for blending\n");
             return &m_blendResult;
         }
         memset(buf, 0, sizeof(float) * width * height * 4);
