@@ -48,6 +48,7 @@ public:
      * object until the next call to get_rawbuf or clear.
      */
     void *get_rawbuf(size_t new_size, bool keep_content) {
+        if (!new_size) new_size = 1;
         if (size >= new_size) {
             if (size >= 1.3 * new_size) {
                 // big reduction request
