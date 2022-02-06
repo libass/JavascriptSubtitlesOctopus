@@ -189,7 +189,7 @@ public:
         ass_set_margins(ass_renderer, top, bottom, left, right);
     }
 
-    int getEventCount() {
+    int getEventCount() const {
         return track->n_events;
     }
 
@@ -201,11 +201,11 @@ public:
         ass_free_event(track, eid);
     }
 
-    int getStyleCount() {
+    int getStyleCount() const {
         return track->n_styles;
     }
 
-    int getStyleByName(const char* name) {
+    int getStyleByName(const char* name) const {
         for (int n = 0; n < track->n_styles; n++) {
             if (track->styles[n].Name && strcmp(track->styles[n].Name, name) == 0)
                 return n;
