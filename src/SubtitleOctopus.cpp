@@ -268,12 +268,13 @@ public:
         }
 
         // make float buffer for blending
-        float* buf = (float*)buffer_resize(&m_blend, sizeof(float) * width * height * 4, 0);
+        const size_t buffer_size = width * height * 4 * sizeof(float);
+        float* buf = (float*)buffer_resize(&m_blend, buffer_size, 0);
         if (buf == NULL) {
             fprintf(stderr, "jso: cannot allocate buffer for blending\n");
             return &m_blendResult;
         }
-        memset(buf, 0, sizeof(float) * width * height * 4);
+        memset(buf, 0, buffer_size);
 
         // blend things in
         for (cur = img; cur != NULL; cur = cur->next) {
