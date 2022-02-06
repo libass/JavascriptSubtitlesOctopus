@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <cstdint>
 #include "../lib/libass/libass/ass.h"
 
 #include "libass.cpp"
@@ -22,11 +23,11 @@ int log_level = 3;
 class ReusableBuffer {
 private:
     void *buffer;
-    int size;
+    size_t size;
     int lessen_counter;
 
 public:
-    ReusableBuffer(): buffer(NULL), size(-1), lessen_counter(0) {}
+    ReusableBuffer(): buffer(NULL), size(0), lessen_counter(0) {}
 
     ~ReusableBuffer() {
         free(buffer);
@@ -35,7 +36,7 @@ public:
     void clear() {
         free(buffer);
         buffer = NULL;
-        size = -1;
+        size = 0;
         lessen_counter = 0;
     }
 
@@ -46,7 +47,7 @@ public:
      * The pointer is valid during the lifetime of the ReusableBuffer
      * object until the next call to get_rawbuf or clear.
      */
-    void *get_rawbuf(int new_size, bool keep_content) {
+    void *get_rawbuf(size_t new_size, bool keep_content) {
         if (size >= new_size) {
             if (size >= 1.3 * new_size) {
                 // big reduction request
