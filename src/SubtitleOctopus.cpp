@@ -20,16 +20,16 @@
 
 int log_level = 3;
 
-class ReusableBuffer {
+class ReusableBuffer2D {
 private:
     void *buffer;
     size_t size;
     int lessen_counter;
 
 public:
-    ReusableBuffer(): buffer(NULL), size(0), lessen_counter(0) {}
+    ReusableBuffer2D(): buffer(NULL), size(0), lessen_counter(0) {}
 
-    ~ReusableBuffer() {
+    ~ReusableBuffer2D() {
         free(buffer);
     }
 
@@ -42,12 +42,16 @@ public:
 
     /*
      * Request a raw pointer to a buffer being able to hold at least
-     * the requested amount of data.
+     * x times y values of size member_size.
      * On failure NULL is returned.
      * The pointer is valid during the lifetime of the ReusableBuffer
      * object until the next call to get_rawbuf or clear.
      */
-    void *get_rawbuf(size_t new_size) {
+    void *get_rawbuf(size_t x, size_t y, size_t member_size) {
+        if (x > SIZE_MAX / member_size / y)
+            return NULL;
+
+        size_t new_size = x * y * member_size;
         if (!new_size) new_size = 1;
         if (size >= new_size) {
             if (size >= 1.3 * new_size) {
@@ -277,7 +281,7 @@ public:
         }
 
         // make float buffer for blending
-        float* buf = (float*)m_blend.get_rawbuf(sizeof(float) * width * height * 4);
+        float* buf = (float*)m_blend.get_rawbuf(width, height, sizeof(float) * 4);
         if (buf == NULL) {
             fprintf(stderr, "jso: cannot allocate buffer for blending\n");
             return &m_blendResult;
@@ -357,7 +361,7 @@ public:
     }
 
 private:
-    ReusableBuffer m_blend;
+    ReusableBuffer2D m_blend;
     RenderBlendResult m_blendResult;
 };
 
