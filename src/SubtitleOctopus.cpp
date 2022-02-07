@@ -77,7 +77,7 @@ const float MAX_UINT8_CAST = 255.9 / 255;
 
 #define CLAMP_UINT8(value) ((value > MIN_UINT8_CAST) ? ((value < MAX_UINT8_CAST) ? (int)(value * 255) : 255) : 0)
 
-typedef struct {
+typedef struct RenderBlendResult {
 public:
     int changed;
     double blend_time;
