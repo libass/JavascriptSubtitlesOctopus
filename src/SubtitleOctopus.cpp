@@ -17,6 +17,11 @@
 #define emscripten_get_now() 0.0
 #endif
 
+// HACK: ass_utils.h couldn't be included due to a compilation error
+#ifndef MSGL_ERR
+#define MSGL_ERR 1
+#endif
+
 int log_level = 3;
 
 typedef struct {
@@ -67,9 +72,12 @@ void buffer_free(buffer_t *buf) {
 void msg_callback(int level, const char *fmt, va_list va, void *data) {
     if (level > log_level) // 6 for verbose
         return;
-    printf("libass: ");
-    vprintf(fmt, va);
-    printf("\n");
+
+    FILE* stream = level <= MSGL_ERR ? stderr : stdout;
+
+    fprintf(stream, "libass: ");
+    vfprintf(stream, fmt, va);
+    fprintf(stream, "\n");
 }
 
 const float MIN_UINT8_CAST = 0.9 / 255;
