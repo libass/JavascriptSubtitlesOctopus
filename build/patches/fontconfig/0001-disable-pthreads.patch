@@ -1,8 +1,8 @@
 diff --git a/configure.ac b/configure.ac
-index 394c281..1cb2f74 100644
+index 26b974a..b73d132 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -681,22 +681,8 @@ if $fc_cv_have_solaris_atomic_ops; then
+@@ -712,22 +712,8 @@ if $fc_cv_have_solaris_atomic_ops; then
  	AC_DEFINE(HAVE_SOLARIS_ATOMIC_OPS, 1, [Have Solaris __machine_*_barrier and atomic_* operations])
  fi
  
