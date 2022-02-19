@@ -1,0 +1,101 @@
+From 2e7bb7592195c94853c4e3b6718d47677e1555bf Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Thiago=20Fran=C3=A7a=20da=20Silva?=
+ <tfsthiagobr98@outlook.com>
+Date: Fri, 18 Feb 2022 21:19:20 -0300
+Subject: [PATCH 2/4] WebIDL: Implement Integer Pointer type (IntPtr)
+
+This allows compatibility with `changed` parameter of the `renderImage` function
+---
+ build/WebIDL.py        | 15 +++++++++++++++
+ build/webidl_binder.py |  4 ++++
+ 2 files changed, 19 insertions(+)
+
+diff --git a/build/WebIDL.py b/build/WebIDL.py
+index 8892616..d140f8f 100644
+--- a/build/WebIDL.py
++++ b/build/WebIDL.py
+@@ -1,4 +1,6 @@
+ ## JavascriptSubtitlesOctopus
++## Patched to:
++##   - add integer pointers (IntPtr)
+ ## From https://github.com/emscripten-core/emscripten/blob/f36f9fcaf83db93e6a6d0f0cdc47ab6379ade139/third_party/WebIDL.py
+ 
+ # from https://hg.mozilla.org/mozilla-central/file/tip/dom/bindings/parser/WebIDL.py
+@@ -2165,6 +2167,7 @@ class IDLBuiltinType(IDLType):
+         'date',
+         'void',
+         # Funny stuff
++        'IntPtr',
+         'ArrayBuffer',
+         'ArrayBufferView',
+         'Int8Array',
+@@ -2184,6 +2187,7 @@ class IDLBuiltinType(IDLType):
+             Types.short: IDLType.Tags.int16,
+             Types.unsigned_short: IDLType.Tags.uint16,
+             Types.long: IDLType.Tags.int32,
++            Types.IntPtr: IDLType.Tags.int32,
+             Types.unsigned_long: IDLType.Tags.uint32,
+             Types.long_long: IDLType.Tags.int64,
+             Types.unsigned_long_long: IDLType.Tags.uint64,
+@@ -2380,6 +2384,9 @@ BuiltinTypes = {
+       IDLBuiltinType.Types.any:
+           IDLBuiltinType(BuiltinLocation("<builtin type>"), "Any",
+                          IDLBuiltinType.Types.any),
++      IDLBuiltinType.Types.IntPtr:
++          IDLBuiltinType(BuiltinLocation("<builtin type>"), "IntPtr",
++                         IDLBuiltinType.Types.IntPtr),
+       IDLBuiltinType.Types.domstring:
+           IDLBuiltinType(BuiltinLocation("<builtin type>"), "String",
+                          IDLBuiltinType.Types.domstring),
+@@ -3622,6 +3629,7 @@ class Tokenizer(object):
+         "...": "ELLIPSIS",
+         "::": "SCOPE",
+         "Date": "DATE",
++        "IntPtr": "INTPTR",
+         "DOMString": "DOMSTRING",
+         "ByteString": "BYTESTRING",
+         "any": "ANY",
+@@ -4507,6 +4515,7 @@ class Parser(Tokenizer):
+                   | DATE
+                   | DOMSTRING
+                   | BYTESTRING
++                  | INTPTR
+                   | ANY
+                   | ATTRIBUTE
+                   | BOOLEAN
+@@ -4573,6 +4582,12 @@ class Parser(Tokenizer):
+         """
+         p[0] = self.handleModifiers(BuiltinTypes[IDLBuiltinType.Types.any], p[2])
+ 
++    def p_SingleTypeIntPtrType(self, p):
++        """
++            SingleType : INTPTR TypeSuffixStartingWithArray
++        """
++        p[0] = self.handleModifiers(BuiltinTypes[IDLBuiltinType.Types.IntPtr], p[2])
++
+     def p_UnionType(self, p):
+         """
+             UnionType : LPAREN UnionMemberType OR UnionMemberType UnionMemberTypes RPAREN
+diff --git a/build/webidl_binder.py b/build/webidl_binder.py
+index 687a5ba..e9a56e5 100644
+--- a/build/webidl_binder.py
++++ b/build/webidl_binder.py
+@@ -1,4 +1,6 @@
+ ## JavascriptSubtitlesOctopus
++## Patched to: 
++##   - add integer pointers (IntPtr)
+ ## From https://github.com/emscripten-core/emscripten/blob/f36f9fcaf83db93e6a6d0f0cdc47ab6379ade139/tools/webidl_binder.py
+ 
+ # Copyright 2014 The Emscripten Authors.  All rights reserved.
+@@ -337,6 +339,8 @@ def type_to_c(t, non_pointing=False):
+       ret = 'bool'
+     elif t == 'Any' or t == 'VoidPtr':
+       ret = 'void*'
++    elif t == 'IntPtr':
++      ret = 'int*'
+     elif t in interfaces:
+       ret = (interfaces[t].getExtendedAttribute('Prefix') or [''])[0] + t + ('' if non_pointing else '*')
+     else:
+-- 
+2.35.1
+
