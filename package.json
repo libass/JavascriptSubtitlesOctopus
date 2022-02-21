@@ -13,7 +13,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Dador/JavascriptSubtitlesOctopus.git"
+    "url": "git+https://github.com/libass/JavascriptSubtitlesOctopus.git"
   },
   "keywords": [
     "libass",
@@ -21,10 +21,10 @@
     "wasm",
     "emscripten"
   ],
-  "author": "TFSThiagoBR98, Dador",
+  "author": "SubtitlesOctopus contributors",
   "license": "LGPL-2.1-or-later AND (FTL OR GPL-2.0-or-later) AND MIT AND MIT-Modern-Variant AND ISC AND NTP AND Zlib AND BSL-1.0",
   "bugs": {
-    "url": "https://github.com/Dador/JavascriptSubtitlesOctopus/issues"
+    "url": "https://github.com/libass/JavascriptSubtitlesOctopus/issues"
   },
-  "homepage": "https://dador.github.io/JavascriptSubtitlesOctopus/"
+  "homepage": "https://libass.github.io/JavascriptSubtitlesOctopus/"
 }
