@@ -116,7 +116,7 @@ public:
     void initLibrary(int frame_w, int frame_h) {
         ass_library = ass_library_init();
         if (!ass_library) {
-            fprintf(stderr, "ass_library_init failed!\n");
+            fprintf(stderr, "jso: ass_library_init failed!\n");
             exit(2);
         }
 
@@ -124,7 +124,7 @@ public:
 
         ass_renderer = ass_renderer_init(ass_library);
         if (!ass_renderer) {
-            fprintf(stderr, "ass_renderer_init failed!\n");
+            fprintf(stderr, "jso: ass_renderer_init failed!\n");
             exit(3);
         }
 
@@ -139,7 +139,7 @@ public:
         removeTrack();
         track = ass_read_file(ass_library, subfile, NULL);
         if (!track) {
-            fprintf(stderr, "Failed to start a track\n");
+            fprintf(stderr, "jso: Failed to start a track\n");
             exit(4);
         }
     }
@@ -148,7 +148,7 @@ public:
         removeTrack();
         track = ass_read_memory(ass_library, buf, (size_t)bufsize, NULL);
         if (!track) {
-            fprintf(stderr, "Failed to start a track\n");
+            fprintf(stderr, "jso: Failed to start a track\n");
             exit(4);
         }
     }
@@ -230,7 +230,7 @@ public:
     }
 
     void setMemoryLimits(int glyph_limit, int bitmap_cache_limit) {
-        printf("libass: setting total libass memory limits to: glyph=%d MiB, bitmap cache=%d MiB\n",
+        printf("jso: setting total libass memory limits to: glyph=%d MiB, bitmap cache=%d MiB\n",
             glyph_limit, bitmap_cache_limit);
         ass_set_cache_limits(ass_renderer, glyph_limit, bitmap_cache_limit);
     }
@@ -270,7 +270,7 @@ public:
         // make float buffer for blending
         float* buf = (float*)buffer_resize(&m_blend, sizeof(float) * width * height * 4, 0);
         if (buf == NULL) {
-            fprintf(stderr, "libass: cannot allocate buffer for blending\n");
+            fprintf(stderr, "jso: cannot allocate buffer for blending\n");
             return &m_blendResult;
         }
         memset(buf, 0, sizeof(float) * width * height * 4);
