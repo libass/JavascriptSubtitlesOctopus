@@ -286,42 +286,7 @@ self.buildResult = function (ptr) {
 }
 
 self.buildResultItem = function (ptr) {
-    var bitmap = ptr.bitmap,
-        stride = ptr.stride,
-        w = ptr.w,
-        h = ptr.h,
-        color = ptr.color;
-
-    if (w == 0 || h == 0) {
-        return null;
-    }
-
-    var r = (color >> 24) & 0xFF,
-        g = (color >> 16) & 0xFF,
-        b = (color >> 8) & 0xFF,
-        a = 255 - (color & 0xFF);
-
-    var result = new Uint8ClampedArray(4 * w * h);
-
-    var bitmapPosition = 0;
-    var resultPosition = 0;
-
-    for (var y = 0; y < h; ++y) {
-        for (var x = 0; x < w; ++x) {
-            var k = Module.HEAPU8[bitmap + bitmapPosition + x] * a / 255;
-            result[resultPosition] = r;
-            result[resultPosition + 1] = g;
-            result[resultPosition + 2] = b;
-            result[resultPosition + 3] = k;
-            resultPosition += 4;
-        }
-        bitmapPosition += stride;
-    }
-
-    x = ptr.dst_x;
-    y = ptr.dst_y;
-
-    return {w: w, h: h, x: x, y: y, buffer: result.buffer};
+    return {w: ptr.w, h: ptr.h, x: ptr.dst_x, y: ptr.dst_y, buffer: HEAPU8.subarray(ptr.bitmap, ptr.bitmap + ptr.w * ptr.h * 4).buffer};
 };
 
 if (typeof SDL !== 'undefined') {
