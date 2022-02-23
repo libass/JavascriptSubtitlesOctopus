@@ -165,9 +165,38 @@ public:
     }
     ASS_Image* renderImage(double time, int* changed) {
         ASS_Image *img = ass_render_frame(ass_renderer, track, (int) (time * 1000), changed);
-        return img;
+        ASS_Image *decoded = NULL;
+        while (img) {
+            decodeBitmap(img, &decoded);
+            img=img->next;
+        }
+        return decoded;
     }
     /* CANVAS */
+
+    void decodeBitmap(ASS_Image* img, ASS_Image** next) {
+        if (img->w == 0 || img->h == 0) return;
+        double alpha = (255 - (img->color & 255)) / 255.0;
+        if (alpha == 0.0) return;
+        uint32_t color = ((img->color << 8) & 0xff0000) | ((img->color >> 8) & 0xff00) | ((img->color >> 24) & 0xff);
+        uint32_t* data = (uint32_t*)malloc(sizeof(uint32_t) * img->w * img->h);
+        uint8_t* pos = img->bitmap;
+        uint32_t res = 0;
+        for (uint32_t y = 0; y < img->h; ++y, pos += img->stride) {
+            for (uint32_t z = 0; z < img->w; ++z, ++res) {
+                uint32_t mask = pos[z];
+                if (mask != 0) data[res] = ((uint32_t)(alpha*mask) << 24) | color;
+            }
+        }
+        ASS_Image* result = (ASS_Image*)malloc(sizeof(ASS_Image));
+        result->w = img->w;
+        result->h = img->h;
+        result->dst_x = img->dst_x;
+        result->dst_y = img->dst_y;
+        result->bitmap = (uint8_t*)data;
+        result->next = *next;
+        *next = result;
+    }
 
     void quitLibrary() {
         ass_free_track(track);
