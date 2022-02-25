@@ -256,6 +256,7 @@ self.paintImages = ({ images, buffers }) => {
       if (image.buffer) {
         if (self.asyncRender) {
           self.offscreenCanvasCtx.drawImage(image.buffer, image.x, image.y)
+          image.buffer.close()
         } else {
           self.bufferCanvas.width = image.w
           self.bufferCanvas.height = image.h
@@ -483,10 +484,10 @@ onmessage = message => {
     clearTimeout(messageResenderTimeout)
     messageResender()
   }
-  if (self[message.data.target]) {
-    self[message.data.target](message.data)
+  const data = message.data
+  if (self[data.target]) {
+    self[data.target](data)
   } else {
-    const { data } = message
     switch (data.target) {
       case 'offscreenCanvas':
         self.offscreenCanvas = data.transferable[0]

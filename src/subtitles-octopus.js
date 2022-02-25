@@ -462,6 +462,7 @@ export default class SubtitlesOctopus extends EventTarget {
       if (image.buffer) {
         if (data.async) {
           this._ctx.drawImage(image.buffer, image.x, image.y)
+          image.buffer.close()
         } else {
           this._bufferCanvas.width = image.w
           this._bufferCanvas.height = image.h
