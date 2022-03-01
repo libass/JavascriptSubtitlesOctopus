@@ -361,7 +361,8 @@ self.requestAnimationFrame = (function () {
   }
 })()
 
-const screen = {
+// eslint-disable-next-line
+let screen = {
   width: 0,
   height: 0
 }
@@ -471,6 +472,109 @@ self.video = data => {
   self.rate = data.rate || self.rate
 }
 
+self.offscreenCanvas = data => {
+  self.offscreenCanvas = data.transferable[0]
+  self.offscreenCanvasCtx = self.offscreenCanvas.getContext('2d')
+  self.bufferCanvas = new OffscreenCanvas(self.height, self.width)
+  self.bufferCtx = self.bufferCanvas.getContext('2d')
+}
+
+self.destroy = () => {
+  self.octObj.quitLibrary()
+}
+
+self.createEvent = data => {
+  _applyKeys(data.event, self.octObj.track.get_events(self.octObj.allocEvent()))
+}
+
+self.getEvents = () => {
+  const events = []
+  for (let i = 0; i < self.octObj.getEventCount(); i++) {
+    const evntPtr = self.octObj.track.get_events(i)
+    events.push({
+      Start: evntPtr.get_Start(),
+      Duration: evntPtr.get_Duration(),
+      ReadOrder: evntPtr.get_ReadOrder(),
+      Layer: evntPtr.get_Layer(),
+      Style: evntPtr.get_Style(),
+      Name: evntPtr.get_Name(),
+      MarginL: evntPtr.get_MarginL(),
+      MarginR: evntPtr.get_MarginR(),
+      MarginV: evntPtr.get_MarginV(),
+      Effect: evntPtr.get_Effect(),
+      Text: evntPtr.get_Text()
+    })
+  }
+  postMessage({
+    target: 'getEvents',
+    events: events
+  })
+}
+
+self.setEvent = data => {
+  _applyKeys(data.event, self.octObj.track.get_events(data.index))
+}
+
+self.removeEvent = data => {
+  self.octObj.removeEvent(data.index)
+}
+
+self.createStyle = data => {
+  _applyKeys(data.style, self.octObj.track.get_styles(self.octObj.allocStyle()))
+}
+
+self.getStyles = () => {
+  const styles = []
+  for (let i = 0; i < self.octObj.getStyleCount(); i++) {
+    const stylPtr = self.octObj.track.get_styles(i)
+    styles.push({
+      Name: stylPtr.get_Name(),
+      FontName: stylPtr.get_FontName(),
+      FontSize: stylPtr.get_FontSize(),
+      PrimaryColour: stylPtr.get_PrimaryColour(),
+      SecondaryColour: stylPtr.get_SecondaryColour(),
+      OutlineColour: stylPtr.get_OutlineColour(),
+      BackColour: stylPtr.get_BackColour(),
+      Bold: stylPtr.get_Bold(),
+      Italic: stylPtr.get_Italic(),
+      Underline: stylPtr.get_Underline(),
+      StrikeOut: stylPtr.get_StrikeOut(),
+      ScaleX: stylPtr.get_ScaleX(),
+      ScaleY: stylPtr.get_ScaleY(),
+      Spacing: stylPtr.get_Spacing(),
+      Angle: stylPtr.get_Angle(),
+      BorderStyle: stylPtr.get_BorderStyle(),
+      Outline: stylPtr.get_Outline(),
+      Shadow: stylPtr.get_Shadow(),
+      Alignment: stylPtr.get_Alignment(),
+      MarginL: stylPtr.get_MarginL(),
+      MarginR: stylPtr.get_MarginR(),
+      MarginV: stylPtr.get_MarginV(),
+      Encoding: stylPtr.get_Encoding(),
+      treat_fontname_as_pattern: stylPtr.get_treat_fontname_as_pattern(),
+      Blur: stylPtr.get_Blur(),
+      Justify: stylPtr.get_Justify()
+    })
+  }
+  postMessage({
+    target: 'getStyles',
+    time: Date.now(),
+    styles: styles
+  })
+}
+
+self.setStyle = data => {
+  _applyKeys(data.style, self.octObj.track.get_styles(data.index))
+}
+
+self.removeStyle = data => {
+  self.octObj.removeStyle(data.index)
+}
+
+self.setimmediate = () => {
+  if (Module.setImmediates) Module.setImmediates.shift()()
+}
+
 onmessage = message => {
   if (!calledMain && !message.data.preMain) {
     if (!messageBuffer) {
@@ -488,105 +592,7 @@ onmessage = message => {
   if (self[data.target]) {
     self[data.target](data)
   } else {
-    switch (data.target) {
-      case 'offscreenCanvas':
-        self.offscreenCanvas = data.transferable[0]
-        self.offscreenCanvasCtx = self.offscreenCanvas.getContext('2d')
-        self.bufferCanvas = new OffscreenCanvas(self.height, self.width)
-        self.bufferCtx = self.bufferCanvas.getContext('2d')
-        break
-      case 'destroy':
-        self.octObj.quitLibrary()
-        break
-      case 'createEvent':
-        _applyKeys(data.event, self.octObj.track.get_events(self.octObj.allocEvent()))
-        break
-      case 'getEvents': {
-        const events = []
-        for (let i = 0; i < self.octObj.getEventCount(); i++) {
-          const evntPtr = self.octObj.track.get_events(i)
-          events.push({
-            Start: evntPtr.get_Start(),
-            Duration: evntPtr.get_Duration(),
-            ReadOrder: evntPtr.get_ReadOrder(),
-            Layer: evntPtr.get_Layer(),
-            Style: evntPtr.get_Style(),
-            Name: evntPtr.get_Name(),
-            MarginL: evntPtr.get_MarginL(),
-            MarginR: evntPtr.get_MarginR(),
-            MarginV: evntPtr.get_MarginV(),
-            Effect: evntPtr.get_Effect(),
-            Text: evntPtr.get_Text()
-          })
-        }
-        postMessage({
-          target: 'getEvents',
-          events: events
-        })
-      }
-        break
-      case 'setEvent':
-        _applyKeys(data.event, self.octObj.track.get_events(data.index))
-        break
-      case 'removeEvent':
-        self.octObj.removeEvent(data.index)
-        break
-      case 'createStyle':
-        _applyKeys(data.style, self.octObj.track.get_styles(self.octObj.allocStyle()))
-        break
-      case 'getStyles': {
-        const styles = []
-        for (let i = 0; i < self.octObj.getStyleCount(); i++) {
-          const stylPtr = self.octObj.track.get_styles(i)
-          styles.push({
-            Name: stylPtr.get_Name(),
-            FontName: stylPtr.get_FontName(),
-            FontSize: stylPtr.get_FontSize(),
-            PrimaryColour: stylPtr.get_PrimaryColour(),
-            SecondaryColour: stylPtr.get_SecondaryColour(),
-            OutlineColour: stylPtr.get_OutlineColour(),
-            BackColour: stylPtr.get_BackColour(),
-            Bold: stylPtr.get_Bold(),
-            Italic: stylPtr.get_Italic(),
-            Underline: stylPtr.get_Underline(),
-            StrikeOut: stylPtr.get_StrikeOut(),
-            ScaleX: stylPtr.get_ScaleX(),
-            ScaleY: stylPtr.get_ScaleY(),
-            Spacing: stylPtr.get_Spacing(),
-            Angle: stylPtr.get_Angle(),
-            BorderStyle: stylPtr.get_BorderStyle(),
-            Outline: stylPtr.get_Outline(),
-            Shadow: stylPtr.get_Shadow(),
-            Alignment: stylPtr.get_Alignment(),
-            MarginL: stylPtr.get_MarginL(),
-            MarginR: stylPtr.get_MarginR(),
-            MarginV: stylPtr.get_MarginV(),
-            Encoding: stylPtr.get_Encoding(),
-            treat_fontname_as_pattern: stylPtr.get_treat_fontname_as_pattern(),
-            Blur: stylPtr.get_Blur(),
-            Justify: stylPtr.get_Justify()
-          })
-        }
-        postMessage({
-          target: 'getStyles',
-          time: Date.now(),
-          styles: styles
-        })
-      }
-        break
-      case 'setStyle':
-        _applyKeys(data.style, self.octObj.track.get_styles(data.index))
-        break
-      case 'removeStyle':
-        self.octObj.removeStyle(data.index)
-        break
-      case 'setimmediate': {
-        if (Module.setImmediates) Module.setImmediates.shift()()
-        break
-      }
-      default:
-        throw new Error('Unknown event target ' + message.data.target)
-    }
+    throw new Error('Unknown event target ' + message.data.target)
   }
 }
 
