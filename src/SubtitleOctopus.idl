@@ -12,8 +12,8 @@ interface ASS_Image {
 
 [NoDelete]
 interface ASS_Style {
-    attribute DOMString Name;
-    attribute DOMString FontName;
+    [Owner] attribute DOMString Name;
+    [Owner] attribute DOMString FontName;
     attribute double FontSize;
     attribute unsigned long PrimaryColour;
     attribute unsigned long SecondaryColour;
@@ -47,12 +47,12 @@ interface ASS_Event {
     attribute long ReadOrder;
     attribute long Layer;
     attribute long Style;
-    attribute DOMString Name;
+    [Owner] attribute DOMString Name;
     attribute long MarginL;
     attribute long MarginR;
     attribute long MarginV;
-    attribute DOMString Effect;
-    attribute DOMString Text;
+    [Owner] attribute DOMString Effect;
+    [Owner] attribute DOMString Text;
 };
 
 [NoDelete]
@@ -63,17 +63,17 @@ interface ASS_Track {
     attribute long max_events;
     [Value] attribute ASS_Style[] styles;
     [Value] attribute ASS_Event[] events;
-    attribute DOMString style_format;
-    attribute DOMString event_format;
+    [Owner] attribute DOMString style_format;
+    [Owner] attribute DOMString event_format;
     attribute long PlayResX;
     attribute long PlayResY;
     attribute double Timer;
     attribute long WrapStyle;
     attribute long ScaledBorderAndShadow;
     attribute long Kerning;
-    attribute DOMString Language;
+    [Owner] attribute DOMString Language;
     attribute long default_style;
-    attribute DOMString name;
+    [Owner] attribute DOMString name;
 };
 
 enum ASS_Hinting {

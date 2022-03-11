@@ -2,6 +2,7 @@
 ## Patched to: 
 ##   - add integer pointers (IntPtr)
 ##   - implement ByteString type
+##   - add [Owner] Extended attribute for Pointer Ownership transfer
 ## From https://github.com/emscripten-core/emscripten/blob/f36f9fcaf83db93e6a6d0f0cdc47ab6379ade139/tools/webidl_binder.py
 
 # Copyright 2014 The Emscripten Authors.  All rights reserved.
@@ -174,6 +175,7 @@ var ensureCache = {
   size: 0,   // the size of buffer
   pos: 0,    // the next free offset in buffer
   temps: [], // extra allocations
+  owned: [], // Owned allocations
   needed: 0, // the total size we need next time
 
   prepare: function() {
@@ -197,22 +199,29 @@ var ensureCache = {
     }
     ensureCache.pos = 0;
   },
-  alloc: function(array, view) {
+  alloc: function(array, view, owner) {
     assert(ensureCache.buffer);
     var bytes = view.BYTES_PER_ELEMENT;
     var len = array.length * bytes;
     len = (len + 7) & -8; // keep things aligned to 8 byte boundaries
     var ret;
-    if (ensureCache.pos + len >= ensureCache.size) {
-      // we failed to allocate in the buffer, ensureCache time around :(
+    if (owner) {
       assert(len > 0); // null terminator, at least
       ensureCache.needed += len;
       ret = Module['_malloc'](len);
-      ensureCache.temps.push(ret);
+      ensureCache.owned.push(ret);
     } else {
-      // we can allocate in the buffer
-      ret = ensureCache.buffer + ensureCache.pos;
-      ensureCache.pos += len;
+      if (ensureCache.pos + len >= ensureCache.size) {
+        // we failed to allocate in the buffer, ensureCache time around :(
+        assert(len > 0); // null terminator, at least
+        ensureCache.needed += len;
+        ret = Module['_malloc'](len);
+        ensureCache.temps.push(ret);
+      } else {
+        // we can allocate in the buffer
+        ret = ensureCache.buffer + ensureCache.pos;
+        ensureCache.pos += len;
+      }
     }
     return ret;
   },
@@ -228,58 +237,73 @@ var ensureCache = {
       view[offset + i] = array[i];
     }
   },
+  clear: function(clearOwned) {
+    for (var i = 0; i < ensureCache.temps.length; i++) {
+      Module['_free'](ensureCache.temps[i]);
+    }
+    if (clearOwned) {
+      for (var i = 0; i < ensureCache.owned.length; i++) {
+        Module['_free'](ensureCache.owned[i]);
+      }
+    }
+    ensureCache.temps.length = 0;
+    Module['_free'](ensureCache.buffer);
+    ensureCache.buffer = 0;
+    ensureCache.size = 0;
+    ensureCache.needed = 0;
+  }
 };
 
 /** @suppress {duplicate} (TODO: avoid emitting this multiple times, it is redundant) */
-function ensureString(value) {
+function ensureString(value, owner) {
   if (typeof value === 'string') {
     var intArray = intArrayFromString(value);
-    var offset = ensureCache.alloc(intArray, HEAP8);
+    var offset = ensureCache.alloc(intArray, HEAP8, owner);
     ensureCache.copy(intArray, HEAP8, offset);
     return offset;
   }
   return value;
 }
 /** @suppress {duplicate} (TODO: avoid emitting this multiple times, it is redundant) */
-function ensureInt8(value) {
+function ensureInt8(value, owner) {
   if (typeof value === 'object') {
-    var offset = ensureCache.alloc(value, HEAP8);
+    var offset = ensureCache.alloc(value, HEAP8, owner);
     ensureCache.copy(value, HEAP8, offset);
     return offset;
   }
   return value;
 }
 /** @suppress {duplicate} (TODO: avoid emitting this multiple times, it is redundant) */
-function ensureInt16(value) {
+function ensureInt16(value, owner) {
   if (typeof value === 'object') {
-    var offset = ensureCache.alloc(value, HEAP16);
+    var offset = ensureCache.alloc(value, HEAP16, owner);
     ensureCache.copy(value, HEAP16, offset);
     return offset;
   }
   return value;
 }
 /** @suppress {duplicate} (TODO: avoid emitting this multiple times, it is redundant) */
-function ensureInt32(value) {
+function ensureInt32(value, owner) {
   if (typeof value === 'object') {
-    var offset = ensureCache.alloc(value, HEAP32);
+    var offset = ensureCache.alloc(value, HEAP32, owner);
     ensureCache.copy(value, HEAP32, offset);
     return offset;
   }
   return value;
 }
 /** @suppress {duplicate} (TODO: avoid emitting this multiple times, it is redundant) */
-function ensureFloat32(value) {
+function ensureFloat32(value, owner) {
   if (typeof value === 'object') {
-    var offset = ensureCache.alloc(value, HEAPF32);
+    var offset = ensureCache.alloc(value, HEAPF32, owner);
     ensureCache.copy(value, HEAPF32, offset);
     return offset;
   }
   return value;
 }
 /** @suppress {duplicate} (TODO: avoid emitting this multiple times, it is redundant) */
-function ensureFloat64(value) {
+function ensureFloat64(value, owner) {
   if (typeof value === 'object') {
-    var offset = ensureCache.alloc(value, HEAPF64);
+    var offset = ensureCache.alloc(value, HEAPF64, owner);
     ensureCache.copy(value, HEAPF64, offset);
     return offset;
   }
@@ -390,7 +414,7 @@ def type_to_cdec(raw):
 
 def render_function(class_name, func_name, sigs, return_type, non_pointer,
                     copy, operator, constructor, func_scope,
-                    call_content=None, const=False, array_attribute=False):
+                    call_content=None, const=False, owned=False, array_attribute=False):
   legacy_mode = CHECKS not in ['ALL', 'FAST']
   all_checks = CHECKS == 'ALL'
 
@@ -505,20 +529,20 @@ def render_function(class_name, func_name, sigs, return_type, non_pointer,
       if not (arg.type.isArray() and not array_attribute):
         body += "  if ({0} && typeof {0} === 'object') {0} = {0}.ptr;\n".format(js_arg)
         if arg.type.isString():
-          body += "  else {0} = ensureString({0});\n".format(js_arg)
+          body += "  else {0} = ensureString({0}, {1});\n".format(js_arg, "true" if (owned) else "false")
       else:
         # an array can be received here
         arg_type = arg.type.name
         if arg_type in ['Byte', 'Octet']:
-          body += "  if (typeof {0} == 'object') {{ {0} = ensureInt8({0}); }}\n".format(js_arg)
+          body += "  if (typeof {0} == 'object') {{ {0} = ensureInt8({0}, {1}); }}\n".format(js_arg, "true" if (owned) else "false")
         elif arg_type in ['Short', 'UnsignedShort']:
-          body += "  if (typeof {0} == 'object') {{ {0} = ensureInt16({0}); }}\n".format(js_arg)
+          body += "  if (typeof {0} == 'object') {{ {0} = ensureInt16({0}, {1}); }}\n".format(js_arg, "true" if (owned) else "false")
         elif arg_type in ['Long', 'UnsignedLong']:
-          body += "  if (typeof {0} == 'object') {{ {0} = ensureInt32({0}); }}\n".format(js_arg)
+          body += "  if (typeof {0} == 'object') {{ {0} = ensureInt32({0}, {1}); }}\n".format(js_arg, "true" if (owned) else "false")
         elif arg_type == 'Float':
-          body += "  if (typeof {0} == 'object') {{ {0} = ensureFloat32({0}); }}\n".format(js_arg)
+          body += "  if (typeof {0} == 'object') {{ {0} = ensureFloat32({0}, {1}); }}\n".format(js_arg, "true" if (owned) else "false")
         elif arg_type == 'Double':
-          body += "  if (typeof {0} == 'object') {{ {0} = ensureFloat64({0}); }}\n".format(js_arg)
+          body += "  if (typeof {0} == 'object') {{ {0} = ensureFloat64({0}, {1}); }}\n".format(js_arg, "true" if (owned) else "false")
 
   c_names = {}
   for i in range(min_args, max_args):
@@ -737,6 +761,7 @@ for name in names:
                     func_scope=interface,
                     call_content=get_call_content,
                     const=m.getExtendedAttribute('Const'),
+                    owned=m.getExtendedAttribute('Owner'),
                     array_attribute=m.type.isArray())
 
     if m.readonly:
@@ -755,6 +780,7 @@ for name in names:
                       func_scope=interface,
                       call_content=set_call_content,
                       const=m.getExtendedAttribute('Const'),
+                      owned=m.getExtendedAttribute('Owner'),
                       array_attribute=m.type.isArray())
       mid_js += [r'''
     Object.defineProperty(%s.prototype, '%s', { get: %s.prototype.%s, set: %s.prototype.%s });''' % (name, attr, name, get_name, name, set_name)]
