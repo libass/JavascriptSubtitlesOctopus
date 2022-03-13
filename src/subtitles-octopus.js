@@ -91,8 +91,8 @@ var SubtitlesOctopus = function (options) {
         // Worker
         if (!self.worker) {
             self.worker = new Worker(self.workerUrl);
-            self.worker.onmessage = self.onWorkerMessage;
-            self.worker.onerror = self.workerError;
+            self.worker.addEventListener('message', self.onWorkerMessage);
+            self.worker.addEventListener('error', self.workerError);
         }
         self.workerActive = false;
         self.createCanvas();
@@ -390,13 +390,9 @@ var SubtitlesOctopus = function (options) {
                 break;
             }
             case 'get-events': {
-                console.log(data.target);
-                console.log(data.events);
                 break;
             }
             case 'get-styles': {
-                console.log(data.target);
-                console.log(data.styles);
                 break;
             }
             case 'ready': {
@@ -558,6 +554,39 @@ var SubtitlesOctopus = function (options) {
         }
     };
 
+    self.fetchFromWorker = function (workerOptions, onSuccess, onError) {
+        try {
+            var target = workerOptions['target']
+
+            var timeout = setTimeout(function() {
+                reject(Error('Error: Timeout while try to fetch ' + target))
+            }, 5000)
+
+            var resolve = function (event) {
+                if (event.data.target == target) {
+                    onSuccess(event.data)
+                    self.worker.removeEventListener('message', resolve)
+                    self.worker.removeEventListener('error', reject)
+                    clearTimeout(timeout)
+                }
+            }
+
+            var reject = function (event) {
+                onError(event)
+                self.worker.removeEventListener('message', resolve)
+                self.worker.removeEventListener('error', reject)
+                clearTimeout(timeout)
+            }
+
+            self.worker.addEventListener('message', resolve)
+            self.worker.addEventListener('error', reject)
+
+            self.worker.postMessage(workerOptions)
+        } catch (error) {
+            onError(error)
+        }
+    }
+
     self.createEvent = function (event) {
         self.worker.postMessage({
             target: 'create-event',
@@ -565,10 +594,12 @@ var SubtitlesOctopus = function (options) {
         });
     };
 
-    self.getEvents = function () {
-        self.worker.postMessage({
+    self.getEvents = function (onSuccess, onError) {
+        self.fetchFromWorker({
             target: 'get-events'
-        });
+        }, function(data) {
+            onSuccess(data.events)
+        }, onError);
     };
 
     self.setEvent = function (event, index) {
@@ -592,11 +623,13 @@ var SubtitlesOctopus = function (options) {
             style: style
         });
     };
-
-    self.getStyles = function () {
-        self.worker.postMessage({
+    
+    self.getStyles = function (onSuccess, onError) {
+        self.fetchFromWorker({
             target: 'get-styles'
-        });
+        }, function(data) {
+            onSuccess(data.styles)
+        }, onError);
     };
 
     self.setStyle = function (style, index) {

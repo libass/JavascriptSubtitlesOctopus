@@ -1,4 +1,10 @@
-# from http://mxr.mozilla.org/mozilla-central/source/dom/bindings/parser/WebIDL.py
+## JavascriptSubtitlesOctopus
+## Patched to:
+##   - add integer pointers (IntPtr)
+##   - add [Owner] Extended attribute
+## From https://github.com/emscripten-core/emscripten/blob/f36f9fcaf83db93e6a6d0f0cdc47ab6379ade139/third_party/WebIDL.py
+
+# from https://hg.mozilla.org/mozilla-central/file/tip/dom/bindings/parser/WebIDL.py
 # rev 501baeb3a034
 
 # This Source Code Form is subject to the terms of the Mozilla Public
@@ -2858,6 +2864,7 @@ class IDLAttribute(IDLInterfaceMember):
               identifier == "AvailableIn" or
               identifier == "Const" or
               identifier == "Value" or
+              identifier == "Owner" or
               identifier == "BoundsChecked" or
               identifier == "NewObject"):
             # Known attributes that we don't need to do anything with here
@@ -2933,7 +2940,7 @@ class IDLArgument(IDLObjectWithIdentifier):
                 self.enforceRange = True
             elif identifier == "TreatNonCallableAsNull":
                 self._allowTreatNonCallableAsNull = True
-            elif identifier in ['Ref', 'Const']:
+            elif identifier in ['Ref', 'Const', 'Owner']:
                 # ok in emscripten
                 self._extraAttributes[identifier] = True
             else:
@@ -4923,11 +4930,12 @@ class Parser(Tokenizer):
 
     def __init__(self, outputdir='', lexer=None):
         Tokenizer.__init__(self, outputdir, lexer)
-        self.parser = yacc.yacc(module=self,
+        self.parser = yacc.yacc(debug=0,
+                                module=self,
                                 outputdir=outputdir,
                                 tabmodule='webidlyacc',
-                                errorlog=yacc.NullLogger(),
-                                picklefile='WebIDLGrammar.pkl')
+                                write_tables=0,
+                                errorlog=yacc.NullLogger())
         self._globalScope = IDLScope(BuiltinLocation("<Global Scope>"), None, None)
         self._installBuiltins(self._globalScope)
         self._productions = []

@@ -1,0 +1,35 @@
+From ea9c45b10d807966510711da723ea1ae558efd45 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Thiago=20Fran=C3=A7a=20da=20Silva?=
+ <tfsthiagobr98@outlook.com>
+Date: Mon, 14 Feb 2022 22:27:57 -0300
+Subject: [PATCH 3/4] WebIDL: Implement ByteString type
+
+This allows compatibility with `bitmap` attribute of the ASS_Image struct
+---
+ build/webidl_binder.py | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/build/webidl_binder.py b/build/webidl_binder.py
+index e9a56e5..faedf10 100644
+--- a/build/webidl_binder.py
++++ b/build/webidl_binder.py
+@@ -1,6 +1,7 @@
+ ## JavascriptSubtitlesOctopus
+ ## Patched to: 
+ ##   - add integer pointers (IntPtr)
++##   - implement ByteString type
+ ## From https://github.com/emscripten-core/emscripten/blob/f36f9fcaf83db93e6a6d0f0cdc47ab6379ade139/tools/webidl_binder.py
+ 
+ # Copyright 2014 The Emscripten Authors.  All rights reserved.
+@@ -327,6 +328,8 @@ def type_to_c(t, non_pointing=False):
+       ret = 'char'
+     elif t == 'Octet':
+       ret = 'unsigned char'
++    elif t == 'ByteString':
++      ret = 'unsigned char*'
+     elif t == 'Void':
+       ret = 'void'
+     elif t == 'String':
+-- 
+2.35.1
+

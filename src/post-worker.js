@@ -594,6 +594,7 @@ function onMessageFromMainEmscriptenThread(message) {
             for (var i = 0; i < self.octObj.getEventCount(); i++) {
                 var evnt_ptr = self.octObj.track.get_events(i);
                 var event = {
+                    _index: i,
                     Start: evnt_ptr.get_Start(),
                     Duration: evnt_ptr.get_Duration(),
                     ReadOrder: evnt_ptr.get_ReadOrder(),
@@ -636,6 +637,7 @@ function onMessageFromMainEmscriptenThread(message) {
             for (var i = 0; i < self.octObj.getStyleCount(); i++) {
                 var styl_ptr = self.octObj.track.get_styles(i);
                 var style = {
+                    _index: i,
                     Name: styl_ptr.get_Name(),
                     FontName: styl_ptr.get_FontName(),
                     FontSize: styl_ptr.get_FontSize(),
