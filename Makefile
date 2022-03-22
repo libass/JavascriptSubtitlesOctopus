@@ -352,7 +352,7 @@ clean-dist:
 clean-libs:
 	rm -frv dist/libraries build/lib
 clean-octopus:
-	cd src && git clean -fdx
+	cd src && git clean -fdX
 
 git-checkout:
 	git submodule sync --recursive && \
