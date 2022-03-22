@@ -1,6 +1,8 @@
 #
 # Fontconfig
 #
+FONTCONFIG_GIT_VERSION:=2.13.94
+
 build/lib/fontconfig/configure: lib/fontconfig $(wildcard $(BASE_DIR)build/patches/fontconfig/*.patch)
 	rm -rf build/lib/fontconfig
 	cp -r lib/fontconfig build/lib/fontconfig
@@ -34,4 +36,7 @@ git-fontconfig:
 	cd lib/fontconfig && \
 	git reset --hard && \
 	git clean -dfx && \
-	git pull origin master
+	git fetch origin && \
+	git checkout $(FONTCONFIG_GIT_VERSION) && \
+	git submodule sync --recursive && \
+	git submodule update --init --recursive

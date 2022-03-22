@@ -1,6 +1,8 @@
 #
 # Fribidi
 #
+FRIBIDI_GIT_VERSION:=v1.0.10
+
 build/lib/fribidi/configure: lib/fribidi $(wildcard $(BASE_DIR)build/patches/fribidi/*.patch)
 	rm -rf build/lib/fribidi
 	mkdir -p build/lib
@@ -34,4 +36,7 @@ git-fribidi:
 	cd lib/fribidi && \
 	git reset --hard && \
 	git clean -dfx && \
-	git pull origin master
+	git fetch origin && \
+	git checkout $(FRIBIDI_GIT_VERSION) && \
+	git submodule sync --recursive && \
+	git submodule update --init --recursive

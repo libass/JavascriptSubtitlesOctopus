@@ -1,6 +1,8 @@
 #
 # Brotli
 #
+BROTLI_GIT_VERSION:=v1.0.9
+
 build/lib/brotli/js/decode.js: build/lib/brotli/configured
 build/lib/brotli/js/polyfill.js: build/lib/brotli/configured
 build/lib/brotli/configured: lib/brotli $(wildcard $(BASE_DIR)build/patches/brotli/*.patch)
@@ -37,4 +39,7 @@ git-brotli:
 	cd lib/brotli && \
 	git reset --hard && \
 	git clean -dfx && \
-	git pull origin master
+	git fetch origin && \
+	git checkout $(BROTLI_GIT_VERSION) && \
+	git submodule sync --recursive && \
+	git submodule update --init --recursive

@@ -1,6 +1,8 @@
 #
 # libass
 #
+LIBASS_GIT_VERSION:=643829edd8408ec37182a04040fe5a7bf54dccc3
+
 build/lib/libass/configured: lib/libass
 	rm -rf build/lib/libass
 	cd lib/libass && NOCONFIGURE=1 ./autogen.sh
@@ -34,4 +36,7 @@ git-libass:
 	cd lib/libass && \
 	git reset --hard && \
 	git clean -dfx && \
-	git pull origin master
+	git fetch origin && \
+	git checkout $(LIBASS_GIT_VERSION) && \
+	git submodule sync --recursive && \
+	git submodule update --init --recursive

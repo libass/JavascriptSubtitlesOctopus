@@ -1,6 +1,7 @@
 #
 # Freetype
 #
+FREETYPE_GIT_VERSION:=VER-2-11-0
 
 ## Without Harfbuzz (Bootstrap)
 build/lib/freetype/build_hb/dist_hb/lib/libfreetype.a: $(DIST_DIR)/lib/libbrotlidec.a $(wildcard $(BASE_DIR)build/patches/freetype/*.patch)
@@ -66,4 +67,7 @@ git-freetype:
 	cd lib/freetype && \
 	git reset --hard && \
 	git clean -dfx && \
-	git pull origin master
+	git fetch origin && \
+	git checkout $(FREETYPE_GIT_VERSION) && \
+	git submodule sync --recursive && \
+	git submodule update --init --recursive

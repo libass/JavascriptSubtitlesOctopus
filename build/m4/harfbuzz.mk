@@ -1,6 +1,8 @@
 #
 # Harfbuzz
 #
+HARFBUZZ_GIT_VERSION:=2.8.2
+
 build/lib/harfbuzz/configure: lib/harfbuzz $(wildcard $(BASE_DIR)build/patches/harfbuzz/*.patch)
 	rm -rf build/lib/harfbuzz
 	cp -r lib/harfbuzz build/lib/harfbuzz
@@ -48,4 +50,7 @@ git-harfbuzz:
 	cd lib/harfbuzz && \
 	git reset --hard && \
 	git clean -dfx && \
-	git pull origin master
+	git fetch origin && \
+	git checkout $(HARFBUZZ_GIT_VERSION) && \
+	git submodule sync --recursive && \
+	git submodule update --init --recursive

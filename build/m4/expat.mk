@@ -1,6 +1,8 @@
 #
 # Expat
 #
+EXPAT_GIT_VERSION:=R_2_4_1
+
 build/lib/expat/configured: lib/expat
 	mkdir -p build/lib/expat
 	touch build/lib/expat/configured
@@ -31,4 +33,7 @@ git-expat:
 	cd lib/expat && \
 	git reset --hard && \
 	git clean -dfx && \
-	git pull origin master
+	git fetch origin && \
+	git checkout $(EXPAT_GIT_VERSION) && \
+	git submodule sync --recursive && \
+	git submodule update --init --recursive
