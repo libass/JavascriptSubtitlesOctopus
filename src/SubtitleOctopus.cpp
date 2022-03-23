@@ -43,11 +43,12 @@ public:
     /*
      * Request a raw pointer to a buffer being able to hold at least
      * x times y values of size member_size.
+     * If zero is set to true, the requested region will be zero-initialised.
      * On failure NULL is returned.
      * The pointer is valid during the lifetime of the ReusableBuffer
      * object until the next call to get_rawbuf or clear.
      */
-    void *get_rawbuf(size_t x, size_t y, size_t member_size) {
+    void *get_rawbuf(size_t x, size_t y, size_t member_size, bool zero) {
         if (x > SIZE_MAX / member_size / y)
             return NULL;
 
@@ -62,15 +63,18 @@ public:
             }
             if (lessen_counter < 10) {
                 // not reducing the buffer yet
+                if (zero)
+                    memset(buffer, 0, new_size);
                 return buffer;
             }
         }
 
         free(buffer);
         buffer = malloc(new_size);
-        if (buffer)
+        if (buffer) {
             size = new_size;
-        else
+            memset(buffer, 0, size);
+        } else
             size = 0;
         lessen_counter = 0;
         return buffer;
@@ -281,12 +285,11 @@ public:
         }
 
         // make float buffer for blending
-        float* buf = (float*)m_blend.get_rawbuf(width, height, sizeof(float) * 4);
+        float* buf = (float*)m_blend.get_rawbuf(width, height, sizeof(float) * 4, true);
         if (buf == NULL) {
             fprintf(stderr, "jso: cannot allocate buffer for blending\n");
             return &m_blendResult;
         }
-        memset(buf, 0, sizeof(float) * width * height * 4);
 
         // blend things in
         for (cur = img; cur != NULL; cur = cur->next) {
