@@ -107,6 +107,9 @@ public:
 } RenderBlendResult;
 
 class SubtitleOctopus {
+private:
+    ReusableBuffer2D m_blend;
+    RenderBlendResult m_blendResult;
 public:
     ASS_Library* ass_library;
     ASS_Renderer* ass_renderer;
@@ -362,10 +365,6 @@ public:
         m_blendResult.image = (unsigned char*)result;
         return &m_blendResult;
     }
-
-private:
-    ReusableBuffer2D m_blend;
-    RenderBlendResult m_blendResult;
 };
 
 int main(int argc, char *argv[]) { return 0; }
