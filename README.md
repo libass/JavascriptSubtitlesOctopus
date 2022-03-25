@@ -140,6 +140,12 @@ When creating an instance of SubtitleOctopus, you can set the following options:
 - `maxRenderHeight`: The maximum rendering height of the subtitles canvas.
                      Beyond this subtitles will be upscaled by the browser.
                      (Default: `0` - no limit)
+- `dropAllAnimations`: If set to true, attempt to discard all animated tags.
+                       Enabling this may severly mangle complex subtitles and
+                       should only be considered as an last ditch effort of uncertain success
+                       for hardware otherwise incapable of displaing anything.
+                       Will not reliably work with manually edited or allocated events.
+                       (Default: `false` - do nothing)
 
 ### Rendering Modes
 #### JS Blending

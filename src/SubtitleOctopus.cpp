@@ -235,6 +235,8 @@ class SubtitleOctopus {
 private:
     ReusableBuffer2D m_blend;
     RenderBlendResult m_blendResult;
+    bool drop_animations;
+    int scanned_events; // next unscanned event index
 public:
     ASS_Library* ass_library;
     ASS_Renderer* ass_renderer;
@@ -252,10 +254,31 @@ public:
         track = NULL;
         canvas_w = 0;
         canvas_h = 0;
+        drop_animations = false;
+        scanned_events = 0;
     }
 
     void setLogLevel(int level) {
         log_level = level;
+    }
+
+    void setDropAnimations(int value) {
+        drop_animations = !!value;
+        if (drop_animations)
+            scanAnimations(scanned_events);
+    }
+
+    /*
+     * \brief Scan events starting at index i for animations
+     * and discard animated tags when found.
+     * Note that once animated tags were dropped they cannot be restored.
+     * Updates the class member scanned_events to last scanned index.
+     */
+    void scanAnimations(int i) {
+        for (; i < track->n_events; i++) {
+             _is_event_animated(track->events + i, drop_animations);
+        }
+        scanned_events = i;
     }
 
     void initLibrary(int frame_w, int frame_h) {
@@ -287,6 +310,7 @@ public:
             fprintf(stderr, "jso: Failed to start a track\n");
             exit(4);
         }
+        scanAnimations(0);
     }
 
     void createTrackMem(char *buf, unsigned long bufsize) {
@@ -296,6 +320,7 @@ public:
             fprintf(stderr, "jso: Failed to start a track\n");
             exit(4);
         }
+        scanAnimations(0);
     }
 
     void removeTrack() {

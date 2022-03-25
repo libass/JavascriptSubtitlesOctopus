@@ -171,6 +171,7 @@ interface SubtitleOctopus {
     attribute ASS_Renderer ass_renderer;
     attribute ASS_Library ass_library;
     void setLogLevel(long level);
+    void setDropAnimations(long value);
     void initLibrary(long frame_w, long frame_h);
     void createTrack(DOMString subfile);
     void createTrackMem(DOMString buf, unsigned long bufsize);

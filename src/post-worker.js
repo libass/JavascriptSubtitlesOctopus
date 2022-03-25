@@ -8,6 +8,7 @@ self.nextIsRaf = false;
 self.lastCurrentTimeReceivedAt = Date.now();
 self.targetFps = 24;
 self.libassMemoryLimit = 0; // in MiB
+self.dropAllAnimations = false;
 
 self.width = 0;
 self.height = 0;
@@ -565,6 +566,7 @@ function onMessageFromMainEmscriptenThread(message) {
             self.targetFps = message.data.targetFps || self.targetFps;
             self.libassMemoryLimit = message.data.libassMemoryLimit || self.libassMemoryLimit;
             self.libassGlyphLimit = message.data.libassGlyphLimit || 0;
+            self.dropAllAnimations = !!message.data.dropAllAnimations || self.dropAllAnimations;
             removeRunDependency('worker-init');
             postMessage({
                 target: "ready",
