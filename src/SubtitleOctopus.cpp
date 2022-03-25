@@ -106,6 +106,131 @@ public:
     unsigned char* image;
 } RenderBlendResult;
 
+/**
+ * \brief Overwrite tag with whitespace to nullify its effect
+ * Boundaries are inclusive at both ends.
+ */
+static void _remove_tag(char *begin, char *end) {
+    if (end < begin)
+        return;
+    memset(begin, ' ', end - begin + 1);
+}
+
+/**
+ * \param begin point to the first character of the tag name (after backslash)
+ * \param end   last character that can be read; at least the name itself
+                and the following character if any must be included
+ * \return true if tag may cause animations, false if it will definitely not
+ */
+static bool _is_animated_tag(char *begin, char *end) {
+    if (end <= begin)
+        return false;
+
+    size_t length = end - begin + 1;
+
+    #define check_simple_tag(tag)  (sizeof(tag)-1 < length && !strncmp(begin, tag, sizeof(tag)-1))
+    #define check_complex_tag(tag) (check_simple_tag(tag) && (begin[sizeof(tag)-1] == '(' \
+                                        || begin[sizeof(tag)-1] == ' ' || begin[sizeof(tag)-1] == '\t'))
+    switch (begin[0]) {
+        case 'k': //-fallthrough
+        case 'K':
+            // Karaoke: k, kf, ko, K and kt ; no other valid ASS-tag starts with k/K
+            return true;
+        case 't':
+            // Animated transform: no other valid tag begins with t
+            // non-nested t-tags have to be complex tags even in single argument
+            // form, but nested t-tags (which act like independent t-tags) are allowed to be
+            // simple-tags without parentheses due to VSF-parsing quirk.
+            // Since all valid simple t-tags require the existence of a complex t-tag, we only check for complex tags
+            // to avoid false positives from invalid simple t-tags. This makes animation-dropping somewhat incorrect
+            // but as animation detection remains accurate, we consider this to be "good enough"
+            return check_complex_tag("t");
+        case 'm':
+            // Movement: complex tag; again no other valid tag begins with m
+            // but ensure it's complex just to be sure
+            return check_complex_tag("move");
+        case 'f':
+            // Fade: \fad and Fade (complex): \fade; both complex
+            // there are several other valid tags beginning with f
+            return check_complex_tag("fad") || check_complex_tag("fade");
+    }
+
+    return false;
+    #undef check_complex_tag
+    #undef check_simple_tag
+}
+
+/**
+ * \param start First character after { (optionally spaces can be dropped)
+ * \param end   Last character before } (optionally spaces can be dropped)
+ * \param drop_animations If true animation tags will be discarded
+ * \return true if after processing the event may contain animations
+           (i.e. when dropping animations this is always false)
+ */
+static bool _is_block_animated(char *start, char *end, bool drop_animations)
+{
+    char *tag_start = NULL; // points to beginning backslash
+    for (char *p = start; p <= end; p++) {
+        if (*p == '\\') {
+            // It is safe to go one before and beyond unconditionally
+            // because the text passed in must be surronded by { }
+            if (tag_start && _is_animated_tag(tag_start + 1, p - 1)) {
+                if (!drop_animations)
+                    return true;
+                // For \t transforms this will assume the final state
+                _remove_tag(tag_start, p - 1);
+            }
+            tag_start = p;
+        }
+    }
+
+    if (tag_start && _is_animated_tag(tag_start + 1, end)) {
+        if (!drop_animations)
+            return true;
+        _remove_tag(tag_start, end);
+    }
+
+    return false;
+}
+
+/**
+ * \param event ASS event to be processed
+ * \param drop_animations If true animation tags will be discarded
+ * \return true if after processing the event may contain animations
+           (i.e. when dropping animations this is always false)
+ */
+static bool _is_event_animated(ASS_Event *event, bool drop_animations) {
+    // Event is animated if it has an Effect or animated override tags
+    if (event->Effect && event->Effect[0] != '\0') {
+        if (!drop_animations) return 1;
+        event->Effect[0] = '\0';
+    }
+
+    // Search for override blocks
+    // Only closed {...}-blocks are parsed by VSFilters and libass
+    char *block_start = NULL; // points to opening {
+    for (char *p = event->Text; *p != '\0'; p++) {
+        switch (*p) {
+            case '{':
+                // Escaping the opening curly bracket to not start an override block is
+                // a VSFilter-incompatible libass extension. But we only use libass, so...
+                if (!block_start && (p == event->Text || *(p-1) != '\\'))
+                    block_start = p;
+                break;
+            case '}':
+                if (block_start && p - block_start > 2
+                        && _is_block_animated(block_start + 1, p - 1, drop_animations))
+                    return true;
+                block_start = NULL;
+                break;
+            default:
+                break;
+        }
+    }
+
+    return false;
+}
+
 class SubtitleOctopus {
 private:
     ReusableBuffer2D m_blend;
