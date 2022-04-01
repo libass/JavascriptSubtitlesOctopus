@@ -5,7 +5,7 @@ BASE_DIR:=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 DIST_DIR:=$(BASE_DIR)dist/libraries
 
 GLOBAL_CFLAGS:=-O3
-GLOBAL_LDFLAGS:=-s ENVIRONMENT=web,webview
+GLOBAL_LDFLAGS:=-s ENVIRONMENT=web,webview -s NO_EXIT_RUNTIME=1
 export LDFLAGS = $(GLOBAL_LDFLAGS)
 
 all: subtitleoctopus
@@ -27,9 +27,7 @@ $(DIST_DIR)/lib/libfribidi.a: build/lib/fribidi/configure
 		-s USE_PTHREADS=0 \
 		$(GLOBAL_CFLAGS) \
 		-s NO_FILESYSTEM=1 \
-		-s NO_EXIT_RUNTIME=1 \
 		-DFRIBIDI_ENTRY=extern \
-		-s MODULARIZE=1 \
 		" \
 		--prefix="$(DIST_DIR)" \
 		--host=x86-none-linux \
@@ -53,8 +51,6 @@ $(DIST_DIR)/lib/libexpat.a: build/lib/expat/configured
 		-s USE_PTHREADS=0 \
 		$(GLOBAL_CFLAGS) \
 		-s NO_FILESYSTEM=1 \
-		-s NO_EXIT_RUNTIME=1 \
-		-s MODULARIZE=1 \
 		" \
 		-DCMAKE_INSTALL_PREFIX=$(DIST_DIR) \
 		-DEXPAT_BUILD_DOCS=off \
@@ -115,8 +111,6 @@ build/lib/freetype/build_hb/dist_hb/lib/libfreetype.a: $(DIST_DIR)/lib/libbrotli
 			-s USE_PTHREADS=0 \
 			$(GLOBAL_CFLAGS) \
 			-s NO_FILESYSTEM=1 \
-			-s NO_EXIT_RUNTIME=1 \
-			-s MODULARIZE=1 \
 			" \
 			--prefix="$$(pwd)/dist_hb" \
 			--host=x86-none-linux \
@@ -149,16 +143,12 @@ $(DIST_DIR)/lib/libharfbuzz.a: build/lib/freetype/build_hb/dist_hb/lib/libfreety
 		$(GLOBAL_CFLAGS) \
 		-s NO_FILESYSTEM=1 \
 		-DHB_NO_MT \
-		-s NO_EXIT_RUNTIME=1 \
-		-s MODULARIZE=1 \
 		" \
 		CXXFLAGS=" \
 		-s USE_PTHREADS=0 \
 		$(GLOBAL_CFLAGS) \
 		-s NO_FILESYSTEM=1 \
 		-DHB_NO_MT \
-		-s NO_EXIT_RUNTIME=1 \
-		-s MODULARIZE=1 \
 		" \
 		--prefix="$(DIST_DIR)" \
 		--host=x86-none-linux \
@@ -185,8 +175,6 @@ $(DIST_DIR)/lib/libfreetype.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/lib
 		-s USE_PTHREADS=0 \
 		$(GLOBAL_CFLAGS) \
 		-s NO_FILESYSTEM=1 \
-		-s NO_EXIT_RUNTIME=1 \
-		-s MODULARIZE=1 \
 		" \
 		--prefix="$(DIST_DIR)" \
 		--host=x86-none-linux \
@@ -218,8 +206,6 @@ $(DIST_DIR)/lib/libfontconfig.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/l
 		-s USE_PTHREADS=0 \
 		-DEMSCRIPTEN \
 		$(GLOBAL_CFLAGS) \
-		-s NO_EXIT_RUNTIME=1 \
-		-s MODULARIZE=1 \
 		" \
 		--prefix="$(DIST_DIR)" \
 		--host=x86-none-linux \
@@ -248,8 +234,6 @@ $(DIST_DIR)/lib/libass.a: $(DIST_DIR)/lib/libfontconfig.a $(DIST_DIR)/lib/libhar
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
 		$(GLOBAL_CFLAGS) \
-		-s NO_EXIT_RUNTIME=1 \
-		-s MODULARIZE=1 \
 		" \
 		--prefix="$(DIST_DIR)" \
 		--host=x86-none-linux \
@@ -296,7 +280,6 @@ EMCC_COMMON_ARGS = \
 	$(GLOBAL_LDFLAGS) \
 	-s EXPORTED_FUNCTIONS="['_main', '_malloc']" \
 	-s EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'getValue', 'FS_createPreloadedFile', 'FS_createPath']" \
-	-s NO_EXIT_RUNTIME=1 \
 	--use-preload-plugins \
 	--preload-file assets/default.woff2 \
 	--preload-file assets/fonts.conf \
