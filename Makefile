@@ -5,7 +5,7 @@ BASE_DIR:=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 DIST_DIR:=$(BASE_DIR)dist/libraries
 
 GLOBAL_CFLAGS:=-O3
-GLOBAL_LDFLAGS:=-s ENVIRONMENT=web,webview -s NO_EXIT_RUNTIME=1
+GLOBAL_LDFLAGS:=-s ENVIRONMENT=web,webview,worker -s NO_EXIT_RUNTIME=1
 export LDFLAGS = $(GLOBAL_LDFLAGS)
 
 all: subtitleoctopus
