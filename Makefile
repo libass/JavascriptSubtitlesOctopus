@@ -4,7 +4,9 @@
 BASE_DIR:=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 DIST_DIR:=$(BASE_DIR)dist/libraries
 
-GLOBAL_CFLAGS:=-O3 -s ENVIRONMENT=web,webview
+GLOBAL_CFLAGS:=-O3
+GLOBAL_LDFLAGS:=-s ENVIRONMENT=web,webview
+export LDFLAGS = $(GLOBAL_LDFLAGS)
 
 all: subtitleoctopus
 
@@ -158,7 +160,6 @@ $(DIST_DIR)/lib/libharfbuzz.a: build/lib/freetype/build_hb/dist_hb/lib/libfreety
 		-s NO_EXIT_RUNTIME=1 \
 		-s MODULARIZE=1 \
 		" \
-		LDFLAGS="" \
 		--prefix="$(DIST_DIR)" \
 		--host=x86-none-linux \
 		--build=x86_64 \
@@ -292,7 +293,7 @@ src/subtitles-octopus-worker.bc: $(OCTP_DEPS) src/Makefile src/SubtitleOctopus.c
 
 # Dist Files
 EMCC_COMMON_ARGS = \
-	$(GLOBAL_CFLAGS) \
+	$(GLOBAL_LDFLAGS) \
 	-s EXPORTED_FUNCTIONS="['_main', '_malloc']" \
 	-s EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'getValue', 'FS_createPreloadedFile', 'FS_createPath']" \
 	-s NO_EXIT_RUNTIME=1 \
