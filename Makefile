@@ -26,7 +26,6 @@ $(DIST_DIR)/lib/libfribidi.a: build/lib/fribidi/configure
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
 		$(GLOBAL_CFLAGS) \
-		-s NO_FILESYSTEM=1 \
 		-DFRIBIDI_ENTRY=extern \
 		" \
 		--prefix="$(DIST_DIR)" \
@@ -50,7 +49,6 @@ $(DIST_DIR)/lib/libexpat.a: build/lib/expat/configured
 		-DCMAKE_C_FLAGS=" \
 		-s USE_PTHREADS=0 \
 		$(GLOBAL_CFLAGS) \
-		-s NO_FILESYSTEM=1 \
 		" \
 		-DCMAKE_INSTALL_PREFIX=$(DIST_DIR) \
 		-DEXPAT_BUILD_DOCS=off \
@@ -110,7 +108,6 @@ build/lib/freetype/build_hb/dist_hb/lib/libfreetype.a: $(DIST_DIR)/lib/libbrotli
 			CFLAGS=" \
 			-s USE_PTHREADS=0 \
 			$(GLOBAL_CFLAGS) \
-			-s NO_FILESYSTEM=1 \
 			" \
 			--prefix="$$(pwd)/dist_hb" \
 			--host=x86-none-linux \
@@ -141,13 +138,11 @@ $(DIST_DIR)/lib/libharfbuzz.a: build/lib/freetype/build_hb/dist_hb/lib/libfreety
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
 		$(GLOBAL_CFLAGS) \
-		-s NO_FILESYSTEM=1 \
 		-DHB_NO_MT \
 		" \
 		CXXFLAGS=" \
 		-s USE_PTHREADS=0 \
 		$(GLOBAL_CFLAGS) \
-		-s NO_FILESYSTEM=1 \
 		-DHB_NO_MT \
 		" \
 		--prefix="$(DIST_DIR)" \
@@ -174,7 +169,6 @@ $(DIST_DIR)/lib/libfreetype.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/lib
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
 		$(GLOBAL_CFLAGS) \
-		-s NO_FILESYSTEM=1 \
 		" \
 		--prefix="$(DIST_DIR)" \
 		--host=x86-none-linux \
