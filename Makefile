@@ -178,7 +178,7 @@ $(DIST_DIR)/lib/libharfbuzz.a: build/lib/freetype/build_hb/dist_hb/lib/libfreety
 # Freetype with Harfbuzz
 $(DIST_DIR)/lib/libfreetype.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/libbrotlidec.a
 	cd build/lib/freetype && \
-	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
+	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig:$(BASE_DIR)build/lib/freetype/build_hb/dist_hb/lib/pkgconfig \
 	emconfigure ./configure \
 		CFLAGS=" \
 		-s USE_PTHREADS=0 \
