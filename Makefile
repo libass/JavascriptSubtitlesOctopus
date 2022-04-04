@@ -253,21 +253,11 @@ OCTP_DEPS = \
 	$(DIST_DIR)/lib/libfontconfig.a \
 	$(DIST_DIR)/lib/libass.a
 
-# Require a patch to fix some errors
-src/SubOctpInterface.cpp: src/SubtitleOctopus.idl
-	cd src && \
-	python3 ../build/webidl_binder.py SubtitleOctopus.idl SubOctpInterface
-
-src/Makefile: src/SubOctpInterface.cpp
-	cd src && \
-	autoreconf -fi && \
-	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
-	emconfigure ./configure --host=x86-none-linux --build=x86_64 CFLAGS="$(GLOBAL_CFLAGS)"
-
-src/subtitles-octopus-worker.bc: $(OCTP_DEPS) src/Makefile src/SubtitleOctopus.cpp src/SubOctpInterface.cpp
-	cd src && \
-	emmake make -j8 && \
-	mv subtitlesoctopus.bc subtitles-octopus-worker.bc
+src/subtitles-octopus-worker.bc: $(OCTP_DEPS) all-src
+.PHONY: all-src
+all-src:
+	PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
+	$(MAKE) -C src all
 
 # Dist Files
 EMCC_COMMON_ARGS = \
