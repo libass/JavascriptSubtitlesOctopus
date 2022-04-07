@@ -1,5 +1,6 @@
 # If needed, override the following variables via `make VARNAME=VAL ...`
-CXX = em++ -r
+# Note: we only compile and not(!) link here, thus -c
+CXX = em++ -c
 CXXFLAGS = -O3 -g4
 LIBASS_CXXFLAGS = $(shell pkg-config --static --cflags "libass >= 0.14.0")
 LOCAL_CXXFLAGS  = -Wall -Wno-deprecated $(LIBASS_CXXFLAGS)
