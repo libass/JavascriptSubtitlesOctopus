@@ -162,19 +162,33 @@ self.setIsPaused = function (isPaused) {
 }
 
 self.renderImageData = (time, force) => {
+  const renderStartTime = Date.now()
   if (self.blendMode === 'wasm') {
     const result = self.octObj.renderBlend(time, force)
-    return { w: result.dest_width, h: result.dest_height, x: result.dest_x, y: result.dest_y, changed: result.changed, image: result.image }
+    return {
+      w: result.dest_width,
+      h: result.dest_height,
+      x: result.dest_x,
+      y: result.dest_y,
+      changed: result.changed,
+      image: result.image,
+      times: {
+        renderTime: Date.now() - renderStartTime - result.blend_time,
+        blendTime: result.blend_time
+      }
+    }
   } else {
     const result = self.octObj.renderImage(time, self.changed)
     result.changed = Module.getValue(self.changed, 'i32')
+    result.times = { renderTime: Date.now() - renderStartTime }
     return result
   }
 }
 
-self.processRender = (result, callback) => {
+self.processRender = (result) => {
   const images = []
   let buffers = []
+  const decodeStartTime = Date.now()
   if (self.blendMode === 'wasm') {
     if (result.image) {
       result.buffer = HEAPU8.buffer.slice(result.image, result.image + result.w * result.h * 4)
@@ -203,10 +217,10 @@ self.processRender = (result, callback) => {
         images[i].buffer = bitmaps[i]
       }
       buffers = bitmaps
-      callback({ images, buffers })
+      self.paintImages({ images, buffers, times: result.times, decodeStartTime })
     })
   } else {
-    callback({ images, buffers })
+    self.paintImages({ images, buffers, times: result.times, decodeStartTime })
   }
 }
 
@@ -229,7 +243,7 @@ self.render = (time, force) => {
   self.busy = true
   const result = self.renderImageData(time, force)
   if (result.changed !== 0 || force) {
-    self.processRender(result, self.paintImages)
+    self.processRender(result)
   } else {
     self.busy = false
   }
@@ -249,8 +263,10 @@ self.renderLoop = (force) => {
   }
 }
 
-self.paintImages = ({ images, buffers }) => {
+self.paintImages = ({ images, buffers, decodeStartTime, times }) => {
+  times.decodeTime = Date.now() - decodeStartTime
   if (self.offscreenCanvasCtx) {
+    const drawStartTime = Date.now()
     self.offscreenCanvasCtx.clearRect(0, 0, self.offscreenCanvas.width, self.offscreenCanvas.height)
     for (const image of images) {
       if (image.buffer) {
@@ -265,11 +281,18 @@ self.paintImages = ({ images, buffers }) => {
         }
       }
     }
+    if (self.debug) {
+      times.drawTime = Date.now() - drawStartTime
+      let total = 0
+      for (const key in times) total += times[key]
+      console.log('Bitmaps: ' + images.length + ' Total: ' + Math.round(total) + 'ms', times)
+    }
   } else {
     postMessage({
       target: 'render',
       async: self.asyncRender,
-      images
+      images,
+      times
     }, buffers)
   }
   self.busy = false

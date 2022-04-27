@@ -456,11 +456,12 @@ export default class SubtitlesOctopus extends EventTarget {
     this._video.requestVideoFrameCallback(this._demandRender.bind(this))
   }
 
-  _render (data) {
+  _render ({ images, async, times }) {
+    const drawStartTime = Date.now()
     this._ctx.clearRect(0, 0, this._canvasctrl.width, this._canvasctrl.height)
-    for (const image of data.images) {
+    for (const image of images) {
       if (image.buffer) {
-        if (data.async) {
+        if (async) {
           this._ctx.drawImage(image.buffer, image.x, image.y)
           image.buffer.close()
         } else {
@@ -470,6 +471,12 @@ export default class SubtitlesOctopus extends EventTarget {
           this._ctx.drawImage(this._bufferCanvas, image.x, image.y)
         }
       }
+    }
+    if (this.debug) {
+      times.drawTime = Date.now() - drawStartTime
+      let total = 0
+      for (const key in times) total += times[key]
+      console.log('Bitmaps: ' + images.length + ' Total: ' + Math.round(total) + 'ms', times)
     }
   }
 
@@ -549,8 +556,8 @@ export default class SubtitlesOctopus extends EventTarget {
   }
 
   _error (err) {
-    this.dispatchEvent(new CustomEvent('error', { detail: err }))
-    throw new Error(err)
+    if (!(err instanceof ErrorEvent)) this.dispatchEvent(new ErrorEvent('error', { message: err instanceof Error ? err.cause : err }))
+    throw err instanceof Error ? err : new Error(err instanceof ErrorEvent ? err.message : 'error', { cause: err })
   }
 
   _removeListeners () {
