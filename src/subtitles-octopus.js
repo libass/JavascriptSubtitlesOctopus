@@ -166,32 +166,57 @@ var SubtitlesOctopus = function (options) {
         }
     };
 
+    function onTimeUpdate() {
+        self.setCurrentTime(self.video.currentTime + self.timeOffset);
+    };
+
+    function onPlaying() {
+        self.setIsPaused(false, self.video.currentTime + self.timeOffset);
+    }
+
+    function onPause() {
+        self.setIsPaused(true, self.video.currentTime + self.timeOffset);
+    }
+
+    function onSeeking() {
+        self.video.removeEventListener('timeupdate', onTimeUpdate, false);
+    }
+
+    function onSeeked() {
+        self.video.addEventListener('timeupdate', onTimeUpdate, false);
+
+        var currentTime = self.video.currentTime + self.timeOffset;
+
+        self.setCurrentTime(currentTime);
+
+        if (self.renderAhead > 0) {
+            _cleanPastRendered(currentTime, true);
+        }
+    }
+
+    function onRateChange() {
+        self.setRate(self.video.playbackRate);
+    }
+
+    function onWaiting() {
+        self.setIsPaused(true, self.video.currentTime + self.timeOffset);
+    }
+
+    function onLoadedMetadata(e) {
+        e.target.removeEventListener(e.type, onLoadedMetadata, false);
+        self.resize();
+    }
+
     self.setVideo = function (video) {
         self.video = video;
         if (self.video) {
-            var timeupdate = function () {
-                self.setCurrentTime(video.currentTime + self.timeOffset);
-            }
-            self.video.addEventListener("timeupdate", timeupdate, false);
-            self.video.addEventListener("playing", function () {
-                self.setIsPaused(false, video.currentTime + self.timeOffset);
-            }, false);
-            self.video.addEventListener("pause", function () {
-                self.setIsPaused(true, video.currentTime + self.timeOffset);
-            }, false);
-            self.video.addEventListener("seeking", function () {
-                self.video.removeEventListener("timeupdate", timeupdate);
-            }, false);
-            self.video.addEventListener("seeked", function () {
-                self.video.addEventListener("timeupdate", timeupdate, false);
-                self.setCurrentTime(video.currentTime + self.timeOffset);
-            }, false);
-            self.video.addEventListener("ratechange", function () {
-                self.setRate(video.playbackRate);
-            }, false);
-            self.video.addEventListener("waiting", function () {
-                self.setIsPaused(true, video.currentTime + self.timeOffset);
-            }, false);
+            self.video.addEventListener('timeupdate', onTimeUpdate, false);
+            self.video.addEventListener('playing', onPlaying, false);
+            self.video.addEventListener('pause', onPause, false);
+            self.video.addEventListener('seeking', onSeeking, false);
+            self.video.addEventListener('seeked', onSeeked, false);
+            self.video.addEventListener('ratechange', onRateChange, false);
+            self.video.addEventListener('waiting', onWaiting, false);
 
             document.addEventListener("fullscreenchange", self.resizeWithTimeout, false);
             document.addEventListener("mozfullscreenchange", self.resizeWithTimeout, false);
@@ -209,10 +234,7 @@ var SubtitlesOctopus = function (options) {
                 self.resize();
             }
             else {
-                self.video.addEventListener("loadedmetadata", function listener(e) {
-                    e.target.removeEventListener(e.type, listener);
-                    self.resize();
-                }, false);
+                self.video.addEventListener('loadedmetadata', onLoadedMetadata, false);
             }
         }
     };
@@ -549,11 +571,41 @@ var SubtitlesOctopus = function (options) {
         });
 
         self.worker.terminate();
+        self.worker.removeEventListener('message', self.onWorkerMessage);
+        self.worker.removeEventListener('error', self.workerError);
         self.workerActive = false;
+        self.worker = null;
+
         // Remove the canvas element to remove residual subtitles rendered on player
         if (self.video) {
+            self.video.removeEventListener('timeupdate', onTimeUpdate, false);
+            self.video.removeEventListener('playing', onPlaying, false);
+            self.video.removeEventListener('pause', onPause, false);
+            self.video.removeEventListener('seeking', onSeeking, false);
+            self.video.removeEventListener('seeked', onSeeked, false);
+            self.video.removeEventListener('ratechange', onRateChange, false);
+            self.video.removeEventListener('waiting', onWaiting, false);
+            self.video.removeEventListener('loadedmetadata', onLoadedMetadata, false);
+
+            document.removeEventListener('fullscreenchange', self.resizeWithTimeout, false);
+            document.removeEventListener('mozfullscreenchange', self.resizeWithTimeout, false);
+            document.removeEventListener('webkitfullscreenchange', self.resizeWithTimeout, false);
+            document.removeEventListener('msfullscreenchange', self.resizeWithTimeout, false);
+            window.removeEventListener('resize', self.resizeWithTimeout, false);
+
             self.video.parentNode.removeChild(self.canvasParent);
+
+            self.video = null;
         }
+
+        if (self.ro) {
+            self.ro.disconnect();
+            self.ro = null;
+        }
+
+        self.onCustomMessage = null;
+        self.onErrorEvent = null;
+        self.onReadyEvent = null;
     };
 
     self.fetchFromWorker = function (workerOptions, onSuccess, onError) {
