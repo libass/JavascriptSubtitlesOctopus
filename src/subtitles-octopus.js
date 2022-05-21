@@ -188,10 +188,6 @@ var SubtitlesOctopus = function (options) {
         var currentTime = self.video.currentTime + self.timeOffset;
 
         self.setCurrentTime(currentTime);
-
-        if (self.renderAhead > 0) {
-            _cleanPastRendered(currentTime, true);
-        }
     }
 
     function onRateChange() {
