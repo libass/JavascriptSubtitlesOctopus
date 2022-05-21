@@ -4,7 +4,7 @@
 BASE_DIR:=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 DIST_DIR:=$(BASE_DIR)dist/libraries
 
-GLOBAL_CFLAGS:=-O3
+GLOBAL_CFLAGS:=-O3 -s USE_PTHREADS=0
 GLOBAL_LDFLAGS:=-s ENVIRONMENT=web,webview,worker -s NO_EXIT_RUNTIME=1
 export LDFLAGS = $(GLOBAL_LDFLAGS)
 
@@ -27,7 +27,6 @@ $(DIST_DIR)/lib/libfribidi.a: build/lib/fribidi/configure
 	cd build/lib/fribidi && \
 	emconfigure ./configure \
 		CFLAGS=" \
-		-s USE_PTHREADS=0 \
 		$(GLOBAL_CFLAGS) \
 		-DFRIBIDI_ENTRY=extern \
 		" \
@@ -50,7 +49,6 @@ $(DIST_DIR)/lib/libexpat.a: build/lib/expat/configured
 	cd build/lib/expat && \
 	emcmake cmake \
 		-DCMAKE_C_FLAGS=" \
-		-s USE_PTHREADS=0 \
 		$(GLOBAL_CFLAGS) \
 		" \
 		-DCMAKE_INSTALL_PREFIX=$(DIST_DIR) \
@@ -109,7 +107,6 @@ build/lib/freetype/build_hb/dist_hb/lib/libfreetype.a: $(DIST_DIR)/lib/libbrotli
 		EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
 		emconfigure ../configure \
 			CFLAGS=" \
-			-s USE_PTHREADS=0 \
 			$(GLOBAL_CFLAGS) \
 			" \
 			--prefix="$$(pwd)/dist_hb" \
@@ -139,12 +136,10 @@ $(DIST_DIR)/lib/libharfbuzz.a: build/lib/freetype/build_hb/dist_hb/lib/libfreety
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig:$(BASE_DIR)build/lib/freetype/build_hb/dist_hb/lib/pkgconfig \
 	emconfigure ./configure \
 		CFLAGS=" \
-		-s USE_PTHREADS=0 \
 		$(GLOBAL_CFLAGS) \
 		-DHB_NO_MT \
 		" \
 		CXXFLAGS=" \
-		-s USE_PTHREADS=0 \
 		$(GLOBAL_CFLAGS) \
 		-DHB_NO_MT \
 		" \
@@ -170,7 +165,6 @@ $(DIST_DIR)/lib/libfreetype.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/lib
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig:$(BASE_DIR)build/lib/freetype/build_hb/dist_hb/lib/pkgconfig \
 	emconfigure ./configure \
 		CFLAGS=" \
-		-s USE_PTHREADS=0 \
 		$(GLOBAL_CFLAGS) \
 		" \
 		--prefix="$(DIST_DIR)" \
@@ -200,7 +194,6 @@ $(DIST_DIR)/lib/libfontconfig.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/l
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
 	emconfigure ./configure \
 		CFLAGS=" \
-		-s USE_PTHREADS=0 \
 		-DEMSCRIPTEN \
 		$(GLOBAL_CFLAGS) \
 		" \
@@ -229,7 +222,6 @@ $(DIST_DIR)/lib/libass.a: $(DIST_DIR)/lib/libfontconfig.a $(DIST_DIR)/lib/libhar
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
 	emconfigure ../../../lib/libass/configure \
 		CFLAGS=" \
-		-s USE_PTHREADS=0 \
 		$(GLOBAL_CFLAGS) \
 		" \
 		--prefix="$(DIST_DIR)" \
