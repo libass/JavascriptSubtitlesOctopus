@@ -194,7 +194,6 @@ $(DIST_DIR)/lib/libfontconfig.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/l
 	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
 	emconfigure ./configure \
 		CFLAGS=" \
-		-DEMSCRIPTEN \
 		$(GLOBAL_CFLAGS) \
 		" \
 		--prefix="$(DIST_DIR)" \
