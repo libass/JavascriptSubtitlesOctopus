@@ -70,29 +70,22 @@ build/lib/brotli/configured: lib/brotli $(wildcard $(BASE_DIR)build/patches/brot
 	$(foreach file, $(wildcard $(BASE_DIR)build/patches/brotli/*.patch), patch -d "$(BASE_DIR)build/lib/brotli" -Np1 -i $(file) && ) true
 	touch build/lib/brotli/configured
 
-build/lib/brotli/libbrotlidec.pc: build/lib/brotli/configured
+$(DIST_DIR)/lib/libbrotlidec.a: $(DIST_DIR)/lib/libbrotlicommon.a
+$(DIST_DIR)/lib/libbrotlicommon.a: build/lib/brotli/configured
 	cd build/lib/brotli && \
-	emcmake cmake \
-		-DCMAKE_C_FLAGS=" \
-		$(GLOBAL_CFLAGS) \
-		" \
-		-DCMAKE_INSTALL_PREFIX=$(DIST_DIR) \
-		. \
-	&& \
-	emmake make -j8 && \
-	cp -r ./c/include $(DIST_DIR)
+    emcmake cmake \
+        -DCMAKE_C_FLAGS=" \
+        $(GLOBAL_CFLAGS) \
+        " \
+        -DCMAKE_INSTALL_PREFIX=$(DIST_DIR) \
+        . \
+    && \
+    emmake make -j8 && \
+	emmake make install
+	# Normalise static lib names
+	cd $(DIST_DIR)/lib/ && \
+	for lib in *-static.a ; do mv "$$lib" "$${lib%-static.a}.a" ; done
 
-$(DIST_DIR)/lib/libbrotlicommon.a: build/lib/brotli/libbrotlidec.pc
-	cd build/lib/brotli && \
-	mkdir -p $(DIST_DIR)/lib/pkgconfig && \
-	cp libbrotlicommon.pc $(DIST_DIR)/lib/pkgconfig && \
-	cp libbrotlicommon-static.a $(DIST_DIR)/lib/libbrotlicommon.a
-
-$(DIST_DIR)/lib/libbrotlidec.a: build/lib/brotli/libbrotlidec.pc $(DIST_DIR)/lib/libbrotlicommon.a
-	cd build/lib/brotli && \
-	mkdir -p $(DIST_DIR)/lib/pkgconfig && \
-	cp libbrotlidec.pc $(DIST_DIR)/lib/pkgconfig && \
-	cp libbrotlidec-static.a $(DIST_DIR)/lib/libbrotlidec.a
 
 # Freetype without Harfbuzz
 build/lib/freetype/build_hb/dist_hb/lib/libfreetype.a: $(DIST_DIR)/lib/libbrotlidec.a $(wildcard $(BASE_DIR)build/patches/freetype/*.patch)
