@@ -17,11 +17,8 @@ include functions.mk
 
 # Fribidi
 build/lib/fribidi/configure: lib/fribidi $(wildcard $(BASE_DIR)build/patches/fribidi/*.patch)
-	rm -rf build/lib/fribidi
-	mkdir -p build/lib
-	cp -r lib/fribidi build/lib/fribidi
-	$(foreach file, $(wildcard $(BASE_DIR)build/patches/fribidi/*.patch), patch -d "$(BASE_DIR)build/lib/fribidi" -Np1 -i $(file) && ) true
-	cd build/lib/fribidi && NOCONFIGURE=1 ./autogen.sh
+	$(call PREPARE_SRC_PATCHED,fribidi)
+	cd build/lib/fribidi && $(RECONF_AUTO)
 
 $(DIST_DIR)/lib/libfribidi.a: build/lib/fribidi/configure
 	cd build/lib/fribidi && \
@@ -41,7 +38,7 @@ $(DIST_DIR)/lib/libfribidi.a: build/lib/fribidi/configure
 	emmake make install-pkgconfigDATA
 
 build/lib/expat/configured: lib/expat
-	mkdir -p build/lib/expat
+	$(call PREPARE_SRC_VPATH,expat)
 	touch build/lib/expat/configured
 
 $(DIST_DIR)/lib/libexpat.a: build/lib/expat/configured
@@ -65,9 +62,7 @@ $(DIST_DIR)/lib/libexpat.a: build/lib/expat/configured
 build/lib/brotli/js/decode.js: build/lib/brotli/configured
 build/lib/brotli/js/polyfill.js: build/lib/brotli/configured
 build/lib/brotli/configured: lib/brotli $(wildcard $(BASE_DIR)build/patches/brotli/*.patch)
-	rm -rf build/lib/brotli
-	cp -r lib/brotli build/lib/brotli
-	$(foreach file, $(wildcard $(BASE_DIR)build/patches/brotli/*.patch), patch -d "$(BASE_DIR)build/lib/brotli" -Np1 -i $(file) && ) true
+	$(call PREPARE_SRC_PATCHED,brotli)
 	touch build/lib/brotli/configured
 
 $(DIST_DIR)/lib/libbrotlidec.a: $(DIST_DIR)/lib/libbrotlicommon.a
@@ -87,13 +82,13 @@ $(DIST_DIR)/lib/libbrotlicommon.a: build/lib/brotli/configured
 	for lib in *-static.a ; do mv "$$lib" "$${lib%-static.a}.a" ; done
 
 
+build/lib/freetype/configure: lib/freetype $(wildcard $(BASE_DIR)build/patches/freetype/*.patch)
+	$(call PREPARE_SRC_PATCHED,freetype)
+	cd build/lib/freetype && $(RECONF_AUTO)
+
 # Freetype without Harfbuzz
-build/lib/freetype/build_hb/dist_hb/lib/libfreetype.a: $(DIST_DIR)/lib/libbrotlidec.a $(wildcard $(BASE_DIR)build/patches/freetype/*.patch)
-	rm -rf build/lib/freetype
-	cp -r lib/freetype build/lib/freetype
-	$(foreach file, $(wildcard $(BASE_DIR)build/patches/freetype/*.patch), patch -d "$(BASE_DIR)build/lib/freetype" -Np1 -i $(file) && ) true
+build/lib/freetype/build_hb/dist_hb/lib/libfreetype.a: $(DIST_DIR)/lib/libbrotlidec.a build/lib/freetype/configure
 	cd build/lib/freetype && \
-		NOCONFIGURE=1 ./autogen.sh && \
 		mkdir -p build_hb && \
 		cd build_hb && \
 		EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
@@ -118,10 +113,8 @@ build/lib/freetype/build_hb/dist_hb/lib/libfreetype.a: $(DIST_DIR)/lib/libbrotli
 
 # Harfbuzz
 build/lib/harfbuzz/configure: lib/harfbuzz $(wildcard $(BASE_DIR)build/patches/harfbuzz/*.patch)
-	rm -rf build/lib/harfbuzz
-	cp -r lib/harfbuzz build/lib/harfbuzz
-	$(foreach file, $(wildcard $(BASE_DIR)build/patches/harfbuzz/*.patch), patch -d "$(BASE_DIR)build/lib/harfbuzz" -Np1 -i $(file) && ) true
-	cd build/lib/harfbuzz && NOCONFIGURE=1 ./autogen.sh
+	$(call PREPARE_SRC_PATCHED,harfbuzz)
+	cd build/lib/harfbuzz && $(RECONF_AUTO)
 
 $(DIST_DIR)/lib/libharfbuzz.a: build/lib/freetype/build_hb/dist_hb/lib/libfreetype.a build/lib/harfbuzz/configure
 	cd build/lib/harfbuzz && \
@@ -176,10 +169,8 @@ $(DIST_DIR)/lib/libfreetype.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/lib
 
 # Fontconfig
 build/lib/fontconfig/configure: lib/fontconfig $(wildcard $(BASE_DIR)build/patches/fontconfig/*.patch)
-	rm -rf build/lib/fontconfig
-	cp -r lib/fontconfig build/lib/fontconfig
-	$(foreach file, $(wildcard $(BASE_DIR)build/patches/fontconfig/*.patch), patch -d "$(BASE_DIR)build/lib/fontconfig" -Np1 -i $(file) && ) true
-	cd build/lib/fontconfig && NOCONFIGURE=1 ./autogen.sh
+	$(call PREPARE_SRC_PATCHED,fontconfig)
+	cd build/lib/fontconfig && $(RECONF_AUTO)
 
 $(DIST_DIR)/lib/libfontconfig.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/libexpat.a $(DIST_DIR)/lib/libfribidi.a $(DIST_DIR)/lib/libfreetype.a build/lib/fontconfig/configure
 	cd build/lib/fontconfig && \
@@ -203,9 +194,8 @@ $(DIST_DIR)/lib/libfontconfig.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/l
 # libass --
 
 build/lib/libass/configured: lib/libass
-	rm -rf build/lib/libass
-	cd lib/libass && NOCONFIGURE=1 ./autogen.sh
-	mkdir -p build/lib/libass
+	cd lib/libass && $(RECONF_AUTO)
+	$(call PREPARE_SRC_VPATH,libass)
 	touch build/lib/libass/configured
 
 $(DIST_DIR)/lib/libass.a: $(DIST_DIR)/lib/libfontconfig.a $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/libexpat.a $(DIST_DIR)/lib/libfribidi.a $(DIST_DIR)/lib/libfreetype.a $(DIST_DIR)/lib/libbrotlidec.a build/lib/libass/configured
