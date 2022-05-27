@@ -28,7 +28,6 @@ $(DIST_DIR)/lib/libfribidi.a: build/lib/fribidi/configure
 	emconfigure ./configure \
 		CFLAGS=" \
 		$(GLOBAL_CFLAGS) \
-		-DFRIBIDI_ENTRY=extern \
 		" \
 		--prefix="$(DIST_DIR)" \
 		--host=x86-none-linux \
