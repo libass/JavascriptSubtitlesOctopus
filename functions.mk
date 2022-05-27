@@ -15,4 +15,6 @@ git-$(1):
 	git reset --hard && \
 	git clean -dfx
 	git submodule update --force lib/$(1)
+
+.PHONY: git-$(1)
 endef

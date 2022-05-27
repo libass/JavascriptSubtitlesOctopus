@@ -9,8 +9,9 @@ GLOBAL_LDFLAGS:=-s ENVIRONMENT=web,webview,worker -s NO_EXIT_RUNTIME=1
 export LDFLAGS = $(GLOBAL_LDFLAGS)
 
 all: subtitleoctopus
-
 subtitleoctopus: dist
+
+.PHONY: all subtitleoctopus dist
 
 include functions.mk
 
@@ -367,3 +368,5 @@ $(foreach subm, $(SUBMODULES), $(eval $(call TR_GIT_SM_RESET,$(subm))))
 
 server: # Node http server npm i -g http-server
 	http-server
+
+.PHONY: clean clean-dist clean-libs clean-octopus git-checkout git-smreset server
