@@ -365,6 +365,6 @@ server: # Node http server npm i -g http-server
 
 
 SUBMODULES := brotli expat fontconfig freetype fribidi harfbuzz libass
-git-update: $(addprefix git-, $(SUBMODULES))
+git-smreset: $(addprefix git-, $(SUBMODULES))
 
-$(foreach subm, $(SUBMODULES), $(eval $(call TR_GIT_SM_UPDATE,$(subm))))
+$(foreach subm, $(SUBMODULES), $(eval $(call TR_GIT_SM_RESET,$(subm))))

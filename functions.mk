@@ -9,10 +9,10 @@
 ## Clean and git related
 
 # @arg1: submodule name
-define TR_GIT_SM_UPDATE
+define TR_GIT_SM_RESET
 git-$(1):
 	cd lib/$(1) && \
 	git reset --hard && \
-	git clean -dfx && \
-	git pull origin master
+	git clean -dfx
+	git submodule update --force lib/$(1)
 endef
