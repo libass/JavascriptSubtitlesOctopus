@@ -360,11 +360,10 @@ git-checkout:
 	git submodule sync --recursive && \
 	git submodule update --init --recursive
 
-server: # Node http server npm i -g http-server
-	http-server
-
-
 SUBMODULES := brotli expat fontconfig freetype fribidi harfbuzz libass
 git-smreset: $(addprefix git-, $(SUBMODULES))
 
 $(foreach subm, $(SUBMODULES), $(eval $(call TR_GIT_SM_RESET,$(subm))))
+
+server: # Node http server npm i -g http-server
+	http-server
