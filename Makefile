@@ -44,7 +44,6 @@ $(DIST_DIR)/lib/libexpat.a: build/lib/expat/configured
 		-DEXPAT_BUILD_TESTS=off \
 		-DEXPAT_BUILD_TOOLS=off \
 	&& \
-	$(JSO_MAKE) && \
 	$(JSO_MAKE) install
 
 # Brotli
@@ -58,7 +57,6 @@ $(DIST_DIR)/lib/libbrotlidec.a: $(DIST_DIR)/lib/libbrotlicommon.a
 $(DIST_DIR)/lib/libbrotlicommon.a: build/lib/brotli/configured
 	cd build/lib/brotli && \
     $(call CONFIGURE_CMAKE) && \
-    $(JSO_MAKE) && \
 	$(JSO_MAKE) install
 	# Normalise static lib names
 	cd $(DIST_DIR)/lib/ && \
@@ -79,7 +77,6 @@ build/lib/freetype/build_hb/dist_hb/lib/libfreetype.a: $(DIST_DIR)/lib/libbrotli
 			--with-brotli=yes \
 			--without-harfbuzz \
 		&& \
-		$(JSO_MAKE) && \
 		$(JSO_MAKE) install
 
 # Harfbuzz
@@ -106,7 +103,6 @@ $(DIST_DIR)/lib/libfreetype.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/lib
 		--with-brotli=yes \
 		--with-harfbuzz \
 	&& \
-	$(JSO_MAKE) && \
 	$(JSO_MAKE) install
 
 # Fontconfig
@@ -137,7 +133,6 @@ $(DIST_DIR)/lib/libass.a: $(DIST_DIR)/lib/libfontconfig.a $(DIST_DIR)/lib/libhar
 		--disable-asm \
 		--enable-fontconfig \
 	&& \
-	$(JSO_MAKE) && \
 	$(JSO_MAKE) install
 
 # SubtitleOctopus.js
