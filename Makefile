@@ -20,7 +20,7 @@ subtitleoctopus: dist
 
 include functions.mk
 
-# Fribidi
+# FriBidi
 build/lib/fribidi/configure: lib/fribidi $(wildcard $(BASE_DIR)build/patches/fribidi/*.patch)
 	$(call PREPARE_SRC_PATCHED,fribidi)
 	cd build/lib/fribidi && $(RECONF_AUTO)
@@ -32,6 +32,7 @@ $(DIST_DIR)/lib/libfribidi.a: build/lib/fribidi/configure
 	$(JSO_MAKE) -C lib/ install && \
 	$(JSO_MAKE) install-pkgconfigDATA
 
+# Expat
 build/lib/expat/configured: lib/expat
 	$(call PREPARE_SRC_VPATH,expat)
 	touch build/lib/expat/configured
@@ -49,6 +50,7 @@ $(DIST_DIR)/lib/libexpat.a: build/lib/expat/configured
 	$(JSO_MAKE) && \
 	$(JSO_MAKE) install
 
+# Brotli
 build/lib/brotli/js/decode.js: build/lib/brotli/configured
 build/lib/brotli/js/polyfill.js: build/lib/brotli/configured
 build/lib/brotli/configured: lib/brotli $(wildcard $(BASE_DIR)build/patches/brotli/*.patch)
@@ -66,11 +68,11 @@ $(DIST_DIR)/lib/libbrotlicommon.a: build/lib/brotli/configured
 	for lib in *-static.a ; do mv "$$lib" "$${lib%-static.a}.a" ; done
 
 
+# Freetype without Harfbuzz
 build/lib/freetype/configure: lib/freetype $(wildcard $(BASE_DIR)build/patches/freetype/*.patch)
 	$(call PREPARE_SRC_PATCHED,freetype)
 	cd build/lib/freetype && $(RECONF_AUTO)
 
-# Freetype without Harfbuzz
 build/lib/freetype/build_hb/dist_hb/lib/libfreetype.a: $(DIST_DIR)/lib/libbrotlidec.a build/lib/freetype/configure
 	cd build/lib/freetype && \
 		mkdir -p build_hb && \
@@ -125,8 +127,8 @@ $(DIST_DIR)/lib/libfontconfig.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/l
 	$(JSO_MAKE) -C fontconfig/ install && \
 	$(JSO_MAKE) install-pkgconfigDATA
 
-# libass --
 
+# libass
 build/lib/libass/configured: lib/libass
 	cd lib/libass && $(RECONF_AUTO)
 	$(call PREPARE_SRC_VPATH,libass)
