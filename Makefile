@@ -8,6 +8,9 @@ GLOBAL_CFLAGS:=-O3 -s USE_PTHREADS=0
 GLOBAL_LDFLAGS:=-s ENVIRONMENT=web,webview,worker -s NO_EXIT_RUNTIME=1
 export LDFLAGS = $(GLOBAL_LDFLAGS)
 
+export PKG_CONFIG_PATH = $(DIST_DIR)/lib/pkgconfig
+export EM_PKG_CONFIG_PATH = $(PKG_CONFIG_PATH)
+
 all: subtitleoctopus
 subtitleoctopus: dist
 
@@ -91,7 +94,6 @@ build/lib/freetype/build_hb/dist_hb/lib/libfreetype.a: $(DIST_DIR)/lib/libbrotli
 	cd build/lib/freetype && \
 		mkdir -p build_hb && \
 		cd build_hb && \
-		EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
 		emconfigure ../configure \
 			CFLAGS=" \
 			$(GLOBAL_CFLAGS) \
@@ -118,7 +120,7 @@ build/lib/harfbuzz/configure: lib/harfbuzz $(wildcard $(BASE_DIR)build/patches/h
 
 $(DIST_DIR)/lib/libharfbuzz.a: build/lib/freetype/build_hb/dist_hb/lib/libfreetype.a build/lib/harfbuzz/configure
 	cd build/lib/harfbuzz && \
-	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig:$(BASE_DIR)build/lib/freetype/build_hb/dist_hb/lib/pkgconfig \
+	EM_PKG_CONFIG_PATH=$(PKG_CONFIG_PATH):$(BASE_DIR)build/lib/freetype/build_hb/dist_hb/lib/pkgconfig \
 	emconfigure ./configure \
 		CFLAGS=" \
 		$(GLOBAL_CFLAGS) \
@@ -147,7 +149,7 @@ $(DIST_DIR)/lib/libharfbuzz.a: build/lib/freetype/build_hb/dist_hb/lib/libfreety
 # Freetype with Harfbuzz
 $(DIST_DIR)/lib/libfreetype.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/libbrotlidec.a
 	cd build/lib/freetype && \
-	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig:$(BASE_DIR)build/lib/freetype/build_hb/dist_hb/lib/pkgconfig \
+	EM_PKG_CONFIG_PATH=$(PKG_CONFIG_PATH):$(BASE_DIR)build/lib/freetype/build_hb/dist_hb/lib/pkgconfig \
 	emconfigure ./configure \
 		CFLAGS=" \
 		$(GLOBAL_CFLAGS) \
@@ -174,7 +176,6 @@ build/lib/fontconfig/configure: lib/fontconfig $(wildcard $(BASE_DIR)build/patch
 
 $(DIST_DIR)/lib/libfontconfig.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/libexpat.a $(DIST_DIR)/lib/libfribidi.a $(DIST_DIR)/lib/libfreetype.a build/lib/fontconfig/configure
 	cd build/lib/fontconfig && \
-	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
 	emconfigure ./configure \
 		CFLAGS=" \
 		$(GLOBAL_CFLAGS) \
@@ -200,7 +201,6 @@ build/lib/libass/configured: lib/libass
 
 $(DIST_DIR)/lib/libass.a: $(DIST_DIR)/lib/libfontconfig.a $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/libexpat.a $(DIST_DIR)/lib/libfribidi.a $(DIST_DIR)/lib/libfreetype.a $(DIST_DIR)/lib/libbrotlidec.a build/lib/libass/configured
 	cd build/lib/libass && \
-	EM_PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
 	emconfigure ../../../lib/libass/configure \
 		CFLAGS=" \
 		$(GLOBAL_CFLAGS) \
@@ -232,7 +232,6 @@ OCTP_DEPS = \
 src/subtitles-octopus-worker.bc: $(OCTP_DEPS) all-src
 .PHONY: all-src
 all-src:
-	PKG_CONFIG_PATH=$(DIST_DIR)/lib/pkgconfig \
 	$(MAKE) -C src all
 
 # Dist Files
