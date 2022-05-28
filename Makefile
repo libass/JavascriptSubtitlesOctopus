@@ -28,8 +28,9 @@ build/lib/fribidi/configure: lib/fribidi $(wildcard $(BASE_DIR)build/patches/fri
 $(DIST_DIR)/lib/libfribidi.a: build/lib/fribidi/configure
 	cd build/lib/fribidi && \
 	$(call CONFIGURE_AUTO) && \
-	emmake make -C lib/ install && \
-	emmake make install-pkgconfigDATA
+	$(JSO_MAKE) -C lib/ fribidi-unicode-version.h && \
+	$(JSO_MAKE) -C lib/ install && \
+	$(JSO_MAKE) install-pkgconfigDATA
 
 build/lib/expat/configured: lib/expat
 	$(call PREPARE_SRC_VPATH,expat)
@@ -45,8 +46,8 @@ $(DIST_DIR)/lib/libexpat.a: build/lib/expat/configured
 		-DEXPAT_BUILD_TESTS=off \
 		-DEXPAT_BUILD_TOOLS=off \
 	&& \
-	emmake make -j8 && \
-	emmake make install
+	$(JSO_MAKE) && \
+	$(JSO_MAKE) install
 
 build/lib/brotli/js/decode.js: build/lib/brotli/configured
 build/lib/brotli/js/polyfill.js: build/lib/brotli/configured
@@ -58,8 +59,8 @@ $(DIST_DIR)/lib/libbrotlidec.a: $(DIST_DIR)/lib/libbrotlicommon.a
 $(DIST_DIR)/lib/libbrotlicommon.a: build/lib/brotli/configured
 	cd build/lib/brotli && \
     $(call CONFIGURE_CMAKE) && \
-    emmake make -j8 && \
-	emmake make install
+    $(JSO_MAKE) && \
+	$(JSO_MAKE) install
 	# Normalise static lib names
 	cd $(DIST_DIR)/lib/ && \
 	for lib in *-static.a ; do mv "$$lib" "$${lib%-static.a}.a" ; done
@@ -79,8 +80,8 @@ build/lib/freetype/build_hb/dist_hb/lib/libfreetype.a: $(DIST_DIR)/lib/libbrotli
 			--with-brotli=yes \
 			--without-harfbuzz \
 		&& \
-		emmake make -j8 && \
-		emmake make install
+		$(JSO_MAKE) && \
+		$(JSO_MAKE) install
 
 # Harfbuzz
 build/lib/harfbuzz/configure: lib/harfbuzz $(wildcard $(BASE_DIR)build/patches/harfbuzz/*.patch)
@@ -96,7 +97,7 @@ $(DIST_DIR)/lib/libharfbuzz.a: build/lib/freetype/build_hb/dist_hb/lib/libfreety
 		--with-freetype \
 	&& \
 	cd src && \
-	emmake make -j8 install-libLTLIBRARIES install-pkgincludeHEADERS install-pkgconfigDATA
+	$(JSO_MAKE) install-libLTLIBRARIES install-pkgincludeHEADERS install-pkgconfigDATA
 
 # Freetype with Harfbuzz
 $(DIST_DIR)/lib/libfreetype.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/libbrotlidec.a
@@ -106,8 +107,8 @@ $(DIST_DIR)/lib/libfreetype.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/lib
 		--with-brotli=yes \
 		--with-harfbuzz \
 	&& \
-	emmake make -j8 && \
-	emmake make install
+	$(JSO_MAKE) && \
+	$(JSO_MAKE) install
 
 # Fontconfig
 build/lib/fontconfig/configure: lib/fontconfig $(wildcard $(BASE_DIR)build/patches/fontconfig/*.patch)
@@ -120,9 +121,9 @@ $(DIST_DIR)/lib/libfontconfig.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/l
 		--disable-docs \
 		--with-default-fonts=/fonts \
 	&& \
-	emmake make -C src/ install && \
-	emmake make -C fontconfig/ install && \
-	emmake make install-pkgconfigDATA
+	$(JSO_MAKE) -C src/ install && \
+	$(JSO_MAKE) -C fontconfig/ install && \
+	$(JSO_MAKE) install-pkgconfigDATA
 
 # libass --
 
@@ -137,8 +138,8 @@ $(DIST_DIR)/lib/libass.a: $(DIST_DIR)/lib/libfontconfig.a $(DIST_DIR)/lib/libhar
 		--disable-asm \
 		--enable-fontconfig \
 	&& \
-	emmake make -j8 && \
-	emmake make install
+	$(JSO_MAKE) && \
+	$(JSO_MAKE) install
 
 # SubtitleOctopus.js
 OCTP_DEPS = \
