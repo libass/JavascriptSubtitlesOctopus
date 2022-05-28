@@ -4,12 +4,9 @@
 BASE_DIR:=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 DIST_DIR:=$(BASE_DIR)dist/libraries
 
-GLOBAL_CFLAGS:=-O3 -s USE_PTHREADS=0
-GLOBAL_LDFLAGS:=-s ENVIRONMENT=web,webview,worker -s NO_EXIT_RUNTIME=1
-export LDFLAGS = $(GLOBAL_LDFLAGS)
-export CFLAGS = $(GLOBAL_CFLAGS)
-export CXXFLAGS = $(GLOBAL_CFLAGS)
-
+export LDFLAGS = -s ENVIRONMENT=web,webview,worker -s NO_EXIT_RUNTIME=1
+export CFLAGS = -O3 -s USE_PTHREADS=0
+export CXXFLAGS = $(CFLAGS)
 export PKG_CONFIG_PATH = $(DIST_DIR)/lib/pkgconfig
 export EM_PKG_CONFIG_PATH = $(PKG_CONFIG_PATH)
 
@@ -161,7 +158,7 @@ all-src:
 
 # Dist Files
 EMCC_COMMON_ARGS = \
-	$(GLOBAL_LDFLAGS) \
+	$(LDFLAGS) \
 	-s EXPORTED_FUNCTIONS="['_main', '_malloc']" \
 	-s EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'getValue', 'FS_createPreloadedFile', 'FS_createPath']" \
 	--use-preload-plugins \
