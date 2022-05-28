@@ -27,6 +27,22 @@ endef
 # All projects we build have autogen.sh, otherwise we could also fallback to `autoreconf -ivf .`
 RECONF_AUTO := NOCONFIGURE=1 ./autogen.sh
 
+# @arg1: path to source directory; defaults to current working directory
+define CONFIGURE_AUTO
+	emconfigure $(or $(1),.)/configure \
+	  --prefix="$(DIST_DIR)" \
+	  --host=x86-none-linux \
+	  --build=x86_64 \
+	  --enable-static \
+	  --disable-shared \
+	  --disable-debug
+endef
+
+# @arg1: path to source directory; defaults to current working directory
+define CONFIGURE_CMAKE
+	emcmake cmake -S "$(or $(1),.)" -DCMAKE_INSTALL_PREFIX="$(DIST_DIR)"
+endef
+
 
 ## Clean and git related
 

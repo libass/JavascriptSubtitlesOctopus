@@ -27,15 +27,7 @@ build/lib/fribidi/configure: lib/fribidi $(wildcard $(BASE_DIR)build/patches/fri
 
 $(DIST_DIR)/lib/libfribidi.a: build/lib/fribidi/configure
 	cd build/lib/fribidi && \
-	emconfigure ./configure \
-		--prefix="$(DIST_DIR)" \
-		--host=x86-none-linux \
-		--build=x86_64 \
-		--enable-static \
-		--disable-shared \
-		--disable-dependency-tracking \
-		--disable-debug \
-	&& \
+	$(call CONFIGURE_AUTO) && \
 	emmake make -C lib/ install && \
 	emmake make install-pkgconfigDATA
 
@@ -45,15 +37,13 @@ build/lib/expat/configured: lib/expat
 
 $(DIST_DIR)/lib/libexpat.a: build/lib/expat/configured
 	cd build/lib/expat && \
-	emcmake cmake \
-		-DCMAKE_INSTALL_PREFIX=$(DIST_DIR) \
+	$(call CONFIGURE_CMAKE,$(BASE_DIR)lib/expat/expat) \
 		-DEXPAT_BUILD_DOCS=off \
 		-DEXPAT_SHARED_LIBS=off \
 		-DEXPAT_BUILD_EXAMPLES=off \
 		-DEXPAT_BUILD_FUZZERS=off \
 		-DEXPAT_BUILD_TESTS=off \
 		-DEXPAT_BUILD_TOOLS=off \
-		$(BASE_DIR)lib/expat/expat \
 	&& \
 	emmake make -j8 && \
 	emmake make install
@@ -67,10 +57,7 @@ build/lib/brotli/configured: lib/brotli $(wildcard $(BASE_DIR)build/patches/brot
 $(DIST_DIR)/lib/libbrotlidec.a: $(DIST_DIR)/lib/libbrotlicommon.a
 $(DIST_DIR)/lib/libbrotlicommon.a: build/lib/brotli/configured
 	cd build/lib/brotli && \
-    emcmake cmake \
-        -DCMAKE_INSTALL_PREFIX=$(DIST_DIR) \
-        . \
-    && \
+    $(call CONFIGURE_CMAKE) && \
     emmake make -j8 && \
 	emmake make install
 	# Normalise static lib names
@@ -87,13 +74,8 @@ build/lib/freetype/build_hb/dist_hb/lib/libfreetype.a: $(DIST_DIR)/lib/libbrotli
 	cd build/lib/freetype && \
 		mkdir -p build_hb && \
 		cd build_hb && \
-		emconfigure ../configure \
+		$(call CONFIGURE_AUTO,..) \
 			--prefix="$$(pwd)/dist_hb" \
-			--host=x86-none-linux \
-			--build=x86_64 \
-			--enable-static \
-			--disable-shared \
-			\
 			--with-brotli=yes \
 			--without-harfbuzz \
 		&& \
@@ -110,14 +92,7 @@ $(DIST_DIR)/lib/libharfbuzz.a: build/lib/freetype/build_hb/dist_hb/lib/libfreety
 	EM_PKG_CONFIG_PATH=$(PKG_CONFIG_PATH):$(BASE_DIR)build/lib/freetype/build_hb/dist_hb/lib/pkgconfig \
 	CFLAGS="-DHB_NO_MT $(CFLAGS)" \
 	CXXFLAGS="-DHB_NO_MT $(CFLAGS)" \
-	emconfigure ./configure \
-		--prefix="$(DIST_DIR)" \
-		--host=x86-none-linux \
-		--build=x86_64 \
-		--enable-static \
-		--disable-shared \
-		--disable-dependency-tracking \
-		\
+	$(call CONFIGURE_AUTO) \
 		--with-freetype \
 	&& \
 	cd src && \
@@ -127,13 +102,7 @@ $(DIST_DIR)/lib/libharfbuzz.a: build/lib/freetype/build_hb/dist_hb/lib/libfreety
 $(DIST_DIR)/lib/libfreetype.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/libbrotlidec.a
 	cd build/lib/freetype && \
 	EM_PKG_CONFIG_PATH=$(PKG_CONFIG_PATH):$(BASE_DIR)build/lib/freetype/build_hb/dist_hb/lib/pkgconfig \
-	emconfigure ./configure \
-		--prefix="$(DIST_DIR)" \
-		--host=x86-none-linux \
-		--build=x86_64 \
-		--enable-static \
-		--disable-shared \
-		\
+	$(call CONFIGURE_AUTO) \
 		--with-brotli=yes \
 		--with-harfbuzz \
 	&& \
@@ -147,12 +116,7 @@ build/lib/fontconfig/configure: lib/fontconfig $(wildcard $(BASE_DIR)build/patch
 
 $(DIST_DIR)/lib/libfontconfig.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/libexpat.a $(DIST_DIR)/lib/libfribidi.a $(DIST_DIR)/lib/libfreetype.a build/lib/fontconfig/configure
 	cd build/lib/fontconfig && \
-	emconfigure ./configure \
-		--prefix="$(DIST_DIR)" \
-		--host=x86-none-linux \
-		--build=x86_64 \
-		--disable-shared \
-		--enable-static \
+	$(call CONFIGURE_AUTO) \
 		--disable-docs \
 		--with-default-fonts=/fonts \
 	&& \
@@ -169,15 +133,8 @@ build/lib/libass/configured: lib/libass
 
 $(DIST_DIR)/lib/libass.a: $(DIST_DIR)/lib/libfontconfig.a $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/libexpat.a $(DIST_DIR)/lib/libfribidi.a $(DIST_DIR)/lib/libfreetype.a $(DIST_DIR)/lib/libbrotlidec.a build/lib/libass/configured
 	cd build/lib/libass && \
-	emconfigure ../../../lib/libass/configure \
-		--prefix="$(DIST_DIR)" \
-		--host=x86-none-linux \
-		--build=x86_64 \
-		--disable-shared \
-		--enable-static \
+	$(call CONFIGURE_AUTO,../../../lib/libass) \
 		--disable-asm \
-		\
-		--enable-harfbuzz \
 		--enable-fontconfig \
 	&& \
 	emmake make -j8 && \
