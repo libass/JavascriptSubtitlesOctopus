@@ -169,10 +169,6 @@ EMCC_COMMON_ARGS = \
 	-s NO_FILESYSTEM=0 \
 	--no-heap-copy \
 	-o $@
-	#--js-opts 0 -g4 \
-	#--closure 1 \
-	#--memory-init-file 0 \
-	#-s OUTLINING_LIMIT=20000 \
 
 dist: src/subtitles-octopus-worker.bc dist/js/subtitles-octopus-worker.js dist/js/subtitles-octopus-worker-legacy.js dist/js/subtitles-octopus.js dist/js/COPYRIGHT
 
