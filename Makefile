@@ -7,6 +7,8 @@ DIST_DIR:=$(BASE_DIR)dist/libraries
 GLOBAL_CFLAGS:=-O3 -s USE_PTHREADS=0
 GLOBAL_LDFLAGS:=-s ENVIRONMENT=web,webview,worker -s NO_EXIT_RUNTIME=1
 export LDFLAGS = $(GLOBAL_LDFLAGS)
+export CFLAGS = $(GLOBAL_CFLAGS)
+export CXXFLAGS = $(GLOBAL_CFLAGS)
 
 export PKG_CONFIG_PATH = $(DIST_DIR)/lib/pkgconfig
 export EM_PKG_CONFIG_PATH = $(PKG_CONFIG_PATH)
@@ -26,9 +28,6 @@ build/lib/fribidi/configure: lib/fribidi $(wildcard $(BASE_DIR)build/patches/fri
 $(DIST_DIR)/lib/libfribidi.a: build/lib/fribidi/configure
 	cd build/lib/fribidi && \
 	emconfigure ./configure \
-		CFLAGS=" \
-		$(GLOBAL_CFLAGS) \
-		" \
 		--prefix="$(DIST_DIR)" \
 		--host=x86-none-linux \
 		--build=x86_64 \
@@ -47,9 +46,6 @@ build/lib/expat/configured: lib/expat
 $(DIST_DIR)/lib/libexpat.a: build/lib/expat/configured
 	cd build/lib/expat && \
 	emcmake cmake \
-		-DCMAKE_C_FLAGS=" \
-		$(GLOBAL_CFLAGS) \
-		" \
 		-DCMAKE_INSTALL_PREFIX=$(DIST_DIR) \
 		-DEXPAT_BUILD_DOCS=off \
 		-DEXPAT_SHARED_LIBS=off \
@@ -72,9 +68,6 @@ $(DIST_DIR)/lib/libbrotlidec.a: $(DIST_DIR)/lib/libbrotlicommon.a
 $(DIST_DIR)/lib/libbrotlicommon.a: build/lib/brotli/configured
 	cd build/lib/brotli && \
     emcmake cmake \
-        -DCMAKE_C_FLAGS=" \
-        $(GLOBAL_CFLAGS) \
-        " \
         -DCMAKE_INSTALL_PREFIX=$(DIST_DIR) \
         . \
     && \
@@ -95,9 +88,6 @@ build/lib/freetype/build_hb/dist_hb/lib/libfreetype.a: $(DIST_DIR)/lib/libbrotli
 		mkdir -p build_hb && \
 		cd build_hb && \
 		emconfigure ../configure \
-			CFLAGS=" \
-			$(GLOBAL_CFLAGS) \
-			" \
 			--prefix="$$(pwd)/dist_hb" \
 			--host=x86-none-linux \
 			--build=x86_64 \
@@ -118,15 +108,9 @@ build/lib/harfbuzz/configure: lib/harfbuzz $(wildcard $(BASE_DIR)build/patches/h
 $(DIST_DIR)/lib/libharfbuzz.a: build/lib/freetype/build_hb/dist_hb/lib/libfreetype.a build/lib/harfbuzz/configure
 	cd build/lib/harfbuzz && \
 	EM_PKG_CONFIG_PATH=$(PKG_CONFIG_PATH):$(BASE_DIR)build/lib/freetype/build_hb/dist_hb/lib/pkgconfig \
+	CFLAGS="-DHB_NO_MT $(CFLAGS)" \
+	CXXFLAGS="-DHB_NO_MT $(CFLAGS)" \
 	emconfigure ./configure \
-		CFLAGS=" \
-		$(GLOBAL_CFLAGS) \
-		-DHB_NO_MT \
-		" \
-		CXXFLAGS=" \
-		$(GLOBAL_CFLAGS) \
-		-DHB_NO_MT \
-		" \
 		--prefix="$(DIST_DIR)" \
 		--host=x86-none-linux \
 		--build=x86_64 \
@@ -144,9 +128,6 @@ $(DIST_DIR)/lib/libfreetype.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/lib
 	cd build/lib/freetype && \
 	EM_PKG_CONFIG_PATH=$(PKG_CONFIG_PATH):$(BASE_DIR)build/lib/freetype/build_hb/dist_hb/lib/pkgconfig \
 	emconfigure ./configure \
-		CFLAGS=" \
-		$(GLOBAL_CFLAGS) \
-		" \
 		--prefix="$(DIST_DIR)" \
 		--host=x86-none-linux \
 		--build=x86_64 \
@@ -167,9 +148,6 @@ build/lib/fontconfig/configure: lib/fontconfig $(wildcard $(BASE_DIR)build/patch
 $(DIST_DIR)/lib/libfontconfig.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/libexpat.a $(DIST_DIR)/lib/libfribidi.a $(DIST_DIR)/lib/libfreetype.a build/lib/fontconfig/configure
 	cd build/lib/fontconfig && \
 	emconfigure ./configure \
-		CFLAGS=" \
-		$(GLOBAL_CFLAGS) \
-		" \
 		--prefix="$(DIST_DIR)" \
 		--host=x86-none-linux \
 		--build=x86_64 \
@@ -192,9 +170,6 @@ build/lib/libass/configured: lib/libass
 $(DIST_DIR)/lib/libass.a: $(DIST_DIR)/lib/libfontconfig.a $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/libexpat.a $(DIST_DIR)/lib/libfribidi.a $(DIST_DIR)/lib/libfreetype.a $(DIST_DIR)/lib/libbrotlidec.a build/lib/libass/configured
 	cd build/lib/libass && \
 	emconfigure ../../../lib/libass/configure \
-		CFLAGS=" \
-		$(GLOBAL_CFLAGS) \
-		" \
 		--prefix="$(DIST_DIR)" \
 		--host=x86-none-linux \
 		--build=x86_64 \
