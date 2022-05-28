@@ -105,9 +105,6 @@ build/lib/freetype/build_hb/dist_hb/lib/libfreetype.a: $(DIST_DIR)/lib/libbrotli
 			--disable-shared \
 			\
 			--with-brotli=yes \
-			--without-zlib \
-			--without-bzip2 \
-			--without-png \
 			--without-harfbuzz \
 		&& \
 		emmake make -j8 && \
@@ -137,11 +134,7 @@ $(DIST_DIR)/lib/libharfbuzz.a: build/lib/freetype/build_hb/dist_hb/lib/libfreety
 		--disable-shared \
 		--disable-dependency-tracking \
 		\
-		--without-cairo \
-		--without-fontconfig \
-		--without-icu \
 		--with-freetype \
-		--without-glib \
 	&& \
 	cd src && \
 	emmake make -j8 install-libLTLIBRARIES install-pkgincludeHEADERS install-pkgconfigDATA
@@ -161,9 +154,6 @@ $(DIST_DIR)/lib/libfreetype.a: $(DIST_DIR)/lib/libharfbuzz.a $(DIST_DIR)/lib/lib
 		--disable-shared \
 		\
 		--with-brotli=yes \
-		--without-zlib \
-		--without-bzip2 \
-		--without-png \
 		--with-harfbuzz \
 	&& \
 	emmake make -j8 && \
