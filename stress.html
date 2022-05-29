@@ -38,7 +38,7 @@
 
     <div id="content" style="padding-top: 25px;">
       <div id="main" class="container container-body">
-        <h1>Attack on Titan Season 3 Part 2 (Spring 2019) Stress Karaoke Test - LossyRender</h1>
+        <h1 class="optionInfo">Attack on Titan Season 3 Part 2 (Spring 2019) Stress Karaoke Test - @RENDER_MODE@</h1>
         
         <video id="test" class="video-js" controls preload="auto" width="840" height="460" data-setup="{}">
             <source src="https://animethemes.moe/video/ShingekiNoKyojinS3Part2-OP1-NCBD1080.webm" type='video/webm'>
@@ -72,9 +72,9 @@
                 // This would look more nice as a plugin but is's just as showcase of using with custom players
                 var video = this.tech_.el_;
                 window.SubtitlesOctopusOnLoad = function () {
-                    var options = {
+                    var options = makeOptions({
                         video: video,
-                        lossyRender: true,
+                        renderMode: 'wasm-blend',
                         subUrl: '/JavascriptSubtitlesOctopus/subtitles/aot3p2_op.ass.br',
                         fonts: [
                             '/JavascriptSubtitlesOctopus/fonts/1_ANGIE-BOLD.woff2', 
@@ -89,7 +89,7 @@
                         //onReady: onReadyFunction,
                         debug: true,
                         workerUrl: '/JavascriptSubtitlesOctopus/assets/js/subtitles-octopus-worker.js'
-                    };
+                    });
                     window.octopusInstance = new SubtitlesOctopus(options); // You can experiment in console
                 };
                 if (SubtitlesOctopus) {

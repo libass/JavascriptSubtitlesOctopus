@@ -25,3 +25,38 @@ var runBenchmark = function () {
         isFirstRun = false;
     }
 }
+
+// Configuration
+/**
+ * Generates options according to the passed base options and URL search params.
+ * @param {Object} options - Base options.
+ * @returns {Object} Options.
+ */
+function makeOptions(options) {
+    var NAMES = {
+        'wasm-blend': 'BlendRenderer',
+        'js-blend': 'JSRenderer',
+        'lossy': 'LossyRenderer'
+    };
+    var param = new URLSearchParams(window.location.search);
+
+    var renderMode = param.get('renderMode');
+
+    if (!renderMode in NAMES) {
+        renderMode = options.renderMode;
+        if (!renderMode in NAMES)
+            renderMode = 'wasm-blend';
+    }
+
+    // Set  Name if required
+    var infoNodes = document.querySelectorAll('.optionInfo');
+    for(var i = 0; i < infoNodes.length; ++i) {
+        var iN = infoNodes[i];
+        var txt = iN.innerHTML;
+        iN.innerHTML = txt.replace('@RENDER_MODE@', NAMES[renderMode]);
+    }
+
+    return Object.assign({}, options, {
+        renderMode: renderMode
+    });
+}

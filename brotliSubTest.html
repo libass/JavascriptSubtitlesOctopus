@@ -13,6 +13,7 @@
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
     <script src="./assets/js/subtitles-octopus.js"></script>
+    <script src="./assets/util.js"></script>
 </head>
 
 <body>
@@ -36,7 +37,7 @@
 
     <div id="content" style="padding-top: 25px;">
       <div id="main" class="container container-body">
-        <h1>Brotli Subtitle Test - LossyRender</h1>
+        <h1 class="optionInfo">Brotli Subtitle Test - @RENDER_MODE@</h1>
         
         <video id="test" class="video-js" controls preload="auto" width="840" height="460" data-setup="{}">
             <source src="https://mirror.clarkson.edu/blender/demo/movies/BBB/bbb_sunflower_1080p_30fps_normal.mp4" type='video/mp4'>
@@ -55,15 +56,15 @@
                 // This would look more nice as a plugin but is's just as showcase of using with custom players
                 var video = this.tech_.el_;
                 window.SubtitlesOctopusOnLoad = function () {
-                    var options = {
+                    var options = makeOptions({
                         video: video,
-                        lossyRender: true,
+                        renderMode: 'lossy',
                         subUrl: '/JavascriptSubtitlesOctopus/subtitles/test.ass.br',
                         fonts: ['/JavascriptSubtitlesOctopus/fonts/Arial.woff2', '/JavascriptSubtitlesOctopus/fonts/TimesNewRoman.woff2'],
                         //onReady: onReadyFunction,
                         debug: true,
                         workerUrl: '/JavascriptSubtitlesOctopus/assets/js/subtitles-octopus-worker.js'
-                    };
+                    });
                     window.octopusInstance = new SubtitlesOctopus(options); // You can experiment in console
                 };
                 if (SubtitlesOctopus) {
