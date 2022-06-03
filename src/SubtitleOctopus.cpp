@@ -337,9 +337,67 @@ public:
         canvas_h = frame_h;
         canvas_w = frame_w;
     }
+    int calcListSize(ASS_Image *img) {
+        int size = 0;
+        for (ASS_Image *tmp = img; tmp; tmp = tmp->next) {
+            if (tmp->w == 0 || tmp->h == 0) {
+              continue;
+            }
+            size += sizeof(uint32_t) * tmp->w * tmp->h + sizeof(ASS_Image);
+        }
+        return size;
+    }
+    void convertImages(ASS_Image *&renderResult, ASS_Image *img, char *rawbuffer) {
+        for (; img; img = img->next) {
+            int w = img->w, h = img->h;
+            if (w == 0 || h == 0) {
+                continue;
+            }
+            double alpha = (255 - (img->color & 255)) / 255.0;
+            if (alpha == 0.0) {
+                continue;
+            }
+            unsigned int datasize = sizeof(uint32_t) * w * h;
+            uint32_t *data = (uint32_t *)rawbuffer;
+            convertBitmap(alpha, data, img, w, h);
+            ASS_Image *result = (ASS_Image *)(rawbuffer + datasize);
+            result->w = w;
+            result->h = h;
+            result->dst_x = img->dst_x;
+            result->dst_y = img->dst_y;
+            result->bitmap = (uint8_t *)data;
+            result->next = renderResult;
+            renderResult = result;
+            rawbuffer += datasize + sizeof(ASS_Image);
+        }
+    }
+    void convertBitmap(double alpha, uint32_t *data, ASS_Image *img, int w, int h) {
+        uint32_t color = ((img->color << 8) & 0xff0000) | ((img->color >> 8) & 0xff00) | ((img->color >> 24) & 0xff);
+        uint8_t *pos = img->bitmap;
+        uint32_t res = 0;
+        for (uint32_t y = 0; y < h; ++y, pos += img->stride) {
+            for (uint32_t z = 0; z < w; ++z, ++res) {
+            uint8_t mask = pos[z];
+            if (mask != 0)
+                data[res] = ((uint32_t)(alpha * mask) << 24) | color;
+            }
+        }
+    }
     ASS_Image* renderImage(double time, int* changed) {
         ASS_Image *img = ass_render_frame(ass_renderer, track, (int) (time * 1000), changed);
-        return img;
+        
+        ASS_Image *renderResult = NULL;
+        if (img == NULL) {
+            return img;
+        }
+        int size = calcListSize(img);
+        char *rawbuffer = (char *)m_blend.get_rawbuf(1, 1, size, true);
+        if (rawbuffer == NULL) {
+            fprintf(stderr, "jso: cannot allocate buffer for rendering\n");
+            return renderResult;
+        }
+        convertImages(renderResult, img, rawbuffer);
+        return renderResult;
     }
     /* CANVAS */
 
