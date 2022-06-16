@@ -1,0 +1,5 @@
+# normalize all line endings on all text files
+*    text=auto
+
+# shell scripts require LF, CRLF doesn't work
+*.sh text eol=lf
