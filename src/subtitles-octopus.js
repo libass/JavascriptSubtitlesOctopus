@@ -1,3 +1,4 @@
+"use strict";
 var SubtitlesOctopus = function (options) {
     var supportsWebAssembly = false;
     try {
