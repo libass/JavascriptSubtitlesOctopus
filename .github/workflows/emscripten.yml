@@ -38,3 +38,32 @@ jobs:
       with:
         name: js
         path: dist/js
+
+
+  update_gh-pages:
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/master'
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          ref: gh-pages
+
+      - name: Remove old assets
+        run: rm -fr assets/js
+
+      - name: Download nightly build
+        uses: actions/download-artifact@v2
+        with:
+          name: js
+          path: assets/js
+
+      - name: Push new version
+        run: |
+          git config --global user.email "actions@noreply.github.com"
+          git config --global user.name "GitHub Action"
+          git add assets/js
+          git commit -m "$(printf \
+            "Update binaries to latest nightly\n\nFrom %s" "${{ github.sha }}")"
+          git push origin gh-pages
