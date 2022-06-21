@@ -290,6 +290,7 @@ public:
         }
 
         ass_set_message_cb(ass_library, msg_callback, NULL);
+        ass_set_extract_fonts(ass_library, 1);
 
         ass_renderer = ass_renderer_init(ass_library);
         if (!ass_renderer) {
@@ -305,7 +306,7 @@ public:
 
     /* TRACK */
     void createTrack(char* subfile) {
-        removeTrack();
+        reloadLibrary();
         track = ass_read_file(ass_library, subfile, NULL);
         if (!track) {
             fprintf(stderr, "jso: Failed to start a track\n");
@@ -315,7 +316,7 @@ public:
     }
 
     void createTrackMem(char *buf, unsigned long bufsize) {
-        removeTrack();
+        reloadLibrary();
         track = ass_read_memory(ass_library, buf, (size_t)bufsize, NULL);
         if (!track) {
             fprintf(stderr, "jso: Failed to start a track\n");
@@ -345,7 +346,7 @@ public:
     /* CANVAS */
 
     void quitLibrary() {
-        ass_free_track(track);
+        removeTrack();
         ass_renderer_done(ass_renderer);
         ass_library_done(ass_library);
         m_blend.clear();
