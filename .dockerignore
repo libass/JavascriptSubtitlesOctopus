@@ -1,0 +1,2 @@
+# Ignore everything for build image step, /code is passed via a volume
+*
