@@ -10,6 +10,7 @@
 #include "../lib/libass/libass/ass.h"
 
 #include "libass.cpp"
+#include "brotli.cpp"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>

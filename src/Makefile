@@ -3,7 +3,8 @@
 CXX = em++ -c
 CXXFLAGS = -O3 -g4
 LIBASS_CXXFLAGS = $(shell pkg-config --static --cflags "libass >= 0.14.0")
-LOCAL_CXXFLAGS  = -Wall -Wno-deprecated $(LIBASS_CXXFLAGS)
+BROTLI_CXXFLAGS = $(shell pkg-config --static --cflags "libbrotlidec")
+LOCAL_CXXFLAGS  = -Wall -Wno-deprecated $(LIBASS_CXXFLAGS) $(BROTLI_CXXFLAGS)
 
 all: subtitles-octopus-worker.bc
 

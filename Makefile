@@ -47,8 +47,6 @@ $(DIST_DIR)/lib/libexpat.a: build/lib/expat/configured
 	$(JSO_MAKE) install
 
 # Brotli
-build/lib/brotli/js/decode.js: build/lib/brotli/configured
-build/lib/brotli/js/polyfill.js: build/lib/brotli/configured
 build/lib/brotli/configured: lib/brotli $(wildcard $(BASE_DIR)build/patches/brotli/*.patch)
 	$(call PREPARE_SRC_PATCHED,brotli)
 	touch build/lib/brotli/configured
@@ -155,7 +153,7 @@ all-src:
 EMCC_COMMON_ARGS = \
 	$(LDFLAGS) \
 	-s AUTO_NATIVE_LIBRARIES=0 \
-	-s EXPORTED_FUNCTIONS="['_main', '_malloc']" \
+	-s EXPORTED_FUNCTIONS="['_main', '_malloc', '_free']" \
 	-s EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'getValue', 'FS_createPreloadedFile', 'FS_createPath']" \
 	--use-preload-plugins \
 	--preload-file assets/default.woff2 \
@@ -167,23 +165,20 @@ EMCC_COMMON_ARGS = \
 
 dist: src/subtitles-octopus-worker.bc dist/js/subtitles-octopus-worker.js dist/js/subtitles-octopus-worker-legacy.js dist/js/subtitles-octopus.js dist/js/COPYRIGHT
 
-dist/js/subtitles-octopus-worker.js: src/subtitles-octopus-worker.bc src/pre-worker.js src/SubOctpInterface.js src/post-worker.js build/lib/brotli/js/decode.js
+dist/js/subtitles-octopus-worker.js: src/subtitles-octopus-worker.bc src/pre-worker.js src/SubOctpInterface.js src/post-worker.js
 	mkdir -p dist/js
 	emcc src/subtitles-octopus-worker.bc $(OCTP_DEPS) \
 		--pre-js src/pre-worker.js \
-		--pre-js build/lib/brotli/js/decode.js \
 		--post-js src/SubOctpInterface.js \
 		--post-js src/post-worker.js \
 		-s WASM=1 \
 		$(EMCC_COMMON_ARGS)
 
-dist/js/subtitles-octopus-worker-legacy.js: src/subtitles-octopus-worker.bc src/polyfill.js src/pre-worker.js src/SubOctpInterface.js src/post-worker.js build/lib/brotli/js/decode.js build/lib/brotli/js/polyfill.js
+dist/js/subtitles-octopus-worker-legacy.js: src/subtitles-octopus-worker.bc src/polyfill.js src/pre-worker.js src/SubOctpInterface.js src/post-worker.js
 	mkdir -p dist/js
 	emcc src/subtitles-octopus-worker.bc $(OCTP_DEPS) \
 		--pre-js src/polyfill.js \
-		--pre-js build/lib/brotli/js/polyfill.js \
 		--pre-js src/pre-worker.js \
-		--pre-js build/lib/brotli/js/decode.js \
 		--post-js src/SubOctpInterface.js \
 		--post-js src/post-worker.js \
 		-s WASM=0 \

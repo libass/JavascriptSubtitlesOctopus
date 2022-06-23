@@ -103,6 +103,38 @@ self.freeTrack = function () {
     self.getRenderMethod()();
 };
 
+self.decodeBrotliArray = function (uint8array) {
+    //Allocate and copy brotli encoded input into the heap, using buf ptr as offset
+    var buf = Module._malloc(uint8array.length);
+    Module["HEAPU8"].set(uint8array, buf);
+
+    //Allocate return length memory
+    var decode_length_ptr = Module._malloc(4);
+
+    var br = new Module.Brotli();
+
+    //uint8_t* decoded;
+    var decoded = br.decode(buf, uint8array.length, decode_length_ptr);
+
+    //int decode_length = *decode_length_ptr
+    var decode_length = Module.getValue(decode_length_ptr, "i32");
+
+    //free input buffer and return length memory
+    Module._free(buf);
+    Module._free(decode_length_ptr);
+
+    if(decoded === 0){
+        //decode err
+        throw "could not decode brotli file";
+    }
+
+    //copy data from the decoded ptr in the heap to a slice, then copy it
+    var content = new Uint8Array(new Uint8Array(Module["HEAPU8"].buffer, decoded, decode_length));
+
+    Module._free(decoded);
+    return content;
+}
+
 /**
  * Set the subtitle track.
  * @param {!string} url the URL of the subtitle file.
@@ -110,7 +142,7 @@ self.freeTrack = function () {
 self.setTrackByUrl = function (url) {
     var content = "";
     if (isBrotliFile(url)) {
-        content = Module["BrotliDecode"](readBinary(url))
+        content = self.decodeBrotliArray(readBinary(url));
     } else {
         content = read_(url);
     }
