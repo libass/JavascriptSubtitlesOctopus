@@ -154,6 +154,7 @@ all-src:
 # Dist Files
 EMCC_COMMON_ARGS = \
 	$(LDFLAGS) \
+	-s AUTO_NATIVE_LIBRARIES=0 \
 	-s EXPORTED_FUNCTIONS="['_main', '_malloc']" \
 	-s EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'getValue', 'FS_createPreloadedFile', 'FS_createPath']" \
 	--use-preload-plugins \
