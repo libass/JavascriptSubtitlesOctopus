@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <string>
 #include <cstdint>
 #include <ass/ass.h>
 
@@ -247,6 +248,8 @@ public:
 
     int status;
 
+    std::string defaultFont;
+
     SubtitleOctopus() {
         status = 0;
         ass_library = NULL;
@@ -281,7 +284,11 @@ public:
         scanned_events = i;
     }
 
-    void initLibrary(int frame_w, int frame_h) {
+    void initLibrary(int frame_w, int frame_h, char* default_font) {
+        if (default_font != NULL) {
+            defaultFont.assign(default_font);
+        }
+
         ass_library = ass_library_init();
         if (!ass_library) {
             fprintf(stderr, "jso: ass_library_init failed!\n");
@@ -353,11 +360,11 @@ public:
     void reloadLibrary() {
         quitLibrary();
 
-        initLibrary(canvas_w, canvas_h);
+        initLibrary(canvas_w, canvas_h, NULL);
     }
 
     void reloadFonts() {
-        ass_set_fonts(ass_renderer, "/assets/default.woff2", NULL, ASS_FONTPROVIDER_FONTCONFIG, "/assets/fonts.conf", 1);
+        ass_set_fonts(ass_renderer, defaultFont.c_str(), NULL, ASS_FONTPROVIDER_FONTCONFIG, "/assets/fonts.conf", 1);
     }
 
     void setMargin(int top, int bottom, int left, int right) {

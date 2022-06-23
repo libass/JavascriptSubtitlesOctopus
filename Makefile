@@ -156,16 +156,16 @@ EMCC_COMMON_ARGS = \
 	$(LDFLAGS) \
 	-s AUTO_NATIVE_LIBRARIES=0 \
 	-s EXPORTED_FUNCTIONS="['_main', '_malloc']" \
+	-s DEFAULT_LIBRARY_FUNCS_TO_INCLUDE="['\$$Browser']" \
 	-s EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'getValue', 'FS_createPreloadedFile', 'FS_createPath']" \
-	--use-preload-plugins \
-	--preload-file assets/default.woff2 \
-	--preload-file assets/fonts.conf \
+	--embed-file assets/fonts.conf \
 	-s ALLOW_MEMORY_GROWTH=1 \
 	-s NO_FILESYSTEM=0 \
+	--memory-init-file=0 \
 	--no-heap-copy \
 	-o $@
 
-dist: src/subtitles-octopus-worker.bc dist/js/subtitles-octopus-worker.js dist/js/subtitles-octopus-worker-legacy.js dist/js/subtitles-octopus.js dist/js/COPYRIGHT
+dist: src/subtitles-octopus-worker.bc dist/js/subtitles-octopus-worker.js dist/js/subtitles-octopus-worker-legacy.js dist/js/subtitles-octopus.js dist/js/COPYRIGHT dist/js/default.woff2
 
 dist/js/subtitles-octopus-worker.js: src/subtitles-octopus-worker.bc src/pre-worker.js src/SubOctpInterface.js src/post-worker.js build/lib/brotli/js/decode.js
 	mkdir -p dist/js
@@ -204,6 +204,9 @@ dist/license/all:
 
 dist/js/COPYRIGHT: dist/license/all
 	cp "$<" "$@"
+
+dist/js/default.woff2:
+	cp assets/default.woff2 "$@"
 
 # Clean Tasks
 

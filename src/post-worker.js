@@ -32,12 +32,17 @@ self.writeFontToFS = function(font) {
     self.fontMap_[font] = true;
 
     if (!self.availableFonts.hasOwnProperty(font)) return;
-    var content = readBinary(self.availableFonts[font]);
 
-    Module["FS"].writeFile('/fonts/font' + (self.fontId++) + '-' + self.availableFonts[font].split('/').pop(), content, {
-        encoding: 'binary'
-    });
+    self.loadFontFile('font' + (self.fontId++) + '-', self.availableFonts[font]);
 };
+
+self.loadFontFile = function (fontId, path) {
+    if (self.lazyFileLoading && path.indexOf("blob:") !== 0) {
+        Module["FS"].createLazyFile("/fonts", fontId + path.split('/').pop(), path, true, false);
+    } else {
+        Module["FS"].createPreloadedFile("/fonts", fontId + path.split('/').pop(), path, true, false);
+    }
+}
 
 /**
  * Write all font's mentioned in the .ass file to the virtual FS.
@@ -553,6 +558,8 @@ function onMessageFromMainEmscriptenThread(message) {
             }
 
             self.availableFonts = message.data.availableFonts;
+            self.fallbackFont = message.data.fallbackFont;
+            self.lazyFileLoading = message.data.lazyFileLoading;
             self.debug = message.data.debug;
             if (!hasNativeConsole && self.debug) {
                 console = makeCustomConsole();
