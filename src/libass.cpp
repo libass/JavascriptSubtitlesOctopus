@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
-#include "../lib/libass/libass/ass.h"
+#include <ass/ass.h>
 
 /**
  * This class is a wrapper for Emscripten WebIDL for interface with Javascript
