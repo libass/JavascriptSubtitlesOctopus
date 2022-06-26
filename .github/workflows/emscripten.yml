@@ -19,10 +19,42 @@ jobs:
     - name: Checkout Base Repo
       uses: actions/checkout@v2
 
-    - name: Checkout Submodules
+    - name: Prepare Submodules
       run: |
         git submodule sync
         git submodule update --init --recursive --force
+        mv lib lib_
+
+    - name: Calculate Hash Key
+      id: cache_config
+      run: |
+        # Invalidate cache if submodules, patches or emscripten version changed
+        key="$(find build/patches/ -type f | sort | xargs cat .gitmodules Dockerfile \
+               Makefile Makefile_licence | shasum -a 256 | cut -d' ' -f1)"
+        echo "::set-output name=key::0-${key}"
+
+    - name: Ensure Cache will be newer than Checkout
+      run: |
+        find . -exec touch -d 1971-01-01T00:00:00 '{}' +
+
+    - name: Retrieve Cached Built Dependencies
+      uses: actions/cache@v3
+      id: cache
+      with:
+        key: ${{ steps.cache_config.outputs.key }}
+        path: |
+          lib
+          build/lib
+          dist/libraries
+          dist/license/*
+          !dist/license/subtitlesoctopus
+          !dist/license/all*
+          /tmp/emcc_lto
+
+    - name: Checkout Submodules
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: |
+        mv lib_ lib
 
     - name: Build Docker Image
       run: |
@@ -30,7 +62,8 @@ jobs:
 
     - name: Build Binaries
       run: |
-        docker run --rm -v "${PWD}":/code libass/jso:latest
+        mkdir -p /tmp/emcc_lto
+        docker run --rm -v "${PWD}":/code -v "/tmp/emcc_lto:/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/lto" libass/jso:latest
 
     - name: Upload Nightly Build
       uses: actions/upload-artifact@v2
