@@ -53,8 +53,6 @@ Module = Module || {};
 Module["preRun"] = Module["preRun"] || [];
 
 Module["preRun"].push(function () {
-    var i;
-
     Module["FS_createPath"]("/", "fonts", true, true);
     Module["FS_createPath"]("/", "fontconfig", true, true);
 
@@ -92,7 +90,7 @@ Module["preRun"].push(function () {
 
     //Module["FS"].mount(Module["FS"].filesystems.IDBFS, {}, '/fonts');
     var fontFiles = self.fontFiles || [];
-    for (i = 0; i < fontFiles.length; i++) {
+    for (var i = 0; i < fontFiles.length; i++) {
         Module["FS_createPreloadedFile"]("/fonts", 'font' + i + '-' + fontFiles[i].split('/').pop(), fontFiles[i], true, true);
     }
 });
