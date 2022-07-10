@@ -4,7 +4,6 @@
 // # Project: subtitlesoctopus
 // License: Expat
 // Copyright: 2017-2021 JavascriptSubtitlesOctopus contributors
-//   2016 Google Inc.
 // 
 // # Project: brotli
 // License: Expat
