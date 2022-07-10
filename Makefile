@@ -4,7 +4,7 @@
 BASE_DIR:=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 DIST_DIR:=$(BASE_DIR)dist/libraries
 
-export LDFLAGS = -O3 -s EVAL_CTORS=1 -flto -s ENVIRONMENT=web,webview,worker -s NO_EXIT_RUNTIME=1 -s STRICT_JS=1
+export LDFLAGS = -O3 -flto -s ENVIRONMENT=web,webview,worker -s NO_EXIT_RUNTIME=1 -s STRICT_JS=1
 export CFLAGS = -O3 -flto -s USE_PTHREADS=0
 export CXXFLAGS = $(CFLAGS)
 export PKG_CONFIG_PATH = $(DIST_DIR)/lib/pkgconfig
@@ -175,6 +175,7 @@ dist/js/subtitles-octopus-worker.js: src/subtitles-octopus-worker.bc src/pre-wor
 		--post-js src/SubOctpInterface.js \
 		--post-js src/post-worker.js \
 		-s WASM=1 \
+		-s EVAL_CTORS=1 \
 		$(EMCC_COMMON_ARGS)
 
 dist/js/subtitles-octopus-worker-legacy.js: src/subtitles-octopus-worker.bc src/polyfill.js src/pre-worker.js src/SubOctpInterface.js src/post-worker.js build/lib/brotli/js/decode.js build/lib/brotli/js/polyfill.js
@@ -190,6 +191,7 @@ dist/js/subtitles-octopus-worker-legacy.js: src/subtitles-octopus-worker.bc src/
 		-s LEGACY_VM_SUPPORT=1 \
 		-s MIN_CHROME_VERSION=27 \
 		-s MIN_SAFARI_VERSION=60005 \
+		--closure=0 \
 		$(EMCC_COMMON_ARGS)
 
 dist/js/subtitles-octopus.js: dist/license/all src/subtitles-octopus.js
