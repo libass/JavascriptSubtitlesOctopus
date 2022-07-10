@@ -61,7 +61,7 @@ Module["preRun"].push(function () {
     if (!self.subContent) {
         // We can use sync xhr cause we're inside Web Worker
         if (isBrotliFile(self.subUrl)) {
-            self.subContent = self.decodeBrotliArray(readBinary(self.subUrl));
+            self.subContent = Module["BrotliDecode"](readBinary(self.subUrl))
         } else {
             self.subContent = read_(self.subUrl);
         }

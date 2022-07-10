@@ -1,0 +1,10 @@
+diff --git a/js/decode.js b/js/decode.js
+index 7896a50..a282bd1 100644
+--- a/js/decode.js
++++ b/js/decode.js
+@@ -2026,4 +2026,4 @@ function BrotliDecodeClosure() {
+ /** @export */
+ var BrotliDecode = BrotliDecodeClosure();
+ 
+-window["BrotliDecode"] = BrotliDecode;
++Module["BrotliDecode"] = BrotliDecode;
