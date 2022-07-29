@@ -21,8 +21,8 @@
 // License: Expat
 // Copyright: 2019 Zhongyuan Zhou <zhouzhongyuan@huawei.com>
 //   2020 Joe Orton <jorton@redhat.com>
-//   2021 Dong-hee Na <donghee.na@python.org>
 //   2016-2019 Sebastian Pipping <sebastian@pipping.org>
+//   2021 Dong-hee Na <donghee.na@python.org>
 //   2017 Joe Orton <jorton@redhat.com>
 //   2002 Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
 //   2004-2006 Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
@@ -34,8 +34,8 @@
 //   2000-2004 Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
 //   2017 Franek Korta <fkorta@gmail.com>
 //   2001-2004 Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
-//   2017 Benbuck Nason <bnason@netflix.com>
 //   2006-2012 Karl Waclawek <karl@waclawek.net>
+//   2017 Benbuck Nason <bnason@netflix.com>
 //   2019 David Loffredo <loffredo@steptools.com>
 //   2018 Benjamin Peterson <benjamin@python.org>
 //   2021 Tim Bray <tbray@textuality.com>
@@ -54,26 +54,26 @@
 //   2002 Greg Stein <gstein@users.sourceforge.net>
 //   2018 Marco Maggi <marco.maggi-ipsu@poste.it>
 //   2017-2018 Rhodri James <rhodri@wildebeest.org.uk>
-//   2020 Boris Kolpackov <boris@codesynthesis.com>
-//   2022 Thijs Schreijer <thijs@thijsschreijer.nl>
 //   2005-2012 Karl Waclawek <karl@waclawek.net>
+//   2022 Thijs Schreijer <thijs@thijsschreijer.nl>
+//   2020 Boris Kolpackov <boris@codesynthesis.com>
 //   2017-2019 Sebastian Pipping <sebastian@pipping.org>
 //   2016 Cristian Rodr\x{00c3}\x{00ad}guez <crrodriguez@opensuse.org>
 //   1999-2000 Thai Open Source Software Center Ltd
 //   2005 Karl Waclawek <karl@waclawek.net>
 //   2000-2017 Expat development team / 1997-2000 Thai Open Source Software Center Ltd
-//   2017 Alexander Bluhm <alexander.bluhm@gmx.net>
+//   2005-2007 Steven Solie <steven@solie.ca>
+//   2005 Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
 //   2016-2021 Sebastian Pipping <sebastian@pipping.org>
 //   2018 Anton Maklakov <antmak.pub@gmail.com>
-//   2005 Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
-//   2005-2007 Steven Solie <steven@solie.ca>
+//   2017 Alexander Bluhm <alexander.bluhm@gmx.net>
 //   1997-2000 Thai Open Source Software Center Ltd
 //   2016-2022 Sebastian Pipping <sebastian@pipping.org>
 //   2017-2021 Sebastian Pipping <sebastian@pipping.org>
 //   2002 Karl Waclawek <karl@waclawek.net>
 //   2002-2009 Karl Waclawek <karl@waclawek.net>
-//   2016 Pascal Cuoq <cuoq@trust-in-soft.com>
 //   2020 Tim Gates <tim.gates@iress.com>
+//   2016 Pascal Cuoq <cuoq@trust-in-soft.com>
 //   2004-2009 Karl Waclawek <karl@waclawek.net>
 //   2017 Jos\x{00c3}\x{00a9} Guti\x{00c3}\x{00a9}rrez de la Concha <jose@zeroc.com>
 //   2002-2006 Karl Waclawek <karl@waclawek.net>
@@ -91,11 +91,11 @@
 // 
 // # Project: freetype
 // License: FTL
-// Copyright: \x{00c5}\x{009d}\x{00c5}\x{00a5} \x{00c5}\x{009d}\x{00c5}\x{00a5}\x{00d1}\x{008f}\x{00c3}\x{00af}\x{00ef}\x{00ac}\x{00af}\x{00c4}\x{009f}")
-//   2001-2021 David Turner, Robert Wilhelm, and Werner Lemberg.
+// Copyright: 2001-2021 David Turner, Robert Wilhelm, and Werner Lemberg.
 //   2009-2013 Adobe Systems Incorporated.
-//   2017-2021 David Turner, Robert Wilhelm, and Werner Lemberg.
+//   \x{00c5}\x{009d}\x{00c5}\x{00a5} \x{00c5}\x{009d}\x{00c5}\x{00a5}\x{00d1}\x{008f}\x{00c3}\x{00af}\x{00ef}\x{00ac}\x{00af}\x{00c4}\x{009f}")
 //   1995-2002 Mark Adler
+//   2017-2021 David Turner, Robert Wilhelm, and Werner Lemberg.
 //   2013 Adobe Systems Incorporated.
 //   2005-2021 David Turner.
 //   2004-2021 Masatake YAMATO and Redhat K.K.
@@ -108,46 +108,46 @@
 //   \x{00c5}\x{009d}\x{00c5}\x{00a5} \x{00c5}\x{009d}\x{00c5}\x{00a5}\x{00d1}\x{008f}\x{00c3}\x{00af}\x{00ef}\x{00ac}\x{00af}\x{00c4}\x{009f}"));
 //   2005-2021 Werner Lemberg and Detlef W\x{00fc}rkner.
 //   2002-2021 David Turner, Robert Wilhelm, and Werner Lemberg.
-//   2003 Huw D M Davies for Codeweavers
-//   2004-2021 David Turner, Robert Wilhelm, Werner Lemberg, and George Williams.
 //   2013-2014 Adobe Systems Incorporated.
+//   2004-2021 David Turner, Robert Wilhelm, Werner Lemberg, and George Williams.
+//   2003 Huw D M Davies for Codeweavers
 //   1996-2021 David Turner, Robert Wilhelm, Werner Lemberg, and Detlef Wuerkner.
 //   2000-2021 David Turner, Robert Wilhelm, and Werner Lemberg.
 //   2007-2021 David Turner.
 //   2011-2013 Adobe Systems Incorporated.
-//   2012-2021 David Turner, Robert Wilhelm, and Werner Lemberg.
 //   2018-2021 Armin Hasitzka, David Turner, Robert Wilhelm, and Werner Lemberg.
-//   2007 Dmitry Timoshkov for Codeweavers
 //   2004-2021 David Turner, Robert Wilhelm, Werner Lemberg and George Williams.
+//   2007 Dmitry Timoshkov for Codeweavers
+//   2012-2021 David Turner, Robert Wilhelm, and Werner Lemberg.
 //   2007-2021 Dereg Clegg and Michael Toftdal.
 //   1996-2021 Just van Rossum, David Turner, Robert Wilhelm, and Werner Lemberg.
 //   2019-2021 Nikhil Ramakrishnan, David Turner, Robert Wilhelm, and Werner Lemberg.
 //   1996-2021 David Turner, Robert Wilhelm, and Werner Lemberg.
 //   2003-2021 Masatake YAMATO, Redhat K.K.,
 //   2008-2021 David Turner, Robert Wilhelm, and Werner Lemberg.
-//   2009-2021 Oran Agra and Mickey Gabel.
 //   2006-2013 Adobe Systems Incorporated.
+//   2009-2021 Oran Agra and Mickey Gabel.
 //   2013-2021 David Turner, Robert Wilhelm, and Werner Lemberg.
 //   2004-2021 Masatake YAMATO, Red Hat K.K.,
 //   2016-2021 David Turner, Robert Wilhelm, and Werner Lemberg.
 //   2020-2021 David Turner, Robert Wilhelm, and Werner Lemberg.
 //   2007-2021 Rahul Bhalerao <rahul.bhalerao@redhat.com>, <b.rahul.pm@gmail.com>.
 //   2002-2021 Roberto Alameda.
-//   2004-2021 suzuki toshiya, Masatake YAMATO, Red Hat K.K.,
 //   1995-2002 Jean-loup Gailly.
-//   2018-2021 David Turner, Robert Wilhelm, and Werner Lemberg.
+//   2004-2021 suzuki toshiya, Masatake YAMATO, Red Hat K.K.,
 //   2004-2021 Albert Chin-A-Young.
+//   2018-2021 David Turner, Robert Wilhelm, and Werner Lemberg.
 //   2002-2021 David Turner, Robert Wilhelm, and Werner Lemberg
 //   2018-2021 David Turner, Robert Wilhelm, Dominik R\x{00c3}\x{00b6}ttsches, and Werner Lemberg.
 //   \x{00e1}\x{00bb}\x{008b}...): %dn", "\x{00e1}\x{00ba}\x{0083}\x{00ce}\x{00ad}\x{00c5}\x{0082}\x{00c4}\x{00ba}", "all", 42);
 //   2005-2021 David Turner, Robert Wilhelm, and Werner Lemberg.
 //   2013 Google, Inc.
 //   2009-2014 Adobe Systems Incorporated.
+//   2007-2013 Adobe Systems Incorporated.
 //   2010-2021 David Turner, Robert Wilhelm, and Werner Lemberg.
 //   2013-2021 Google, Inc.
-//   2007-2013 Adobe Systems Incorporated.
-//   2007-2021 Derek Clegg and Michael Toftdal.
 //   2001, 2012 David Turner, Robert Wilhelm, and Werner Lemberg.
+//   2007-2021 Derek Clegg and Michael Toftdal.
 //   2003-2021 David Turner, Robert Wilhelm, and Werner Lemberg.
 //   2008-2021 David Turner, Robert Wilhelm, Werner Lemberg, and suzuki toshiya.
 //   1990, 1994, 1998 The Open Group
@@ -163,8 +163,8 @@
 // Copyright: 1995-2002 Jean-loup Gailly and Mark Adler
 // 
 // License: Expat
-// Copyright: 2001-2004 Francesco Zappa Nardelli
-//   2000-2001, 2004 Francesco Zappa Nardelli
+// Copyright: 2000-2001, 2004 Francesco Zappa Nardelli
+//   2001-2004 Francesco Zappa Nardelli
 //   2003 Francesco Zappa Nardelli
 //   2001-2015 Francesco Zappa Nardelli
 //   2001-2004, 2011 Francesco Zappa Nardelli
@@ -251,8 +251,8 @@
 //   2014 Google, Inc.
 // 
 // License: MIT~old
-// Copyright: 2012 Mozilla Foundation.
-//   2004, 2007, 2009 Red Hat, Inc.
+// Copyright: 2004, 2007, 2009 Red Hat, Inc.
+//   2012 Mozilla Foundation.
 //   2009 Red Hat, Inc.
 //   2015 Google, Inc.
 //   2014 Google, Inc.
@@ -260,9 +260,9 @@
 //   2016 Igalia S.L.
 //   2011 Martin Hosken
 //   2018 Ebrahim Byagowi.
-//   2020 Ebrahim Byagowi
-//   1998-2004 David Turner and Werner Lemberg
 //   2019 Ebrahim Byagowi
+//   1998-2004 David Turner and Werner Lemberg
+//   2020 Ebrahim Byagowi
 //   2013 Red Hat, Inc.
 //   2011-2012 Google, Inc.
 //   2011 SIL International
@@ -270,8 +270,8 @@
 //   2018 Google, Inc.
 //   2019-2020 Ebrahim Byagowi
 //   2012 Google, Inc.
-//   2017 Google, Inc.
 //   2007-2009 Red Hat, Inc.
+//   2017 Google, Inc.
 //   2011 Codethink Limited
 //   2013 Google, Inc.
 //   2015-2019 Ebrahim Byagowi
