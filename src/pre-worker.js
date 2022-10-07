@@ -45,7 +45,13 @@ function isBrotliFile(url) {
         len = url.length;
     }
 
-    return url.endsWith(".br", len);
+    if (url.endsWith(".br", len)) {
+        console.warn("Support for manual brotli decompression is tentatively deprecated and "
+                + "may be removed with the next release. Instead use HTTP's Content-Encoding.")
+        return true;
+    }
+
+    return false;
 }
 
 Module = Module || {};

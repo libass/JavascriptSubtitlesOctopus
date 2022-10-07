@@ -175,11 +175,16 @@ simply will not draw anything in canvas, mostly on low end devices.
 **WARNING: Experimental, not stable and not working in some browsers**
 
 
-### Brotli Compressed Subtitles
-The SubtitleOctopus allow the use of compressed subtitles in brotli format,
-saving bandwidth and reducing library startup time
+### Brotli Compressed Subtitles (DEPRECATED)
+Manual support for brotli-compressed subtitles is tentatively deprecated
+and may be removed with the next release.
 
-To use, just run: `brotli subFile.ass` and use the .br result file with the subUrl option
+Instead use HTTP's `Content-Encoding:` header to transmit files compressed and
+let the browser handle decompression before it reaches JSO. This supports more
+compression algorithms and is likely faster.
+Do not use a `.br` file extension if you use `Content-Ecoding:` as this will
+conflict with the still existing manual support which tries to decompress any data
+with a `.br` extension.
 
 ## How to build?
 
