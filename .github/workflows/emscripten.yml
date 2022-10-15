@@ -11,13 +11,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.9.1
+      uses: styfle/cancel-workflow-action@0.11.0
       with:
           access_token: ${{ github.token }}
           all_but_latest: true
 
     - name: Checkout Base Repo
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Prepare Submodules
       run: |
@@ -31,7 +31,7 @@ jobs:
         # Invalidate cache if submodules, patches or emscripten version changed
         key="$(find build/patches/ -type f | sort | xargs cat .gitmodules Dockerfile \
                Makefile Makefile_licence | shasum -a 256 | cut -d' ' -f1)"
-        echo "::set-output name=key::0-${key}"
+        echo "key=0-${key}" >> $GITHUB_OUTPUT
 
     - name: Ensure Cache will be newer than Checkout
       run: |
@@ -79,7 +79,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           ref: gh-pages
 
@@ -87,7 +87,7 @@ jobs:
         run: rm -fr assets/js
 
       - name: Download nightly build
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: js
           path: assets/js
