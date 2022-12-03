@@ -20,6 +20,7 @@ Copyright: 2014 Google Inc.
 # Project: expat
 License: Expat
 Copyright: 2019 Zhongyuan Zhou <zhouzhongyuan@huawei.com>
+  2017-2022 Rhodri James <rhodri@wildebeest.org.uk>
   2020 Joe Orton <jorton@redhat.com>
   2021 Dong-hee Na <donghee.na@python.org>
   2016-2019 Sebastian Pipping <sebastian@pipping.org>
@@ -53,7 +54,6 @@ Copyright: 2019 Zhongyuan Zhou <zhouzhongyuan@huawei.com>
   2000 Clark Cooper <coopercc@users.sourceforge.net>
   2002 Greg Stein <gstein@users.sourceforge.net>
   2018 Marco Maggi <marco.maggi-ipsu@poste.it>
-  2017-2018 Rhodri James <rhodri@wildebeest.org.uk>
   2020 Boris Kolpackov <boris@codesynthesis.com>
   2022 Thijs Schreijer <thijs@thijsschreijer.nl>
   2005-2012 Karl Waclawek <karl@waclawek.net>
