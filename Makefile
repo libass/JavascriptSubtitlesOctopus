@@ -24,7 +24,7 @@ build/lib/fribidi/configure: lib/fribidi $(wildcard $(BASE_DIR)build/patches/fri
 
 $(DIST_DIR)/lib/libfribidi.a: build/lib/fribidi/configure
 	cd build/lib/fribidi && \
-	$(call CONFIGURE_AUTO) && \
+	$(call CONFIGURE_AUTO) --disable-debug && \
 	$(JSO_MAKE) -C lib/ fribidi-unicode-version.h && \
 	$(JSO_MAKE) -C lib/ install && \
 	$(JSO_MAKE) install-pkgconfigDATA

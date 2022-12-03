@@ -34,8 +34,7 @@ define CONFIGURE_AUTO
 	  --host=x86-none-linux \
 	  --build=x86_64 \
 	  --enable-static \
-	  --disable-shared \
-	  --disable-debug
+	  --disable-shared
 endef
 
 # @arg1: path to source directory; defaults to current working directory
