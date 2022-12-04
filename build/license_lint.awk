@@ -48,7 +48,7 @@ fulltext && /^License: / {
 
 END {
     for (l in licenses) {
-        if(l == "public-domain")
+        if(l == "public-domain" || l == "Unlicense")
           continue # No notice required
         print "Missing full text for '"l"'!" | "cat>&2"
         ++errors
