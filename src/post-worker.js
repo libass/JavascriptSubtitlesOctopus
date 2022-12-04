@@ -116,11 +116,7 @@ self.freeTrack = function () {
  */
 self.setTrackByUrl = function (url) {
     var content = "";
-    if (isBrotliFile(url)) {
-        content = Module["BrotliDecode"](readBinary(url))
-    } else {
-        content = read_(url);
-    }
+    content = read_(url);
     self.setTrack(content);
 };
 

@@ -5,7 +5,7 @@
 all: dist/license/all
 
 LIB_LICENSES := brotli expat freetype fribidi fontconfig harfbuzz libass
-LIB_LICENSES_FINDOPT_brotli   := -path ./research -prune -false -o ! -path ./js/decode.min.js
+LIB_LICENSES_FINDOPT_brotli   := -regex \./c/.+
 LIB_LICENSES_FINDOPT_expat    := -path ./expat/fuzz -prune -false -o
 LIB_LICENSES_FINDOPT_freetype := -path ./src/tools -prune -false -o
 LIB_LICENSES_FINDOPT_fribidi  := -path ./bin -prune -false -o

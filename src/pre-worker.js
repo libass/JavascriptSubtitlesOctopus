@@ -32,28 +32,6 @@ function makeCustomConsole() {
     return console;
 }
 
-/**
- * Test the subtitle file for Brotli compression.
- * @param {!string} url the URL of the subtitle file.
- * @returns {boolean} Brotli compression found or not.
- */
-function isBrotliFile(url) {
-    // Search for parameters
-    var len = url.indexOf("?");
-
-    if (len === -1) {
-        len = url.length;
-    }
-
-    if (url.endsWith(".br", len)) {
-        console.warn("Support for manual brotli decompression is tentatively deprecated and "
-                + "may be removed with the next release. Instead use HTTP's Content-Encoding.")
-        return true;
-    }
-
-    return false;
-}
-
 Module = Module || {};
 
 Module["preRun"] = Module["preRun"] || [];
@@ -64,11 +42,7 @@ Module["preRun"].push(function () {
 
     if (!self.subContent) {
         // We can use sync xhr cause we're inside Web Worker
-        if (isBrotliFile(self.subUrl)) {
-            self.subContent = Module["BrotliDecode"](readBinary(self.subUrl))
-        } else {
-            self.subContent = read_(self.subUrl);
-        }
+        self.subContent = read_(self.subUrl);
     }
 
     if (self.availableFonts && self.availableFonts.length !== 0) {
