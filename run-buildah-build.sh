@@ -15,4 +15,4 @@ if [ "$FAST" -eq 0 ] ; then
     buildah rm "$CONTAINER" >/dev/null 2>&1 || :
     buildah from --name "$CONTAINER" "$IMAGE":latest
 fi
-buildah run -t -v "${PWD}":/code "$CONTAINER" $cmd "$@"
+buildah run -t --env LC_ALL=C.UTF-8 -v "${PWD}":/code "$CONTAINER" $cmd "$@"

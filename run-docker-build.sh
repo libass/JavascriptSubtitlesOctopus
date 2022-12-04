@@ -8,7 +8,7 @@ if [ "$FAST" -eq 0 ] ; then
     docker build -t "$IMAGE" .
 fi
 if [ "$#" -eq 0 ] ; then
-    docker run --rm -v "${PWD}":/code --name "$CONTAINER" "$IMAGE":latest
+    docker run --rm --env LC_ALL=C.UTF-8 -v "${PWD}":/code --name "$CONTAINER" "$IMAGE":latest
 else
-    docker run --rm -v "${PWD}":/code --name "$CONTAINER" "$IMAGE":latest "$@"
+    docker run --rm --env LC_ALL=C.UTF-8 -v "${PWD}":/code --name "$CONTAINER" "$IMAGE":latest "$@"
 fi

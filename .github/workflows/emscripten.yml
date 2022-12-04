@@ -63,7 +63,7 @@ jobs:
     - name: Build Binaries
       run: |
         mkdir -p /tmp/emcc_lto
-        docker run --rm -v "${PWD}":/code -v "/tmp/emcc_lto:/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/lto" libass/jso:latest
+        docker run --rm --env LC_ALL=C.UTF-8 -v "${PWD}":/code -v "/tmp/emcc_lto:/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/lto" libass/jso:latest
 
     - name: Upload Nightly Build
       uses: actions/upload-artifact@v3

@@ -41,9 +41,16 @@ else
 fi
 
 
-find "$base_dir" $FINDOPTS -type f -regextype egrep -regex '.*\.(c|h|cpp|hpp|js)$' -exec \
-    licensecheck --machine --copyright --deb-fmt '{}' \; \
-    | awk -F"$tabulator" -v base_dir="$base_dir" \
+FIFO="$base_dir"/__LICENSE_EXTRACT_QUEUE.tmp
+mkfifo "$FIFO"
+# We want to be able to clean up the named pipe on error
+# and will check the exit codes ourselves
+set +e
+
+find "$base_dir" $FINDOPTS -type f -regextype egrep -regex '.*\.(c|h|cpp|hpp|js)$' -print0 \
+    | xargs -0 -P1 licensecheck --machine --copyright --deb-fmt --encoding UTF-8 > "$FIFO"\
+	& scan_pid="$!"
+awk -F"$tabulator" -v base_dir="$base_dir" \
         -v def_license="$def_license" -v def_copy="$def_copy" '
             BEGIN {
                 split("", lcfiles)     # Clear array with only pre-Issue 8 POSIX
@@ -100,4 +107,10 @@ find "$base_dir" $FINDOPTS -type f -regextype egrep -regex '.*\.(c|h|cpp|hpp|js)
                     printf "\n"
                 }
             }
-        '
+        ' \
+	< "$FIFO"
+fret="$?"
+wait "$scan_pid"
+sret="$?"
+rm "$FIFO"
+exit "$((fret | sret))"
