@@ -3,6 +3,7 @@
 #        back into the main Makefile
 
 all: dist/license/all
+.PHONY: all
 
 LIB_LICENSES := brotli expat freetype fribidi fontconfig harfbuzz libass
 LIB_LICENSES_FINDOPT_brotli   := -regex \./c/.+
