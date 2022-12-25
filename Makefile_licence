@@ -35,6 +35,3 @@ dist/license/all: dist/license/subtitlesoctopus $(addprefix dist/license/, $(LIB
 	mv dist/license/all dist/license/all.tmp
 	build/license_lint.awk dist/license/all.tmp build/license_fullnotice
 	cat dist/license/all.tmp build/license_fullnotice > dist/license/all
-
-dist/js/COPYRIGHT: dist/license/all
-	cp "$<" "$@"
