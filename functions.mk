@@ -21,7 +21,6 @@ endef
 define PREPARE_SRC_VPATH
 	rm -rf build/lib/$(1)
 	mkdir -p build/lib/$(1)
-	touch build/lib/$(1)/configured
 endef
 
 # All projects we build have autogen.sh, otherwise we could also fallback to `autoreconf -ivf .`
