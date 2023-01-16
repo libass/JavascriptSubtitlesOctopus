@@ -474,14 +474,9 @@ var SubtitlesOctopus = function (options) {
 
 
         if (
-          self.canvas.width != width ||
-          self.canvas.height != height ||
-          self.canvas.style.top != top ||
-          self.canvas.style.left != left
+          self.canvas.style.top != top + 'px' ||
+          self.canvas.style.left != left + 'px'
         ) {
-            self.canvas.width = width;
-            self.canvas.height = height;
-
             if (videoSize != null) {
                 self.canvasParent.style.position = 'relative';
                 self.canvas.style.display = 'block';
@@ -492,6 +487,13 @@ var SubtitlesOctopus = function (options) {
                 self.canvas.style.left = left + 'px';
                 self.canvas.style.pointerEvents = 'none';
             }
+        }
+        if (
+          self.canvas.width != width ||
+          self.canvas.height != height
+        ) {
+            self.canvas.width = width;
+            self.canvas.height = height;
 
             self.worker.postMessage({
                 target: 'canvas',
