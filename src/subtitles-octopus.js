@@ -245,9 +245,10 @@ var SubtitlesOctopus = function (options) {
         var width = self.video.offsetWidth, height = self.video.offsetHeight;
         var elementRatio = width / height;
         var realWidth = width, realHeight = height;
-        if (elementRatio > videoRatio) realWidth = Math.floor(height * videoRatio);
-        else realHeight = Math.floor(width / videoRatio);
-
+        if(!options.skipAspectRatioCheck) {
+            if (elementRatio > videoRatio) realWidth = Math.floor(height * videoRatio);
+            else realHeight = Math.floor(width / videoRatio);
+        }
         var x = (width - realWidth) / 2;
         var y = (height - realHeight) / 2;
 
