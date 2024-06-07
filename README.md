@@ -60,7 +60,8 @@ var options = {
     canvas: document.getElementById('canvas'), // canvas element
     subUrl: '/test/test.ass', // Link to subtitles
     fonts: ['/test/font-1.ttf', '/test/font-2.ttf'], // Links to fonts (not required, default font already included in build)
-    workerUrl: '/libassjs-worker.js' // Link to file "libassjs-worker.js"
+    workerUrl: '/libassjs-worker.js', // Link to file "libassjs-worker.js"
+    wasmUrl: '/libassjs.wasm', // Link to file "libassjs.wasm" (not required, default loaded by workerUrl)
 };
 var instance = new SubtitlesOctopus(options);
 // And then...
@@ -111,6 +112,8 @@ When creating an instance of SubtitleOctopus, you can set the following options:
 - `subContent`: The content of the subtitle file to play. (Require either
   `subContent` or `subUrl` to be specified)
 - `workerUrl`: The URL of the worker. (Default: `libassjs-worker.js`)
+- `wasmUrl`: The URL of the WebAssembly file. (if your wasm file is not in the
+  same directory as the worker, you need to specify this) (Optional)
 - `fonts`: An array of links to the fonts used in the subtitle. (Optional)
 - `availableFonts`: Object with all available fonts - Key is font name in lower
   case, value is link: `{"arial": "/font1.ttf"}` (Optional)

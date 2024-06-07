@@ -77,6 +77,15 @@ Module["preRun"].push(function () {
     }
 });
 
+// override locateFile for wasm file requests
+Module['locateFile'] = function (url) {
+    // if we have a wasmUrl, use it
+    if (self.wasmUrl && /\.wasm$/.test(url)) {
+        return self.wasmUrl;
+    }
+    return url;
+};
+
 Module['onRuntimeInitialized'] = function () {
     self.octObj = new Module.SubtitleOctopus();
 

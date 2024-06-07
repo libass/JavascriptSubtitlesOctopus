@@ -552,7 +552,7 @@ function onMessageFromMainEmscriptenThread(message) {
                 self.renderMode = 'wasm-blend';
                 console.error("'createImageBitmap' needed for 'lossy' unsupported. Falling back to default!");
             }
-
+            self.wasmUrl = message.data.wasmUrl;
             self.availableFonts = message.data.availableFonts;
             self.fallbackFont = message.data.fallbackFont;
             self.lazyFileLoading = message.data.lazyFileLoading;
