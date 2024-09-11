@@ -11,13 +11,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Cancel previous runs
-      uses: styfle/cancel-workflow-action@0.11.0
+      uses: styfle/cancel-workflow-action@0.12.1
       with:
           access_token: ${{ github.token }}
           all_but_latest: true
 
     - name: Checkout Base Repo
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Prepare Submodules
       run: |
@@ -38,7 +38,7 @@ jobs:
         find . -exec touch -d 1971-01-01T00:00:00 '{}' +
 
     - name: Retrieve Cached Built Dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       id: cache
       with:
         key: ${{ steps.cache_config.outputs.key }}
@@ -66,7 +66,7 @@ jobs:
         docker run --rm --env LC_ALL=C.UTF-8 -v "${PWD}":/code -v "/tmp/emcc_lto:/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/lto" libass/jso:latest
 
     - name: Upload Nightly Build
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/master'
       with:
         name: js
@@ -79,7 +79,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: gh-pages
 
@@ -87,7 +87,7 @@ jobs:
         run: rm -fr assets/js
 
       - name: Download nightly build
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: js
           path: assets/js
