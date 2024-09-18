@@ -32,6 +32,7 @@ var SubtitlesOctopus = function (options) {
     self.onReadyEvent = options.onReady; // Function called when SubtitlesOctopus is ready (optional)
     if (supportsWebAssembly) {
         self.workerUrl = options.workerUrl || 'subtitles-octopus-worker.js'; // Link to WebAssembly worker
+        self.wasmUrl = options.wasmUrl || null; // Link to WebAssembly binary
     } else {
         self.workerUrl = options.legacyWorkerUrl || 'subtitles-octopus-worker-legacy.js'; // Link to legacy worker
     }
@@ -108,6 +109,7 @@ var SubtitlesOctopus = function (options) {
             height: self.canvas.height,
             URL: document.URL,
             currentScript: self.workerUrl,
+            wasmUrl: self.wasmUrl,
             preMain: true,
             renderMode: self.renderMode,
             subUrl: self.subUrl,
@@ -678,7 +680,7 @@ var SubtitlesOctopus = function (options) {
             style: style
         });
     };
-    
+
     self.getStyles = function (onSuccess, onError) {
         self.fetchFromWorker({
             target: 'get-styles'
